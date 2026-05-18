@@ -515,7 +515,7 @@ function TreinoView(){
       h("div",null,
         h("div",{style:{fontSize:10,color:sc.t,fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Série em andamento"),
         h("div",{style:{fontSize:44,fontWeight:900,fontVariantNumeric:"tabular-nums",letterSpacing:-1,color:"#fff"}},fmtT(exTime))),
-      h("button",{onClick:()=>{setExRun(false);setLastDur(exTime);setShowCarga(true);},style:{padding:"14px 28px",borderRadius:12,background:sc.t,border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}},"Finalizar Série")),
+      h("button",{onClick:()=>{setExRun(false);setLastDur(exTime);setCarga(exLog[0]?.carga||0);setShowCarga(true);},style:{padding:"14px 28px",borderRadius:12,background:sc.t,border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}},"Finalizar Série")),
     cntd!==null&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:500,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
       h("div",{style:{fontSize:11,color:"#555",fontWeight:700,letterSpacing:3,textTransform:"uppercase",marginBottom:24}},"Prepare-se"),
       h("div",{style:{fontSize:160,fontWeight:900,color:sc.t,lineHeight:1,fontVariantNumeric:"tabular-nums",textShadow:"0 0 80px "+sc.t+"55"}},cntd),
