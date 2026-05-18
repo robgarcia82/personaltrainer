@@ -440,6 +440,7 @@ function TreinoView(){
   const[lastDur,setLastDur]=useState(0);
   const[carga,setCarga]=useState(0);
   const[showCarga,setShowCarga]=useState(false);
+  const[seriesCt,setSeriesCt]=useState(0);
   const tf=useRef(null);
   const cdRef=useRef(null);
   const etRef=useRef(null);
@@ -453,16 +454,30 @@ function TreinoView(){
   const fl=EX.filter(x=>{if(x.s!==selS)return false;if(af&&x.f!==af)return false;if(sr){const q=sr.toLowerCase();return x.n.toLowerCase().includes(q)||x.m.toLowerCase().includes(q)}return true});
   if(selEx===null)return h(ExerciseGridView,{selS,fl,sc,onBack:()=>{setSelS(null);setSr("");setAf("")},onSelect:setSelEx,sr,setSr,af,setAf});
   const ex=selEx;const eb=EB[ex.eq]||EB.corporal;const sesEx=EX.filter(x=>x.s===selS);const num=sesEx.indexOf(ex)+1;
+  const blocoKey=sb&&sb.startsWith(String(ex.id))?sb.replace(String(ex.id),""):null;
+  const plannedSeries=blocoKey?parseInt((ex[blocoKey]||"").split("x")[0])||0:0;
+  const allSeriesDone=plannedSeries>0&&seriesCt>=plannedSeries;
+  const nextEx=sesEx[sesEx.indexOf(ex)+1]||null;
   const exLog=JSON.parse(localStorage.getItem("workout_log")||"[]").filter(e=>e.exerciseId===ex.id).slice(-4).reverse();
-  const saveSeries=(pse)=>{const entry={id:Date.now()+"",ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,pse,carga};const log=JSON.parse(localStorage.getItem("workout_log")||"[]");log.push(entry);localStorage.setItem("workout_log",JSON.stringify(log));setShowPse(false);setExTime(0);setCarga(0);setSt(true);setTl(ts);setTr(true);};
+  const saveSeries=(pse)=>{const entry={id:Date.now()+"",ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,pse,carga};const log=JSON.parse(localStorage.getItem("workout_log")||"[]");log.push(entry);localStorage.setItem("workout_log",JSON.stringify(log));setShowPse(false);setExTime(0);setCarga(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
   return h("div",{style:{paddingBottom:80}},
     h("div",{style:{position:"sticky",top:0,zIndex:100,background:"#07070d",padding:"12px 16px 10px",borderBottom:"1px solid "+sc.t+"33"}},
       h("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
-        h("button",{onClick:()=>{setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);},style:{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:20,border:"1px solid #1a1a25",background:"#111118",color:"#888",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}},"← "+selS),
+        h("button",{onClick:()=>{setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);},style:{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:20,border:"1px solid #1a1a25",background:"#111118",color:"#888",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}},"← "+selS),
         h("span",{style:{fontSize:11,color:"#444",flexShrink:0}},num+" / "+sesEx.length)),
       h("div",{style:{display:"flex",alignItems:"center",gap:8}},
         h("span",{style:{fontSize:15,fontWeight:700,color:"#fff",flex:1,lineHeight:1.3}},ex.n),
         h("span",{style:{display:"inline-block",fontSize:9,fontWeight:700,letterSpacing:.8,padding:"3px 8px",borderRadius:6,background:eb.bg,color:eb.c,flexShrink:0}},eb.l))),
+    h("div",{style:{padding:"12px 16px 16px",borderBottom:"1px solid #1a1a25"}},
+      h("div",{style:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:12}},
+        h("span",{style:{fontSize:11,color:"#444",fontWeight:600}},"DESCANSO:"),
+        [45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),style:{padding:"7px 16px",borderRadius:10,border:"1px solid "+(ts===s?sc.t+"66":"#1e1e30"),background:"#111118",color:ts===s?sc.t:"#666",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},s+"s"))),
+      allSeriesDone
+        ?h("button",{onClick:()=>{setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);nextEx?setSelEx(nextEx):setSelEx(null);},
+            style:{width:"100%",padding:"18px",borderRadius:14,border:"none",color:"#fff",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"inherit",letterSpacing:.5,background:nextEx?"#16a34a":"#7c3aed"}},
+            nextEx?"Próximo Exercício  →":"✓  Treino Concluído")
+        :h("button",{onClick:()=>{setCntd(3);setSt(false);setTr(false);},disabled:exRun||cntd!==null,
+            style:{width:"100%",padding:"18px",borderRadius:14,border:"none",color:"#fff",fontSize:17,fontWeight:800,cursor:exRun||cntd!==null?"not-allowed":"pointer",fontFamily:"inherit",letterSpacing:.5,background:exRun||cntd!==null?"#1a1a25":sc.t}},"▶  Iniciar Série")),
     h("div",{style:{padding:"16px 16px 0"}},
       h("div",{style:{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}},
         BK.map((b,i)=>h("button",{key:b,onClick:()=>setSb(sb===ex.id+b?null:ex.id+b),style:{padding:"5px 14px",borderRadius:8,border:"1px solid "+BC[i]+"33",background:sb===ex.id+b?BC[i]+"22":"transparent",color:sb===ex.id+b?BC[i]:"#555",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},BL[i]))),
@@ -482,16 +497,7 @@ function TreinoView(){
         h("p",{style:{fontSize:13,lineHeight:1.5,color:"#888",margin:0}},ex.t)),
       h("div",{style:{background:"#1a0a0a",borderLeft:"3px solid #ef4444",borderRadius:"0 10px 10px 0",padding:"12px 14px",marginBottom:16}},
         h("div",{style:{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#ef4444",marginBottom:5}},"⚠️ ERROS COMUNS"),
-        h("p",{style:{fontSize:13,lineHeight:1.5,color:"#995555",margin:0}},ex.e)),
-      h("div",{style:{marginBottom:16}},
-        h("button",{onClick:()=>{setCntd(3);setSt(false);setTr(false);},disabled:exRun||cntd!==null,
-          style:{width:"100%",padding:"18px",borderRadius:14,border:"none",color:"#fff",
-            fontSize:17,fontWeight:800,cursor:exRun||cntd!==null?"not-allowed":"pointer",
-            fontFamily:"inherit",letterSpacing:.5,
-            background:exRun||cntd!==null?"#1a1a25":sc.t}},"▶  Iniciar Série"),
-        h("div",{style:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginTop:12}},
-          h("span",{style:{fontSize:11,color:"#444",fontWeight:600}},"DESCANSO:"),
-          [45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),style:{padding:"7px 16px",borderRadius:10,border:"1px solid #1e1e30",background:"#111118",color:"#666",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},s+"s"))))),
+        h("p",{style:{fontSize:13,lineHeight:1.5,color:"#995555",margin:0}},ex.e))),
     exLog.length>0&&h("div",{style:{padding:"0 16px 20px",borderTop:"1px solid #1a1a25",marginTop:4}},
       h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#444",textTransform:"uppercase",padding:"16px 0 10px"}},"Histórico de séries"),
       h("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}},
@@ -528,11 +534,11 @@ function TreinoView(){
           h("div",{style:{fontSize:22,fontWeight:800,color:"#fff",marginBottom:6}},ex.n),
           h("div",{style:{fontSize:15,color:"#888"}},"Duração: ",h("span",{style:{color:"#fff",fontWeight:700}},fmtT(lastDur)))),
         h("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",gap:24,marginBottom:28}},
-          h("button",{onClick:()=>setCarga(v=>Math.max(0,v-1)),style:{width:72,height:72,borderRadius:16,border:"1px solid #1e1e30",background:"#111118",color:"#fff",fontSize:36,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"-"),
+          h("button",{onClick:()=>setCarga(v=>parseFloat(Math.max(0,v-0.5).toFixed(1))),style:{width:72,height:72,borderRadius:16,border:"1px solid #1e1e30",background:"#111118",color:"#fff",fontSize:36,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"-"),
           h("div",{style:{textAlign:"center",minWidth:120}},
             h("div",{style:{fontSize:80,fontWeight:900,color:"#fff",fontVariantNumeric:"tabular-nums",lineHeight:1}},carga>0?carga:"—"),
             h("div",{style:{fontSize:13,color:"#555",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginTop:6}},"kg")),
-          h("button",{onClick:()=>setCarga(v=>v+1),style:{width:72,height:72,borderRadius:16,border:"1px solid #1e1e30",background:"#111118",color:"#fff",fontSize:36,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"+")),
+          h("button",{onClick:()=>setCarga(v=>parseFloat((v+0.5).toFixed(1))),style:{width:72,height:72,borderRadius:16,border:"1px solid #1e1e30",background:"#111118",color:"#fff",fontSize:36,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"+")),
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:28}},
           [5,10,15,20,25,30,35,40,45,50].map(w=>
             h("button",{key:w,onClick:()=>setCarga(w),style:{padding:"14px 0",borderRadius:12,border:"2px solid "+(carga===w?"#fff":"#1e1e30"),background:carga===w?"#ffffff18":"#111118",color:carga===w?"#fff":"#666",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},w+"kg"))),
