@@ -194,6 +194,36 @@ e:"Não usar impulso. Amplitude completa na descida.",
 b1:"3× máx",b2:"3× máx",b3:"3× máx (+peso)",dl:"2× máx (leve)"}
 ];
 
+const BASE="https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
+const EX_IMGS={
+  1:BASE+"Dumbbell_Bench_Press/0.jpg",
+  2:BASE+"Incline_Dumbbell_Press/0.jpg",
+  3:BASE+"Dumbbell_Flyes/0.jpg",
+  4:BASE+"Dips_-_Chest_Version/0.jpg",
+  5:BASE+"Triceps_Pushdown/0.jpg",
+  6:BASE+"Lying_Dumbbell_Tricep_Extension/0.jpg",
+  7:BASE+"Wide-Grip_Lat_Pulldown/0.jpg",
+  8:BASE+"Seated_Cable_Rows/0.jpg",
+  9:BASE+"One-Arm_Dumbbell_Row/0.jpg",
+  10:BASE+"V-Bar_Pulldown/0.jpg",
+  11:BASE+"Dumbbell_Alternate_Bicep_Curl/0.jpg",
+  12:BASE+"Standing_Biceps_Cable_Curl/0.jpg",
+  13:BASE+"Dumbbell_Shoulder_Press/0.jpg",
+  14:BASE+"Arnold_Dumbbell_Press/0.jpg",
+  15:BASE+"Side_Lateral_Raise/0.jpg",
+  16:BASE+"Face_Pull/0.jpg",
+  17:BASE+"Front_Raise_And_Pullover/0.jpg",
+  18:BASE+"Seated_Bent-Over_Rear_Delt_Raise/0.jpg",
+  19:BASE+"Split_Squat_with_Dumbbells/0.jpg",
+  20:BASE+"Sumo_Deadlift/0.jpg",
+  21:BASE+"Romanian_Deadlift/0.jpg",
+  22:BASE+"Single_Leg_Glute_Bridge/0.jpg",
+  23:BASE+"Standing_Dumbbell_Calf_Raise/0.jpg",
+  24:BASE+"Hanging_Leg_Raise/0.jpg",
+  25:BASE+"Pullups/0.jpg",
+  26:BASE+"Chin-Up/0.jpg"
+};
+
 const SC={
   "Superiores 1":{t:"#ef4444",bg:"#2a0808"},
   "Superiores 2":{t:"#60a5fa",bg:"#0c1e3a"},
@@ -361,6 +391,11 @@ function TreinoView(){
             h("div",{style:{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}},
               BK.map((b,i)=>h("button",{key:b,onClick:()=>setSb(sb===ex.id+b?null:ex.id+b),style:{padding:"4px 10px",borderRadius:6,border:"1px solid "+BC[i]+"33",background:sb===ex.id+b?BC[i]+"22":"transparent",color:sb===ex.id+b?BC[i]:"#555",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},BL[i]))),
             sb&&sb.startsWith(String(ex.id))&&h("div",{style:{background:"#0a0a12",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:13,fontWeight:600,color:BC[BK.indexOf(sb.replace(String(ex.id),""))]}},ex[sb.replace(String(ex.id),"")]||"—"),
+            EX_IMGS[ex.id]&&h("div",{style:{marginBottom:14,borderRadius:12,overflow:"hidden",background:"#111118",border:"1px solid #1a1a25",position:"relative"}},
+              h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
+                onError:e=>{e.target.parentElement.style.display="none"},
+                style:{width:"100%",height:200,objectFit:"cover",objectPosition:"top",display:"block"}}),
+              h("div",{style:{position:"absolute",bottom:0,left:0,right:0,padding:"6px 10px",background:"linear-gradient(transparent,#0d0d14cc)",fontSize:10,color:"#555",fontWeight:600,letterSpacing:.5,textTransform:"uppercase"}},"Demonstração")),
             h("div",{style:{marginBottom:14}},
               h("div",{style:{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:sc.t,marginBottom:10}},"Como executar"),
               ex.st.map((s,i)=>h("div",{key:i,style:{display:"flex",gap:10,marginBottom:7}},
