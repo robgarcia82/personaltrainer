@@ -489,7 +489,7 @@ function TreinoView(){
             background:exRun||cntd!==null?"#1a1a25":sc.t}},"▶  Iniciar Série"),
         h("div",{style:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginTop:12}},
           h("span",{style:{fontSize:11,color:"#444",fontWeight:600}},"DESCANSO:"),
-          [45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),style:{padding:"7px 16px",borderRadius:10,border:"1px solid #1e1e30",background:"#111118",color:"#666",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},s+"s")))),
+          [45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),style:{padding:"7px 16px",borderRadius:10,border:"1px solid #1e1e30",background:"#111118",color:"#666",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},s+"s"))))),
     exLog.length>0&&h("div",{style:{padding:"0 16px 20px",borderTop:"1px solid #1a1a25",marginTop:4}},
       h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#444",textTransform:"uppercase",padding:"16px 0 10px"}},"Histórico de séries"),
       h("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}},
