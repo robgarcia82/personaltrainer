@@ -436,6 +436,7 @@ function TreinoView(){
   const[carga,setCarga]=useState(0);
   const[showCarga,setShowCarga]=useState(false);
   const[seriesCt,setSeriesCt]=useState(0);
+  const[reps,setReps]=useState(0);
   const tf=useRef(null);
   const cdRef=useRef(null);
   const etRef=useRef(null);
@@ -453,9 +454,11 @@ function TreinoView(){
   const plannedSeries=blocoKey?parseInt((ex[blocoKey]||"").split("x")[0])||0:0;
   const allSeriesDone=plannedSeries>0&&seriesCt>=plannedSeries;
   const nextEx=sesEx[sesEx.indexOf(ex)+1]||null;
-  const exLog=JSON.parse(localStorage.getItem("workout_log")||"[]").filter(e=>e.exerciseId===ex.id).slice(-4).reverse();
-  const saveSeries=(pse)=>{const entry={id:Date.now()+"",ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,pse,carga};const log=JSON.parse(localStorage.getItem("workout_log")||"[]");log.push(entry);localStorage.setItem("workout_log",JSON.stringify(log));setShowPse(false);setExTime(0);setCarga(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
-  return h("div",{style:{paddingBottom:nextEx&&seriesCt>=3?148:80}},
+  function getWorkoutLog(){try{const r=localStorage.getItem("workout_log");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}}
+  function setWorkoutLog(l){try{localStorage.setItem("workout_log",JSON.stringify(l));}catch(e){console.error("Erro ao salvar workout_log",e);}}
+  const exLog=getWorkoutLog().filter(e=>e.exerciseId===ex.id).slice(-4).reverse();
+  const saveSeries=(pse)=>{const entry={id:Date.now()+"",ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,reps,pse,carga};const log=getWorkoutLog();setWorkoutLog([...log,entry]);setShowPse(false);setExTime(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
+  return h("div",{style:{paddingBottom:nextEx&&seriesCt>=(plannedSeries>0?plannedSeries:3)?148:80}},
     h("div",{style:{position:"sticky",top:0,zIndex:100,background:"#07070d",padding:"12px 16px 10px",borderBottom:"1px solid "+sc.t+"33"}},
       h("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
         h("button",{onClick:()=>{setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);},style:{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:20,border:"1px solid #1a1a25",background:"#111118",color:"#888",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}},"← "+selS),
@@ -479,6 +482,7 @@ function TreinoView(){
         ?h("div",{style:{background:"#111118",borderRadius:12,padding:"14px 16px",border:"1px solid #1a1a25",display:"flex",alignItems:"center",marginBottom:12}},
             h("div",{style:{flex:1,display:"flex",gap:14,alignItems:"baseline",flexWrap:"wrap"}},
               exLog[0].carga>0&&h("span",{style:{fontSize:26,fontWeight:900,color:"#fff",letterSpacing:-.5}},exLog[0].carga+"kg"),
+              exLog[0].reps>0&&h("span",{style:{fontSize:16,fontWeight:700,color:"#aaa"}},exLog[0].reps+" reps"),
               h("span",{style:{fontSize:13,color:"#888"}},fmtT(exLog[0].duration)),
               h("span",{style:{fontSize:14,fontWeight:700,color:exLog[0].pse<=3?"#22c55e":exLog[0].pse<=6?"#f59e0b":exLog[0].pse<=8?"#ef4444":"#dc2626"}},"PSE "+exLog[0].pse)),
             h("span",{style:{fontSize:10,color:"#333",flexShrink:0}},exLog[0].date))
@@ -486,9 +490,7 @@ function TreinoView(){
       seriesCt>0&&exLog.length>0&&h("div",{style:{background:"#111120",borderRadius:10,padding:"11px 14px",marginBottom:12,border:"1px solid #16a34a33",display:"flex",alignItems:"center",gap:10}},
         h("span",{style:{fontSize:16}},"→"),
         h("span",{style:{fontSize:13,color:"#888"}},
-          exLog[0].pse>=9?"Reduza a carga na próxima série":
-          exLog[0].pse<=5?"Você pode aumentar a carga":
-          "Mantenha a carga e foque na execução")),
+          (()=>{const{pse,reps:r}=exLog[0];if(r>0&&r<=5&&pse>=8)return"Carga provavelmente alta para a meta de hoje.";if(pse>=9)return"Considere reduzir a carga ou aumentar o descanso.";if(pse<=6&&r>=10)return"Pode aumentar levemente a carga na próxima série.";if(pse>=7&&pse<=8)return"Mantenha a carga e repita a qualidade.";return"Mantenha a carga e foque na execução.";})())),
       h("div",{style:{fontSize:9,fontWeight:700,letterSpacing:1.5,color:"#444",textTransform:"uppercase",marginBottom:8}},"Meta de hoje"),
       h("div",{style:{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}},
         BK.map((b,i)=>h("button",{key:b,onClick:()=>setSb(sb===ex.id+b?null:ex.id+b),
@@ -521,13 +523,15 @@ function TreinoView(){
           return h("div",{key:e.id,style:{background:"#111118",borderRadius:10,padding:"10px 8px",textAlign:"center",border:"1px solid #1a1a25"}},
             h("div",{style:{fontSize:22,fontWeight:800,color:pc}},e.pse),
             h("div",{style:{fontSize:9,color:"#555",marginTop:1}},"PSE"),
-            h("div",{style:{fontSize:12,fontWeight:700,color:"#aaa",marginTop:4}},fmtT(e.duration)),
-            e.carga>0&&h("div",{style:{fontSize:11,fontWeight:700,color:"#888",marginTop:2}},e.carga+"kg"),
+            e.carga>0&&h("div",{style:{fontSize:12,fontWeight:700,color:"#aaa",marginTop:4}},e.carga+"kg"),
+            e.reps>0&&h("div",{style:{fontSize:11,color:"#666",marginTop:2}},e.reps+" reps"),
+            h("div",{style:{fontSize:10,color:"#555",marginTop:2}},fmtT(e.duration)),
             h("div",{style:{fontSize:9,color:"#444",marginTop:2}},e.date));})))  ,
-    nextEx&&seriesCt>=3&&h("div",{style:{position:"fixed",bottom:64,left:0,right:0,zIndex:190,background:"#0d0d14f2",backdropFilter:"blur(16px)",borderTop:"1px solid #1a1a25",padding:"10px 16px"}},
+    nextEx&&seriesCt>=(plannedSeries>0?plannedSeries:3)&&h("div",{style:{position:"fixed",bottom:64,left:0,right:0,zIndex:190,background:"#0d0d14f2",backdropFilter:"blur(16px)",borderTop:"1px solid #1a1a25",padding:"10px 16px"}},
       h("button",{onClick:()=>{setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);setSelEx(nextEx);},
         style:{width:"100%",padding:"15px",borderRadius:14,border:"1px solid #1e1e30",background:"#111118",color:"#aaa",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3}},
-        "Próximo exercício  →")),
+        "Próximo exercício  →",
+        h("span",{style:{display:"block",fontSize:11,color:"#666",fontWeight:400,marginTop:2}},"Série "+seriesCt+" de "+(plannedSeries>0?plannedSeries:3)+" concluída"))),
     st&&!exRun&&h("div",{style:{position:"fixed",inset:0,background:"rgba(7,7,13,0.96)",backdropFilter:"blur(20px)",zIndex:200,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
       h("div",{style:{fontSize:11,color:"#555",fontWeight:700,letterSpacing:3,textTransform:"uppercase",marginBottom:24}},"Descanso"),
       h("div",{style:{fontSize:120,fontWeight:900,fontVariantNumeric:"tabular-nums",letterSpacing:-4,lineHeight:1,color:tl===0?"#22c55e":tl<=10?"#ef4444":"#fff",textShadow:tl===0?"0 0 60px #22c55e55":tl<=10?"0 0 60px #ef444455":"0 0 40px #ffffff22"}},Math.floor(tl/60)+":"+String(tl%60).padStart(2,"0")),
@@ -541,14 +545,14 @@ function TreinoView(){
       h("div",null,
         h("div",{style:{fontSize:10,color:sc.t,fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Série em andamento"),
         h("div",{style:{fontSize:44,fontWeight:900,fontVariantNumeric:"tabular-nums",letterSpacing:-1,color:"#fff"}},fmtT(exTime))),
-      h("button",{onClick:()=>{setExRun(false);setLastDur(exTime);setCarga(exLog[0]?.carga||0);setShowCarga(true);},style:{padding:"14px 28px",borderRadius:12,background:sc.t,border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}},"Finalizar Série")),
+      h("button",{onClick:()=>{setExRun(false);setLastDur(exTime);setCarga(exLog[0]?.carga??0);setReps(exLog[0]?.reps??0);setShowCarga(true);},style:{padding:"14px 28px",borderRadius:12,background:sc.t,border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}},"Finalizar Série")),
     cntd!==null&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:500,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
       h("div",{style:{fontSize:11,color:"#555",fontWeight:700,letterSpacing:3,textTransform:"uppercase",marginBottom:24}},"Prepare-se"),
       h("div",{style:{fontSize:160,fontWeight:900,color:sc.t,lineHeight:1,fontVariantNumeric:"tabular-nums",textShadow:"0 0 80px "+sc.t+"55"}},cntd),
       h("div",{style:{fontSize:16,color:"#888",marginTop:28,fontWeight:600,textAlign:"center"}},ex.n),
       h("button",{onClick:()=>setCntd(null),style:{marginTop:44,padding:"10px 28px",borderRadius:20,border:"1px solid #333",background:"transparent",color:"#555",fontSize:13,cursor:"pointer",fontFamily:"inherit"}},"Cancelar")),
-    showCarga&&h("div",{style:{position:"fixed",inset:0,background:"rgba(7,7,13,0.97)",zIndex:550,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}},
-      h("div",{style:{width:"100%",maxWidth:600}},
+    showCarga&&h("div",{style:{position:"fixed",inset:0,background:"rgba(7,7,13,0.97)",zIndex:550,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",overflowY:"auto"}},
+      h("div",{style:{width:"100%",maxWidth:600,paddingTop:24,paddingBottom:24}},
         h("div",{style:{textAlign:"center",marginBottom:32}},
           h("div",{style:{fontSize:12,color:"#555",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:10}},"Carga utilizada"),
           h("div",{style:{fontSize:22,fontWeight:800,color:"#fff",marginBottom:6}},ex.n),
@@ -559,9 +563,20 @@ function TreinoView(){
             h("div",{style:{fontSize:80,fontWeight:900,color:"#fff",fontVariantNumeric:"tabular-nums",lineHeight:1}},carga>0?carga:"—"),
             h("div",{style:{fontSize:13,color:"#555",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginTop:6}},"kg")),
           h("button",{onClick:()=>setCarga(v=>parseFloat((v+0.5).toFixed(1))),style:{width:72,height:72,borderRadius:16,border:"1px solid #1e1e30",background:"#111118",color:"#fff",fontSize:36,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"+")),
-        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:28}},
+        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}},
           [5,10,15,20,25,30,35,40,45,50].map(w=>
             h("button",{key:w,onClick:()=>setCarga(w),style:{padding:"14px 0",borderRadius:12,border:"2px solid "+(carga===w?"#fff":"#1e1e30"),background:carga===w?"#ffffff18":"#111118",color:carga===w?"#fff":"#666",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},w+"kg"))),
+        h("div",{style:{marginBottom:20}},
+          h("div",{style:{fontSize:12,color:"#555",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",textAlign:"center",marginBottom:14}},"Repetições feitas"),
+          h("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",gap:24,marginBottom:14}},
+            h("button",{onClick:()=>setReps(v=>Math.max(0,v-1)),style:{width:56,height:56,borderRadius:16,border:"1px solid #1e1e30",background:"#111118",color:"#fff",fontSize:28,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"-"),
+            h("div",{style:{textAlign:"center",minWidth:100}},
+              h("div",{style:{fontSize:54,fontWeight:900,color:"#fff",fontVariantNumeric:"tabular-nums",lineHeight:1}},reps>0?reps:"—"),
+              h("div",{style:{fontSize:12,color:"#555",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginTop:4}},"reps")),
+            h("button",{onClick:()=>setReps(v=>v+1),style:{width:56,height:56,borderRadius:16,border:"1px solid #1e1e30",background:"#111118",color:"#fff",fontSize:28,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"+")),
+          h("div",{style:{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8}},
+            [6,8,10,12,15,20].map(r=>
+              h("button",{key:r,onClick:()=>setReps(r),style:{padding:"11px 0",borderRadius:12,border:"2px solid "+(reps===r?"#fff":"#1e1e30"),background:reps===r?"#ffffff18":"#111118",color:reps===r?"#fff":"#666",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},r)))),
         h("button",{onClick:()=>{setShowCarga(false);setShowPse(true);},style:{width:"100%",padding:"18px",borderRadius:14,border:"none",background:sc.t,color:"#fff",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"inherit",marginBottom:12}},"Continuar  →"),
         h("button",{onClick:()=>{setShowCarga(false);},style:{width:"100%",padding:"13px",borderRadius:12,border:"1px solid #222",background:"transparent",color:"#444",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"Cancelar"))),
     showPse&&h("div",{style:{position:"fixed",inset:0,background:"rgba(7,7,13,0.97)",zIndex:600,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}},
@@ -570,7 +585,7 @@ function TreinoView(){
           h("div",{style:{fontSize:12,color:"#555",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:10}},"Como foi a série?"),
           h("div",{style:{fontSize:24,fontWeight:800,color:"#fff",marginBottom:8}},ex.n),
           h("div",{style:{fontSize:16,color:"#888"}},"Duração: ",h("span",{style:{color:"#fff",fontWeight:700}},fmtT(lastDur))),
-          h("div",{style:{fontSize:14,color:"#888",marginTop:4}},"Carga: ",h("span",{style:{color:"#fff",fontWeight:700}},carga>0?carga+"kg":"—"))),
+          h("div",{style:{fontSize:14,color:"#888",marginTop:4}},"Carga: ",h("span",{style:{color:"#fff",fontWeight:700}},carga>0?carga+"kg":"—")," · Reps: ",h("span",{style:{color:"#fff",fontWeight:700}},reps>0?reps:"—"))),
         h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:10,fontSize:11,color:"#555",padding:"0 4px"}},
           h("span",null,"Muito fácil"),h("span",null,"Moderado"),h("span",null,"Máximo")),
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}},
