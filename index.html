@@ -706,8 +706,6 @@ function App(){
   return h("div",{style:{minHeight:"100vh",background:"#07070d",color:"#e8e8f0",fontFamily:"'SF Pro Display',system-ui,-apple-system,sans-serif",paddingBottom:64}},
     h("div",{style:{padding:"24px 16px 12px",textAlign:"center",borderBottom:"1px solid #111"}},
       h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:3,color:"#ef4444",textTransform:"uppercase",marginBottom:4}},"Roberto Garcia • Home Gym"),
-      h("h1",{style:{fontSize:24,fontWeight:800,letterSpacing:-.5,margin:0,color:"#fff"}},
-        tab==="treino"?"Guia de Exercícios":tab==="dieta"?"Plano Nutricional":"Coach de Treino"),
       h("p",{style:{color:"#555",fontSize:11,marginTop:4}},subtitulo[tab])),
     tab==="treino"&&h(TreinoView,null),
     tab==="dieta"&&h(DietaView,null),
