@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#ef4444">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>Guia de Exerc\u00edcios — Roberto Garcia</title>
+<title>Personal Trainer — Roberto Garcia</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body,#root{height:100%;background:#07070d;color:#e8e8f0;font-family:'SF Pro Display',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -25,103 +25,433 @@ input::placeholder{color:#333}
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
 const EX=[
-{id:1,n:"Supino com Halteres",m:"Peitoral maior",s:"Upper A",d:"Seg",f:"Peito",eq:"halter",st:["Deite no banco com um halter em cada m\u00e3o, p\u00e9s firmes no ch\u00e3o.","Bra\u00e7os estendidos acima do peito, halteres alinhados com os ombros.","Des\u00e7a controlando por 2-3s at\u00e9 os cotovelos na altura do peito.","Empurre para cima de forma explosiva.","Mantenha as esc\u00e1pulas retra\u00eddas durante todo o movimento."],t:"Imagine que est\u00e1 empurrando o corpo para dentro do banco. Isso ativa mais o peitoral.",e:"N\u00e3o arquear excessivamente as costas. Manter cotovelos em ~75\u00b0.",b1:"3x10-12 | PSE 6-7",b2:"4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
-{id:2,n:"Supino Inclinado c/ Halteres",m:"Peitoral superior",s:"Upper A",d:"Seg",f:"Peito",eq:"halter",st:["Ajuste o banco para 30-45 graus.","Deite com os halteres na altura dos ombros.","Empurre para cima seguindo linha inclinada.","Des\u00e7a controlando at\u00e9 sentir o alongamento.","Esc\u00e1pulas retra\u00eddas no banco."],t:"30\u00b0 ativa mais peitoral. 45\u00b0 envolve mais delt\u00f3ide. Prefira 30\u00b0.",e:"N\u00e3o subir o banco acima de 45\u00b0.",b1:"3x10-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x10-12 | PSE 5-6"},
-{id:3,n:"Lat Pulldown na Polia",m:"Dorsais, redondo maior, b\u00edceps",s:"Upper A",d:"Seg",f:"Costas",eq:"mc1000",st:["Sente sob a polia alta da MC-1000. Use o pad de apoio.","Segure a barra com pegada pronada, mais larga que os ombros.","Puxe a barra em dire\u00e7\u00e3o ao peito, cotovelos para baixo e tr\u00e1s.","Aperte as costas no ponto mais baixo por 1s.","Retorne controlando at\u00e9 estender os bra\u00e7os. Sinta o alongamento."],t:"SUBSTITUI O PULLOVER. O exerc\u00edcio que mais faltava. Pense em puxar com os cotovelos, n\u00e3o com as m\u00e3os.",e:"N\u00e3o puxar atr\u00e1s da cabe\u00e7a. N\u00e3o balan\u00e7ar o tronco.",b1:"3x10-12 | PSE 6-7",b2:"4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
-{id:4,n:"Remada c/ Halter (Unilateral)",m:"Dorsais, romboides, trap\u00e9zio",s:"Upper A",d:"Seg",f:"Costas",eq:"halter",st:["Apoie joelho e m\u00e3o no banco. Perna oposta no ch\u00e3o.","Segure o halter, bra\u00e7o estendido.","Puxe em dire\u00e7\u00e3o ao quadril. Cotovelo rente ao corpo.","Aperte as costas no topo por 1s.","Des\u00e7a controlando."],t:"Pense em puxar com o cotovelo, n\u00e3o com a m\u00e3o.",e:"N\u00e3o girar o tronco para subir o peso.",b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
-{id:5,n:"Face Pull na Polia",m:"Delt\u00f3ide posterior, rotadores",s:"Upper A",d:"Seg",f:"Ombro",eq:"mc1000",st:["Polia na altura do rosto ou acima.","Segure a corda com pegada neutra.","Puxe em dire\u00e7\u00e3o ao rosto, abrindo os cotovelos.","Gire as m\u00e3os para fora no final \u2014 pose de b\u00edceps duplo.","Retorne controlando."],t:"ESSENCIAL. Equilibra o trabalho de empurrar. Previne les\u00e3o de ombro. Fa\u00e7a em TODOS os dias de upper.",e:"N\u00e3o usar peso pesado. Qualidade > carga. Corda vai pro rosto, n\u00e3o pro peito.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
-{id:6,n:"Eleva\u00e7\u00e3o Lateral c/ Halteres",m:"Delt\u00f3ide lateral",s:"Upper A",d:"Seg",f:"Ombro",eq:"halter",st:["Em p\u00e9, halteres ao lado, leve inclina\u00e7\u00e3o do tronco.","Levante os bra\u00e7os para os lados at\u00e9 a altura dos ombros.","Cotovelos levemente flexionados e fixos.","Pause 1s no topo.","Des\u00e7a controlando."],t:"Mindinho mais alto que o polegar no topo.",e:"N\u00e3o usar impulso. N\u00e3o subir acima dos ombros.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
-{id:7,n:"Rosca Halter Alternada",m:"B\u00edceps braquial",s:"Upper A",d:"Seg",f:"Bra\u00e7os",eq:"halter",st:["Em p\u00e9, halteres ao lado, palmas para frente.","Flexione um bra\u00e7o at\u00e9 o ombro. Cotovelo fixo.","Aperte b\u00edceps 1s no topo.","Des\u00e7a controlando, repita outro lado.","10 reps = 10 cada lado."],t:"Cotovelo colado ao corpo.",e:"N\u00e3o balan\u00e7ar o corpo.",b1:"2x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x12-15 | PSE 5-6"},
-{id:8,n:"Tr\u00edceps Pushdown na Polia",m:"Tr\u00edceps (3 cabe\u00e7as)",s:"Upper A",d:"Seg",f:"Bra\u00e7os",eq:"mc1000",st:["Polia no ponto mais alto.","Segure barra reta ou corda, pegada pronada.","Cotovelos colados ao corpo.","Empurre para baixo estendendo completamente.","Retorne controlando at\u00e9 antebra\u00e7os paralelos ao ch\u00e3o."],t:"SUBSTITUI O MERGULHO NO BANCO. Mais isolamento, sem estresse no ombro. Com corda: gire m\u00e3os para fora no final.",e:"Cotovelos n\u00e3o saem da posi\u00e7\u00e3o. N\u00e3o inclinar o tronco.",b1:"2x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x12-15 | PSE 5-6"},
-{id:9,n:"Agachamento Goblet",m:"Quadr\u00edceps, gl\u00fateos",s:"Lower A",d:"Ter",f:"Pernas",eq:"halter",st:["Halter verticalmente contra o peito.","P\u00e9s na largura dos ombros, pontas para fora.","Agache empurrando joelhos para fora, peito erguido.","Des\u00e7a at\u00e9 coxas paralelas.","Empurre o ch\u00e3o para subir."],t:"Se 24kg ficar leve, segure um halter em cada m\u00e3o na posi\u00e7\u00e3o de front squat.",e:"N\u00e3o deixar joelhos cederem para dentro.",b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
-{id:10,n:"Agachamento B\u00falgaro",m:"Quadr\u00edceps, gl\u00fateos, estabilizadores",s:"Lower A",d:"Ter",f:"Pernas",eq:"halter",st:["De costas para o banco, apoie p\u00e9 traseiro na borda.","Halter em cada m\u00e3o ao lado do corpo.","Agache na perna da frente at\u00e9 coxa paralela.","Empurre com a perna da frente.","Complete um lado antes de trocar."],t:"Ajuste a dist\u00e2ncia do banco at\u00e9 sentir confort\u00e1vel.",e:"N\u00e3o empurrar com a perna de tr\u00e1s.",b1:"3x10/perna | PSE 6-7",b2:"3-4x8/perna | PSE 7-8",b3:"4x6/perna | PSE 8-9",dl:"2x10/perna | PSE 5-6"},
-{id:11,n:"Stiff com Halteres",m:"Isquiotibiais, gl\u00fateos",s:"Lower A",d:"Ter",f:"Pernas",eq:"halter",st:["Em p\u00e9, halteres \u00e0 frente das coxas.","Joelhos levemente flexionados e fixos, quadril para tr\u00e1s.","Des\u00e7a pr\u00f3ximo \u00e0s pernas at\u00e9 alongamento forte.","Pare quando tronco paralelo ao ch\u00e3o.","Volte contraindo gl\u00fateos e isquiotibiais."],t:"Foque no alongamento dos isquiotibiais.",e:"N\u00e3o arredondar as costas.",b1:"3x10-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x8-10 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
-{id:12,n:"Glute Bridge c/ Sandbag",m:"Gl\u00fateos, isquiotibiais",s:"Lower A",d:"Ter",f:"Pernas",eq:"sandbag",st:["Deite, joelhos flexionados, p\u00e9s apoiados.","Sandbag 20kg sobre o quadril.","Empurre quadril para cima contraindo gl\u00fateos.","Aperte 2s no topo.","Des\u00e7a controlando."],t:"P\u00e9s mais perto do gl\u00fateo = mais ativa\u00e7\u00e3o.",e:"N\u00e3o hiperestender a lombar no topo.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
-{id:13,n:"Step Up no Banco",m:"Quadr\u00edceps, gl\u00fateos",s:"Lower A",d:"Ter",f:"Pernas",eq:"halter",st:["De frente pro banco, halter em cada m\u00e3o.","P\u00e9 inteiro em cima do banco.","Empurre com a perna de cima.","Estenda quadril no topo.","Des\u00e7a controlando."],t:"Banco na altura do joelho. Mais alto = mais gl\u00fateo.",e:"N\u00e3o dar impulso com a perna de baixo.",b1:"3x10/perna | PSE 6-7",b2:"3x8/perna | PSE 7-8",b3:"3x8/perna | PSE 8",dl:"2x10/perna | PSE 5-6"},
-{id:14,n:"Panturrilha em P\u00e9",m:"Gastrocn\u00eamio",s:"Lower A",d:"Ter",f:"Pernas",eq:"halter",st:["Sobre degrau, ponta do p\u00e9 na borda, halter na m\u00e3o.","Calcanhar desce \u2014 alongamento.","Empurre na ponta do p\u00e9.","Aperte 1s no topo.","Des\u00e7a devagar (3s)."],t:"Amplitude completa > peso.",e:"N\u00e3o usar impulso. N\u00e3o dobrar joelho.",b1:"3x15-20 | PSE 6-7",b2:"3x12-15 | PSE 7-8",b3:"3x12-15 | PSE 8",dl:"2x15-20 | PSE 5-6"},
-{id:15,n:"Hanging Leg Raise",m:"Core \u2014 reto abdominal inferior",s:"Lower A",d:"Ter",f:"Core",eq:"mc1000",st:["Pendure na barra fixa da MC-1000, bra\u00e7os estendidos.","Pernas estendidas, corpo est\u00e1vel.","Levante as pernas at\u00e9 90\u00b0.","Contra\u00eda abd\u00f4men 1s no topo.","Des\u00e7a controlando."],t:"SUBSTITUI A PRANCHA. Muito mais efetivo. Se n\u00e3o conseguir pernas retas, comece com joelhos flexionados (knee raise).",e:"N\u00e3o balan\u00e7ar. N\u00e3o usar impulso.",b1:"3x8-12 | PSE 6-7",b2:"3x10-15 | PSE 7-8",b3:"3x12-15 | PSE 8",dl:"2x8-12 | PSE 5-6"},
-{id:16,n:"Desenvolvimento c/ Halteres",m:"Delt\u00f3ide anterior e lateral",s:"Upper B",d:"Qui",f:"Ombro",eq:"halter",st:["Sentado a 90\u00b0, halteres na altura dos ombros.","Empurre para cima at\u00e9 estender.","Des\u00e7a controlando.","Cotovelos para os lados e levemente \u00e0 frente.","Core contra\u00eddo."],t:"Sentado elimina impulso das pernas.",e:"N\u00e3o inclinar para tr\u00e1s.",b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
-{id:17,n:"Arnold Press",m:"Delt\u00f3ide anterior, lateral, rotadores",s:"Upper B",d:"Qui",f:"Ombro",eq:"halter",st:["Sentado, halteres \u00e0 frente do rosto, palmas para voc\u00ea.","Ao empurrar, gire palmas para frente no topo.","Estenda bra\u00e7os completamente.","Des\u00e7a fazendo rota\u00e7\u00e3o inversa.","Movimento flu\u00eddo."],t:"A rota\u00e7\u00e3o ativa mais fibras. Menos peso que desenvolvimento.",e:"N\u00e3o apressar a rota\u00e7\u00e3o.",b1:"3x10-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x10-12 | PSE 5-6"},
-{id:18,n:"Cable Row (Remada Polia Baixa)",m:"Dorsais, romboides, trap\u00e9zio",s:"Upper B",d:"Qui",f:"Costas",eq:"mc1000",st:["Polia no ponto mais baixo. Sente com p\u00e9s no suporte.","Segure puxador, bra\u00e7os estendidos.","Puxe em dire\u00e7\u00e3o ao abd\u00f4men, cotovelos para tr\u00e1s.","Aperte esc\u00e1pulas 1s.","Retorne controlando."],t:"NOVO \u2014 tens\u00e3o constante superior \u00e0 remada com halter. Tronco reto, sem balan\u00e7ar.",e:"N\u00e3o inclinar excessivamente para tr\u00e1s. N\u00e3o arredondar lombar.",b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
-{id:19,n:"Lat Pulldown Pegada Neutra",m:"Dorsais (inferior), b\u00edceps",s:"Upper B",d:"Qui",f:"Costas",eq:"mc1000",st:["Polia no ponto mais alto.","Pegada neutra (palmas uma para outra).","Puxe em dire\u00e7\u00e3o ao peito, cotovelos rente ao corpo.","Aperte costas 1s.","Retorne controlando."],t:"Varia\u00e7\u00e3o do Upper A \u2014 pegada diferente ativa mais a parte inferior dos dorsais.",e:"N\u00e3o usar impulso. Pense nos cotovelos descendo.",b1:"3x10-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x10-12 | PSE 5-6"},
-{id:20,n:"Crucifixo com Halteres",m:"Peitoral, delt\u00f3ide anterior",s:"Upper B",d:"Qui",f:"Peito",eq:"halter",st:["Deite no banco, halteres acima do peito, bra\u00e7os quase estendidos.","Cotovelos flexionados e fixos, abra para os lados.","Des\u00e7a at\u00e9 alongamento no peitoral.","Traga de volta como se abra\u00e7asse uma \u00e1rvore.","N\u00e3o bata os halteres no topo."],t:"Menos peso que supino. Foque no alongamento e squeeze.",e:"N\u00e3o estender bra\u00e7os completamente.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
-{id:21,n:"Face Pull na Polia",m:"Delt\u00f3ide posterior, rotadores",s:"Upper B",d:"Qui",f:"Ombro",eq:"mc1000",st:["Polia na altura do rosto.","Corda com pegada neutra.","Puxe em dire\u00e7\u00e3o ao rosto, abrindo cotovelos.","Gire m\u00e3os para fora no final.","Retorne controlando."],t:"Presente nos 2 dias Upper \u2014 sa\u00fade do ombro + delt\u00f3ide posterior.",e:"Qualidade > carga. Sempre.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
-{id:22,n:"Cable Curl (Rosca na Polia)",m:"B\u00edceps braquial",s:"Upper B",d:"Qui",f:"Bra\u00e7os",eq:"mc1000",st:["Polia no ponto mais baixo.","Pegada supinada (palmas para cima).","Cotovelos colados, flexione at\u00e9 os ombros.","Aperte b\u00edceps 1s no topo.","Des\u00e7a controlando \u2014 tens\u00e3o constante."],t:"NOVO \u2014 tens\u00e3o constante do cabo \u00e9 superior ao halter para hipertrofia. No halter a tens\u00e3o cai no topo e no fundo; no cabo ela \u00e9 constante.",e:"N\u00e3o balan\u00e7ar. Cotovelos fixos.",b1:"2x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x12-15 | PSE 5-6"},
-{id:23,n:"Dips nas Paralelas",m:"Tr\u00edceps, peitoral inferior",s:"Upper B",d:"Qui",f:"Bra\u00e7os",eq:"mc1000",st:["Segure as barras paralelas, bra\u00e7os estendidos, corpo suspenso.","Incline tronco para frente (mais peito) ou reto (mais tr\u00edceps).","Flexione cotovelos descendo at\u00e9 90\u00b0.","Empurre at\u00e9 estender.","Controle todo o movimento."],t:"NOVO \u2014 superior ao mergulho no banco. Para progredir: adicione halter entre os p\u00e9s.",e:"N\u00e3o descer demais. N\u00e3o abrir cotovelos.",b1:"3x8-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
-{id:24,n:"Terra Sumo c/ Halteres",m:"Posterior, gl\u00fateos, quad, core",s:"Lower B",d:"S\u00e1b",f:"Pernas",eq:"halter",st:["P\u00e9s mais largos que ombros, pontas a 45\u00b0.","Halteres entre as pernas.","Agache empurrando joelhos para fora, peito erguido.","Empurre o ch\u00e3o, estendendo quadril e joelhos.","Aperte gl\u00fateos no topo."],t:"Pense em empurrar o ch\u00e3o, n\u00e3o puxar o peso.",e:"N\u00e3o arredondar lombar.",b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
-{id:25,n:"Stiff Unilateral c/ Halter",m:"Isquiotibiais (unilateral)",s:"Lower B",d:"S\u00e1b",f:"Pernas",eq:"halter",st:["Em p\u00e9 sobre uma perna, halter na m\u00e3o oposta.","Incline tronco, perna livre sobe para tr\u00e1s.","Des\u00e7a at\u00e9 alongamento forte.","Corpo forma linha reta.","Volte contraindo gl\u00fateo."],t:"Olhe para ponto fixo no ch\u00e3o para equil\u00edbrio.",e:"N\u00e3o girar o quadril.",b1:"3x10/perna | PSE 6-7",b2:"3x8/perna | PSE 7-8",b3:"3x8/perna | PSE 8",dl:"2x10/perna | PSE 5-6"},
-{id:26,n:"Afundo com Halteres",m:"Quadr\u00edceps, gl\u00fateos",s:"Lower B",d:"S\u00e1b",f:"Pernas",eq:"halter",st:["Em p\u00e9, halter em cada m\u00e3o.","Passo \u00e0 frente, agache at\u00e9 joelho traseiro quase no ch\u00e3o.","Ambos os joelhos a 90\u00b0.","Empurre com perna da frente.","Alterne ou complete um lado."],t:"Passada longa = mais gl\u00fateo. Curta = mais quad.",e:"N\u00e3o deixar joelho colapsar para dentro.",b1:"3x10/perna | PSE 6-7",b2:"3x8/perna | PSE 7-8",b3:"3x8/perna | PSE 8",dl:"2x10/perna | PSE 5-6"},
-{id:27,n:"Cable Pull Through",m:"Gl\u00fateos, isquiotibiais",s:"Lower B",d:"S\u00e1b",f:"Pernas",eq:"mc1000",st:["Polia no ponto mais baixo. De costas para a m\u00e1quina.","Segure corda entre as pernas.","D\u00ea um passo \u00e0 frente para criar tens\u00e3o.","Flexione quadril empurrando-o para tr\u00e1s.","Estenda quadril explosivamente, apertando gl\u00fateos."],t:"NOVO \u2014 excelente para gl\u00fateos e posterior. Como um hip thrust em p\u00e9. Foco total no squeeze.",e:"N\u00e3o arredondar costas. Movimento \u00e9 no quadril.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
-{id:28,n:"Goblet Squat c/ Pausa",m:"Quad, core, gl\u00fateos",s:"Lower B",d:"S\u00e1b",f:"Pernas",eq:"halter",st:["Halter contra o peito.","Agache at\u00e9 o fundo.","PARE 2-3s. Peito erguido, core contra\u00eddo.","Sem bounce, empurre para cima.","Pausa elimina reflexo el\u00e1stico."],t:"Use 20-30% menos peso que no goblet normal.",e:"N\u00e3o relaxar na posi\u00e7\u00e3o baixa.",b1:"3x10-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x10-12 | PSE 5-6"},
-{id:29,n:"Panturrilha Sentado c/ Halter",m:"S\u00f3leo",s:"Lower B",d:"S\u00e1b",f:"Pernas",eq:"halter",st:["Sente, pontas dos p\u00e9s em degrau.","Halter sobre joelhos (toalha).","Calcanhares descem.","Empurre na ponta dos p\u00e9s.","Aperte 1s, des\u00e7a 3s."],t:"Sentado trabalha o s\u00f3leo. Combinar com panturrilha em p\u00e9 cobre tudo.",e:"N\u00e3o usar amplitude parcial.",b1:"3x15-20 | PSE 6-7",b2:"3x12-15 | PSE 7-8",b3:"3x12-15 | PSE 8",dl:"2x15-20 | PSE 5-6"},
-{id:30,n:"Prancha Lateral",m:"Obl\u00edquos, core lateral",s:"Lower B",d:"S\u00e1b",f:"Core",eq:"corporal",st:["De lado, antebra\u00e7o no ch\u00e3o, cotovelo sob ombro.","P\u00e9s empilhados ou um \u00e0 frente.","Levante quadril \u2014 linha reta.","Contra\u00eda core e mantenha.","Troque de lado."],t:"Para dificultar: levante bra\u00e7o livre ou perna de cima.",e:"N\u00e3o deixar quadril cair.",b1:"3x20-30s/lado",b2:"3x30-40s/lado",b3:"3x40-45s/lado",dl:"2x20-30s/lado"},
-{id:31,n:"Pull-Up (Pegada Pronada)",m:"Dorsais, redondo, b\u00edceps",s:"B\u00f4nus",d:"Progress\u00e3o",f:"Costas",eq:"mc1000",st:["Barra fixa, pegada pronada, mais larga que ombros.","Puxe at\u00e9 queixo passar a barra.","Aperte costas 1s.","Des\u00e7a controlando.","Se n\u00e3o conseguir: fa\u00e7a negativas (s\u00f3 a descida, 5s)."],t:"O rei dos exerc\u00edcios de costas. Substitua pulldown quando conseguir 3x8. Progress\u00e3o: negativas \u2192 assistido \u2192 completo \u2192 com peso.",e:"N\u00e3o usar impulso. Amplitude completa.",b1:"3x m\u00e1x (ou negativas)",b2:"3x m\u00e1x",b3:"3x m\u00e1x (+peso)",dl:"2x m\u00e1x (leve)"},
-{id:32,n:"Chin-Up (Pegada Supinada)",m:"Dorsais, b\u00edceps (mais b\u00edceps)",s:"B\u00f4nus",d:"Progress\u00e3o",f:"Costas",eq:"mc1000",st:["Barra fixa, pegada supinada, largura dos ombros.","Puxe at\u00e9 queixo passar a barra.","Aperte costas e b\u00edceps.","Des\u00e7a controlando.","Geralmente mais f\u00e1cil que pull-up."],t:"Mais f\u00e1cil que pull-up por envolver mais b\u00edceps. \u00d3tima transi\u00e7\u00e3o. Alterne: uma sess\u00e3o pull-up, outra chin-up.",e:"N\u00e3o usar impulso. Amplitude completa.",b1:"3x m\u00e1x",b2:"3x m\u00e1x",b3:"3x m\u00e1x (+peso)",dl:"2x m\u00e1x (leve)"}
+{id:1,n:"Supino com Halteres",m:"Peitoral maior",s:"Upper A",d:"Seg",f:"Peito",eq:"halter",st:["Deite no banco com um halter em cada mão, pés firmes no chão.","Braços estendidos acima do peito, halteres alinhados com os ombros.","Desça controlando por 2-3s até os cotovelos na altura do peito.","Empurre para cima de forma explosiva.","Mantenha as escápulas retraídas durante todo o movimento."],t:"Imagine que está empurrando o corpo para dentro do banco. Isso ativa mais o peitoral.",e:"Não arquear excessivamente as costas. Manter cotovelos em ~75°.",b1:"3x10-12 | PSE 6-7",b2:"4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
+{id:2,n:"Supino Inclinado c/ Halteres",m:"Peitoral superior",s:"Upper A",d:"Seg",f:"Peito",eq:"halter",st:["Ajuste o banco para 30-45 graus.","Deite com os halteres na altura dos ombros.","Empurre para cima seguindo linha inclinada.","Desça controlando até sentir o alongamento.","Escápulas retraídas no banco."],t:"30° ativa mais peitoral. 45° envolve mais deltóide. Prefira 30°.",e:"Não subir o banco acima de 45°.",b1:"3x10-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x10-12 | PSE 5-6"},
+{id:3,n:"Lat Pulldown na Polia",m:"Dorsais, redondo maior, bíceps",s:"Upper A",d:"Seg",f:"Costas",eq:"mc1000",st:["Sente sob a polia alta da MC-1000. Use o pad de apoio.","Segure a barra com pegada pronada, mais larga que os ombros.","Puxe a barra em direção ao peito, cotovelos para baixo e trás.","Aperte as costas no ponto mais baixo por 1s.","Retorne controlando até estender os braços. Sinta o alongamento."],t:"SUBSTITUI O PULLOVER. O exercício que mais faltava. Pense em puxar com os cotovelos, não com as mãos.",e:"Não puxar atrás da cabeça. Não balançar o tronco.",b1:"3x10-12 | PSE 6-7",b2:"4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
+{id:4,n:"Remada c/ Halter (Unilateral)",m:"Dorsais, romboides, trapézio",s:"Upper A",d:"Seg",f:"Costas",eq:"halter",st:["Apoie joelho e mão no banco. Perna oposta no chão.","Segure o halter, braço estendido.","Puxe em direção ao quadril. Cotovelo rente ao corpo.","Aperte as costas no topo por 1s.","Desça controlando."],t:"Pense em puxar com o cotovelo, não com a mão.",e:"Não girar o tronco para subir o peso.",b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
+{id:5,n:"Face Pull na Polia",m:"Deltóide posterior, rotadores",s:"Upper A",d:"Seg",f:"Ombro",eq:"mc1000",st:["Polia na altura do rosto ou acima.","Segure a corda com pegada neutra.","Puxe em direção ao rosto, abrindo os cotovelos.","Gire as mãos para fora no final — pose de bíceps duplo.","Retorne controlando."],t:"ESSENCIAL. Equilibra o trabalho de empurrar. Previne lesão de ombro. Faça em TODOS os dias de upper.",e:"Não usar peso pesado. Qualidade > carga. Corda vai pro rosto, não pro peito.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
+{id:6,n:"Elevação Lateral c/ Halteres",m:"Deltóide lateral",s:"Upper A",d:"Seg",f:"Ombro",eq:"halter",st:["Em pé, halteres ao lado, leve inclinação do tronco.","Levante os braços para os lados até a altura dos ombros.","Cotovelos levemente flexionados e fixos.","Pause 1s no topo.","Desça controlando."],t:"Mindinho mais alto que o polegar no topo.",e:"Não usar impulso. Não subir acima dos ombros.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
+{id:7,n:"Rosca Halter Alternada",m:"Bíceps braquial",s:"Upper A",d:"Seg",f:"Braços",eq:"halter",st:["Em pé, halteres ao lado, palmas para frente.","Flexione um braço até o ombro. Cotovelo fixo.","Aperte bíceps 1s no topo.","Desça controlando, repita outro lado.","10 reps = 10 cada lado."],t:"Cotovelo colado ao corpo.",e:"Não balançar o corpo.",b1:"2x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x12-15 | PSE 5-6"},
+{id:8,n:"Tríceps Pushdown na Polia",m:"Tríceps (3 cabeças)",s:"Upper A",d:"Seg",f:"Braços",eq:"mc1000",st:["Polia no ponto mais alto.","Segure barra reta ou corda, pegada pronada.","Cotovelos colados ao corpo.","Empurre para baixo estendendo completamente.","Retorne controlando até antebraços paralelos ao chão."],t:"SUBSTITUI O MERGULHO NO BANCO. Mais isolamento, sem estresse no ombro. Com corda: gire mãos para fora no final.",e:"Cotovelos não saem da posição. Não inclinar o tronco.",b1:"2x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x12-15 | PSE 5-6"},
+{id:9,n:"Agachamento Goblet",m:"Quadríceps, glúteos",s:"Lower A",d:"Ter",f:"Pernas",eq:"halter",st:["Halter verticalmente contra o peito.","Pés na largura dos ombros, pontas para fora.","Agache empurrando joelhos para fora, peito erguido.","Desça até coxas paralelas.","Empurre o chão para subir."],t:"Se 24kg ficar leve, segure um halter em cada mão na posição de front squat.",e:"Não deixar joelhos cederem para dentro.",b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
+{id:10,n:"Agachamento Búlgaro",m:"Quadríceps, glúteos, estabilizadores",s:"Lower A",d:"Ter",f:"Pernas",eq:"halter",st:["De costas para o banco, apoie pé traseiro na borda.","Halter em cada mão ao lado do corpo.","Agache na perna da frente até coxa paralela.","Empurre com a perna da frente.","Complete um lado antes de trocar."],t:"Ajuste a distância do banco até sentir confortável.",e:"Não empurrar com a perna de trás.",b1:"3x10/perna | PSE 6-7",b2:"3-4x8/perna | PSE 7-8",b3:"4x6/perna | PSE 8-9",dl:"2x10/perna | PSE 5-6"},
+{id:11,n:"Stiff com Halteres",m:"Isquiotibiais, glúteos",s:"Lower A",d:"Ter",f:"Pernas",eq:"halter",st:["Em pé, halteres à frente das coxas.","Joelhos levemente flexionados e fixos, quadril para trás.","Desça próximo às pernas até alongamento forte.","Pare quando tronco paralelo ao chão.","Volte contraindo glúteos e isquiotibiais."],t:"Foque no alongamento dos isquiotibiais.",e:"Não arredondar as costas.",b1:"3x10-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x8-10 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
+{id:12,n:"Glute Bridge c/ Sandbag",m:"Glúteos, isquiotibiais",s:"Lower A",d:"Ter",f:"Pernas",eq:"sandbag",st:["Deite, joelhos flexionados, pés apoiados.","Sandbag 20kg sobre o quadril.","Empurre quadril para cima contraindo glúteos.","Aperte 2s no topo.","Desça controlando."],t:"Pés mais perto do glúteo = mais ativação.",e:"Não hiperestender a lombar no topo.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
+{id:13,n:"Step Up no Banco",m:"Quadríceps, glúteos",s:"Lower A",d:"Ter",f:"Pernas",eq:"halter",st:["De frente pro banco, halter em cada mão.","Pé inteiro em cima do banco.","Empurre com a perna de cima.","Estenda quadril no topo.","Desça controlando."],t:"Banco na altura do joelho. Mais alto = mais glúteo.",e:"Não dar impulso com a perna de baixo.",b1:"3x10/perna | PSE 6-7",b2:"3x8/perna | PSE 7-8",b3:"3x8/perna | PSE 8",dl:"2x10/perna | PSE 5-6"},
+{id:14,n:"Panturrilha em Pé",m:"Gastrocnêmio",s:"Lower A",d:"Ter",f:"Pernas",eq:"halter",st:["Sobre degrau, ponta do pé na borda, halter na mão.","Calcanhar desce — alongamento.","Empurre na ponta do pé.","Aperte 1s no topo.","Desça devagar (3s)."],t:"Amplitude completa > peso.",e:"Não usar impulso. Não dobrar joelho.",b1:"3x15-20 | PSE 6-7",b2:"3x12-15 | PSE 7-8",b3:"3x12-15 | PSE 8",dl:"2x15-20 | PSE 5-6"},
+{id:15,n:"Hanging Leg Raise",m:"Core — reto abdominal inferior",s:"Lower A",d:"Ter",f:"Core",eq:"mc1000",st:["Pendure na barra fixa da MC-1000, braços estendidos.","Pernas estendidas, corpo estável.","Levante as pernas até 90°.","Contraía abdômen 1s no topo.","Desça controlando."],t:"SUBSTITUI A PRANCHA. Muito mais efetivo. Se não conseguir pernas retas, comece com joelhos flexionados (knee raise).",e:"Não balançar. Não usar impulso.",b1:"3x8-12 | PSE 6-7",b2:"3x10-15 | PSE 7-8",b3:"3x12-15 | PSE 8",dl:"2x8-12 | PSE 5-6"},
+{id:16,n:"Desenvolvimento c/ Halteres",m:"Deltóide anterior e lateral",s:"Upper B",d:"Qui",f:"Ombro",eq:"halter",st:["Sentado a 90°, halteres na altura dos ombros.","Empurre para cima até estender.","Desça controlando.","Cotovelos para os lados e levemente à frente.","Core contraído."],t:"Sentado elimina impulso das pernas.",e:"Não inclinar para trás.",b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
+{id:17,n:"Arnold Press",m:"Deltóide anterior, lateral, rotadores",s:"Upper B",d:"Qui",f:"Ombro",eq:"halter",st:["Sentado, halteres à frente do rosto, palmas para você.","Ao empurrar, gire palmas para frente no topo.","Estenda braços completamente.","Desça fazendo rotação inversa.","Movimento fluído."],t:"A rotação ativa mais fibras. Menos peso que desenvolvimento.",e:"Não apressar a rotação.",b1:"3x10-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x10-12 | PSE 5-6"},
+{id:18,n:"Cable Row (Remada Polia Baixa)",m:"Dorsais, romboides, trapézio",s:"Upper B",d:"Qui",f:"Costas",eq:"mc1000",st:["Polia no ponto mais baixo. Sente com pés no suporte.","Segure puxador, braços estendidos.","Puxe em direção ao abdômen, cotovelos para trás.","Aperte escápulas 1s.","Retorne controlando."],t:"NOVO — tensão constante superior à remada com halter. Tronco reto, sem balançar.",e:"Não inclinar excessivamente para trás. Não arredondar lombar.",b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
+{id:19,n:"Lat Pulldown Pegada Neutra",m:"Dorsais (inferior), bíceps",s:"Upper B",d:"Qui",f:"Costas",eq:"mc1000",st:["Polia no ponto mais alto.","Pegada neutra (palmas uma para outra).","Puxe em direção ao peito, cotovelos rente ao corpo.","Aperte costas 1s.","Retorne controlando."],t:"Variação do Upper A — pegada diferente ativa mais a parte inferior dos dorsais.",e:"Não usar impulso. Pense nos cotovelos descendo.",b1:"3x10-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x10-12 | PSE 5-6"},
+{id:20,n:"Crucifixo com Halteres",m:"Peitoral, deltóide anterior",s:"Upper B",d:"Qui",f:"Peito",eq:"halter",st:["Deite no banco, halteres acima do peito, braços quase estendidos.","Cotovelos flexionados e fixos, abra para os lados.","Desça até alongamento no peitoral.","Traga de volta como se abraçasse uma árvore.","Não bata os halteres no topo."],t:"Menos peso que supino. Foque no alongamento e squeeze.",e:"Não estender braços completamente.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
+{id:21,n:"Face Pull na Polia",m:"Deltóide posterior, rotadores",s:"Upper B",d:"Qui",f:"Ombro",eq:"mc1000",st:["Polia na altura do rosto.","Corda com pegada neutra.","Puxe em direção ao rosto, abrindo cotovelos.","Gire mãos para fora no final.","Retorne controlando."],t:"Presente nos 2 dias Upper — saúde do ombro + deltóide posterior.",e:"Qualidade > carga. Sempre.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
+{id:22,n:"Cable Curl (Rosca na Polia)",m:"Bíceps braquial",s:"Upper B",d:"Qui",f:"Braços",eq:"mc1000",st:["Polia no ponto mais baixo.","Pegada supinada (palmas para cima).","Cotovelos colados, flexione até os ombros.","Aperte bíceps 1s no topo.","Desça controlando — tensão constante."],t:"NOVO — tensão constante do cabo é superior ao halter para hipertrofia. No halter a tensão cai no topo e no fundo; no cabo ela é constante.",e:"Não balançar. Cotovelos fixos.",b1:"2x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x12-15 | PSE 5-6"},
+{id:23,n:"Dips nas Paralelas",m:"Tríceps, peitoral inferior",s:"Upper B",d:"Qui",f:"Braços",eq:"mc1000",st:["Segure as barras paralelas, braços estendidos, corpo suspenso.","Incline tronco para frente (mais peito) ou reto (mais tríceps).","Flexione cotovelos descendo até 90°.","Empurre até estender.","Controle todo o movimento."],t:"NOVO — superior ao mergulho no banco. Para progredir: adicione halter entre os pés.",e:"Não descer demais. Não abrir cotovelos.",b1:"3x8-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
+{id:24,n:"Terra Sumo c/ Halteres",m:"Posterior, glúteos, quad, core",s:"Lower B",d:"Sáb",f:"Pernas",eq:"halter",st:["Pés mais largos que ombros, pontas a 45°.","Halteres entre as pernas.","Agache empurrando joelhos para fora, peito erguido.","Empurre o chão, estendendo quadril e joelhos.","Aperte glúteos no topo."],t:"Pense em empurrar o chão, não puxar o peso.",e:"Não arredondar lombar.",b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"},
+{id:25,n:"Stiff Unilateral c/ Halter",m:"Isquiotibiais (unilateral)",s:"Lower B",d:"Sáb",f:"Pernas",eq:"halter",st:["Em pé sobre uma perna, halter na mão oposta.","Incline tronco, perna livre sobe para trás.","Desça até alongamento forte.","Corpo forma linha reta.","Volte contraindo glúteo."],t:"Olhe para ponto fixo no chão para equilíbrio.",e:"Não girar o quadril.",b1:"3x10/perna | PSE 6-7",b2:"3x8/perna | PSE 7-8",b3:"3x8/perna | PSE 8",dl:"2x10/perna | PSE 5-6"},
+{id:26,n:"Afundo com Halteres",m:"Quadríceps, glúteos",s:"Lower B",d:"Sáb",f:"Pernas",eq:"halter",st:["Em pé, halter em cada mão.","Passo à frente, agache até joelho traseiro quase no chão.","Ambos os joelhos a 90°.","Empurre com perna da frente.","Alterne ou complete um lado."],t:"Passada longa = mais glúteo. Curta = mais quad.",e:"Não deixar joelho colapsar para dentro.",b1:"3x10/perna | PSE 6-7",b2:"3x8/perna | PSE 7-8",b3:"3x8/perna | PSE 8",dl:"2x10/perna | PSE 5-6"},
+{id:27,n:"Cable Pull Through",m:"Glúteos, isquiotibiais",s:"Lower B",d:"Sáb",f:"Pernas",eq:"mc1000",st:["Polia no ponto mais baixo. De costas para a máquina.","Segure corda entre as pernas.","Dê um passo à frente para criar tensão.","Flexione quadril empurrando-o para trás.","Estenda quadril explosivamente, apertando glúteos."],t:"NOVO — excelente para glúteos e posterior. Como um hip thrust em pé. Foco total no squeeze.",e:"Não arredondar costas. Movimento é no quadril.",b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
+{id:28,n:"Goblet Squat c/ Pausa",m:"Quad, core, glúteos",s:"Lower B",d:"Sáb",f:"Pernas",eq:"halter",st:["Halter contra o peito.","Agache até o fundo.","PARE 2-3s. Peito erguido, core contraído.","Sem bounce, empurre para cima.","Pausa elimina reflexo elástico."],t:"Use 20-30% menos peso que no goblet normal.",e:"Não relaxar na posição baixa.",b1:"3x10-12 | PSE 6-7",b2:"3x8-10 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x10-12 | PSE 5-6"},
+{id:29,n:"Panturrilha Sentado c/ Halter",m:"Sóleo",s:"Lower B",d:"Sáb",f:"Pernas",eq:"halter",st:["Sente, pontas dos pés em degrau.","Halter sobre joelhos (toalha).","Calcanhares descem.","Empurre na ponta dos pés.","Aperte 1s, desça 3s."],t:"Sentado trabalha o sóleo. Combinar com panturrilha em pé cobre tudo.",e:"Não usar amplitude parcial.",b1:"3x15-20 | PSE 6-7",b2:"3x12-15 | PSE 7-8",b3:"3x12-15 | PSE 8",dl:"2x15-20 | PSE 5-6"},
+{id:30,n:"Prancha Lateral",m:"Oblíquos, core lateral",s:"Lower B",d:"Sáb",f:"Core",eq:"corporal",st:["De lado, antebraço no chão, cotovelo sob ombro.","Pés empilhados ou um à frente.","Levante quadril — linha reta.","Contraía core e mantenha.","Troque de lado."],t:"Para dificultar: levante braço livre ou perna de cima.",e:"Não deixar quadril cair.",b1:"3x20-30s/lado",b2:"3x30-40s/lado",b3:"3x40-45s/lado",dl:"2x20-30s/lado"},
+{id:31,n:"Pull-Up (Pegada Pronada)",m:"Dorsais, redondo, bíceps",s:"Bônus",d:"Progressão",f:"Costas",eq:"mc1000",st:["Barra fixa, pegada pronada, mais larga que ombros.","Puxe até queixo passar a barra.","Aperte costas 1s.","Desça controlando.","Se não conseguir: faça negativas (só a descida, 5s)."],t:"O rei dos exercícios de costas. Substitua pulldown quando conseguir 3x8. Progressão: negativas → assistido → completo → com peso.",e:"Não usar impulso. Amplitude completa.",b1:"3x máx (ou negativas)",b2:"3x máx",b3:"3x máx (+peso)",dl:"2x máx (leve)"},
+{id:32,n:"Chin-Up (Pegada Supinada)",m:"Dorsais, bíceps (mais bíceps)",s:"Bônus",d:"Progressão",f:"Costas",eq:"mc1000",st:["Barra fixa, pegada supinada, largura dos ombros.","Puxe até queixo passar a barra.","Aperte costas e bíceps.","Desça controlando.","Geralmente mais fácil que pull-up."],t:"Mais fácil que pull-up por envolver mais bíceps. Ótima transição. Alterne: uma sessão pull-up, outra chin-up.",e:"Não usar impulso. Amplitude completa.",b1:"3x máx",b2:"3x máx",b3:"3x máx (+peso)",dl:"2x máx (leve)"}
 ];
-const SC={"Upper A":{t:"#60a5fa",bg:"#0c1e3a"},"Lower A":{t:"#4ade80",bg:"#0a2618"},"Upper B":{t:"#c084fc",bg:"#2e1065"},"Lower B":{t:"#fbbf24",bg:"#2d1f06"},"B\u00f4nus":{t:"#f472b6",bg:"#2d0a1e"}};
-const FC={"Peito":"#ef4444","Costas":"#3b82f6","Ombro":"#f59e0b","Pernas":"#22c55e","Bra\u00e7os":"#a855f7","Core":"#ec4899"};
+const SC={"Upper A":{t:"#60a5fa",bg:"#0c1e3a"},"Lower A":{t:"#4ade80",bg:"#0a2618"},"Upper B":{t:"#c084fc",bg:"#2e1065"},"Lower B":{t:"#fbbf24",bg:"#2d1f06"},"Bônus":{t:"#f472b6",bg:"#2d0a1e"}};
+const FC={"Peito":"#ef4444","Costas":"#3b82f6","Ombro":"#f59e0b","Pernas":"#22c55e","Braços":"#a855f7","Core":"#ec4899"};
 const EB={mc1000:{bg:"#1e3a5f",c:"#60a5fa",l:"MC-1000"},halter:{bg:"#2d1f06",c:"#fbbf24",l:"HALTER"},sandbag:{bg:"#1a2e1a",c:"#4ade80",l:"SANDBAG"},corporal:{bg:"#2a1525",c:"#f472b6",l:"CORPORAL"}};
 const BC=["#1e40af","#ef4444","#7c3aed","#16a34a"];
 const BL=["Bloco 1","Bloco 2","Bloco 3","Deload"];
 const BK=["b1","b2","b3","dl"];
 
-function App(){
-const[sr,setSr]=useState("");
-const[as,setAs]=useState("Todos");
-const[af,setAf]=useState("");
-const[oc,setOc]=useState(null);
-const[sb,setSb]=useState(null);
-const[st,setSt]=useState(false);
-const[ts,setTs]=useState(90);
-const[tr,setTr]=useState(false);
-const[tl,setTl]=useState(90);
-const tf=useRef(null);
-useEffect(()=>{if(tr&&tl>0)tf.current=setTimeout(()=>setTl(v=>v-1),1000);else if(tl===0&&tr){setTr(false);try{navigator.vibrate&&navigator.vibrate([200,100,200,100,200])}catch(e){}}return()=>clearTimeout(tf.current)},[tr,tl]);
-const stT=(s)=>{setTs(s);setTl(s);setTr(true);setSt(true)};
-const rt=()=>{setTr(false);setTl(ts)};
-const SS=["Todos","Upper A","Lower A","Upper B","Lower B","B\u00f4nus"];
-const FS=["Peito","Costas","Ombro","Pernas","Bra\u00e7os","Core"];
-const fl=EX.filter(x=>{if(as!=="Todos"&&x.s!==as)return false;if(af&&x.f!==af)return false;if(sr){const q=sr.toLowerCase();return x.n.toLowerCase().includes(q)||x.m.toLowerCase().includes(q)}return true});
-const gp={};fl.forEach(x=>{if(!gp[x.s])gp[x.s]=[];gp[x.s].push(x)});
+const DIET={
+  kcal:2200,prot:154,carb:258,fat:62,
+  mounjaro:"Com Mounjaro: priorize proteína mesmo sem fome (mín. 120g/dia). Beba 2,5L+ de água — o medicamento aumenta risco de desidratação.",
+  dias:[
+    {dia:"Segunda",treino:"Upper A — Dia de Treino",tipo:"treino",cor:"#60a5fa",refeicoes:[
+      {nome:"Café da Manhã",hora:"07:00",itens:["3 ovos mexidos com azeite","2 fatias pão integral","1 mamão médio"],kcal:510,p:27,c:50,g:18},
+      {nome:"Pré-Treino",hora:"10:30",itens:["1 banana","30g whey protein (200ml água)"],kcal:215,p:25,c:27,g:1},
+      {nome:"Almoço — Pós-Treino",hora:"13:00",itens:["150g frango grelhado","6 col arroz branco","3 col feijão carioca","Salada verde + tomate à vontade"],kcal:620,p:48,c:82,g:8},
+      {nome:"Lanche da Tarde",hora:"16:30",itens:["200g iogurte grego integral","4 castanhas-do-pará"],kcal:295,p:20,c:13,g:19},
+      {nome:"Jantar",hora:"19:30",itens:["150g patinho grelhado","200g batata doce assada","Brócolis refogado à vontade"],kcal:560,p:34,c:86,g:14}
+    ]},
+    {dia:"Terça",treino:"Lower A — Dia de Treino",tipo:"treino",cor:"#4ade80",refeicoes:[
+      {nome:"Café da Manhã",hora:"07:00",itens:["Omelete 3 ovos + 80g queijo cottage","1 laranja"],kcal:465,p:36,c:22,g:22},
+      {nome:"Pré-Treino",hora:"10:30",itens:["150g batata doce cozida","100g frango desfiado"],kcal:295,p:26,c:33,g:3},
+      {nome:"Almoço — Pós-Treino",hora:"13:00",itens:["150g tilápia grelhada","6 col arroz integral","Legumes refogados (abobrinha + cenoura)","Salada"],kcal:560,p:40,c:75,g:8},
+      {nome:"Lanche da Tarde",hora:"16:30",itens:["30g whey protein","1 banana"],kcal:215,p:25,c:27,g:1},
+      {nome:"Jantar",hora:"19:30",itens:["Omelete 2 ovos","100g grão-de-bico cozido","Salada com azeite"],kcal:665,p:27,c:101,g:28}
+    ]},
+    {dia:"Quarta",treino:"Descanso — Recuperação",tipo:"descanso",cor:"#555",refeicoes:[
+      {nome:"Café da Manhã",hora:"07:30",itens:["3 ovos mexidos","50g aveia com leite desnatado","100g frutas vermelhas"],kcal:520,p:32,c:56,g:16},
+      {nome:"Lanche da Manhã",hora:"10:00",itens:["200g iogurte grego integral"],kcal:180,p:17,c:9,g:8},
+      {nome:"Almoço",hora:"13:00",itens:["150g frango grelhado","100g macarrão integral (cru)","Molho de tomate natural","Salada"],kcal:620,p:46,c:82,g:8},
+      {nome:"Lanche da Tarde",hora:"16:30",itens:["30g whey protein","1 maçã"],kcal:200,p:25,c:25,g:1},
+      {nome:"Jantar",hora:"19:30",itens:["120g salmão grelhado","200g batata doce","Salada verde com azeite"],kcal:680,p:34,c:86,g:29}
+    ]},
+    {dia:"Quinta",treino:"Upper B — Dia de Treino",tipo:"treino",cor:"#c084fc",refeicoes:[
+      {nome:"Café da Manhã",hora:"07:00",itens:["3 ovos mexidos com azeite","2 fatias pão integral","1 laranja"],kcal:495,p:26,c:49,g:18},
+      {nome:"Pré-Treino",hora:"10:30",itens:["1 banana","30g whey protein"],kcal:215,p:25,c:27,g:1},
+      {nome:"Almoço — Pós-Treino",hora:"13:00",itens:["150g carne moída (patinho)","6 col arroz branco","3 col feijão carioca","Salada"],kcal:645,p:48,c:82,g:15},
+      {nome:"Lanche da Tarde",hora:"16:30",itens:["200g iogurte grego integral","30g granola low sugar"],kcal:320,p:19,c:30,g:12},
+      {nome:"Jantar",hora:"19:30",itens:["150g frango grelhado","200g batata inglesa cozida","Legumes no vapor"],kcal:525,p:36,c:70,g:16}
+    ]},
+    {dia:"Sexta",treino:"Descanso — Recuperação",tipo:"descanso",cor:"#555",refeicoes:[
+      {nome:"Café da Manhã",hora:"07:30",itens:["3 ovos mexidos","50g aveia com água","1 banana"],kcal:520,p:30,c:58,g:15},
+      {nome:"Lanche da Manhã",hora:"10:00",itens:["200g iogurte grego","30g mix nuts"],kcal:360,p:19,c:14,g:26},
+      {nome:"Almoço",hora:"13:00",itens:["150g frango grelhado","6 col arroz branco","100g lentilha cozida","Salada"],kcal:620,p:50,c:80,g:7},
+      {nome:"Lanche da Tarde",hora:"16:30",itens:["30g whey protein","1 fruta"],kcal:195,p:25,c:22,g:1},
+      {nome:"Jantar",hora:"19:30",itens:["2 ovos + 1 lata atum (120g)","Salada grande com azeite","2 fatias pão integral"],kcal:505,p:30,c:84,g:13}
+    ]},
+    {dia:"Sábado",treino:"Lower B — Dia de Treino",tipo:"treino",cor:"#fbbf24",refeicoes:[
+      {nome:"Café da Manhã",hora:"07:00",itens:["3 ovos mexidos com azeite","2 fatias pão integral","1 mamão médio"],kcal:510,p:27,c:50,g:18},
+      {nome:"Pré-Treino",hora:"09:30",itens:["150g batata doce cozida","100g frango"],kcal:295,p:26,c:33,g:3},
+      {nome:"Almoço — Pós-Treino",hora:"12:30",itens:["150g contrafile grelhado","6 col arroz branco","3 col feijão","Salada"],kcal:665,p:48,c:82,g:18},
+      {nome:"Lanche da Tarde",hora:"15:30",itens:["200g iogurte grego integral","4 castanhas-do-pará"],kcal:295,p:20,c:13,g:19},
+      {nome:"Jantar",hora:"19:00",itens:["150g tilápia grelhada","200g batata doce","Brócolis refogado"],kcal:435,p:33,c:56,g:10}
+    ]},
+    {dia:"Domingo",treino:"Descanso — Refeicão Livre",tipo:"livre",cor:"#f472b6",refeicoes:[
+      {nome:"Café da Manhã",hora:"08:00",itens:["3 ovos mexidos","50g aveia com frutas","Café com leite"],kcal:500,p:28,c:52,g:16},
+      {nome:"Almoço Livre",hora:"13:00",itens:["✅ Refeicão livre — mantenha proteína alta","Evite ultrapassar +400 kcal do target","Prefira proteína animal como base"],kcal:700,p:40,c:90,g:22},
+      {nome:"Lanche",hora:"16:00",itens:["200g iogurte grego"],kcal:180,p:17,c:9,g:8},
+      {nome:"Jantar",hora:"19:30",itens:["150g frango grelhado","200g batata doce","Salada verde"],kcal:820,p:69,c:107,g:16}
+    ]}
+  ],
+  regras:[
+    "🥩 Proteína primeiro — mesmo sem fome, coma a proteína antes de tudo",
+    "💧 2,5L+ de água/dia — Mounjaro aumenta risco de desidratação",
+    "⏰ Se passar 4h sem comer, tome um shake de whey",
+    "🏋️ Pré e pós-treino são prioridade — nunca pule essas refeições",
+    "🌟 Domingo pode flexibilizar no almoço — proteína alta preserva o músculo",
+    "🙏 Se náusea (efeito do Mounjaro), priorize líquidos proteicos"
+  ],
+  suplementos:[
+    {nome:"Whey Protein",quando:"Pré e/ou pós-treino",dose:"30g",cor:"#60a5fa"},
+    {nome:"Creatina",quando:"Qualquer horário (consistente)",dose:"5g/dia",cor:"#c084fc"},
+    {nome:"Vitamina D3",quando:"Manhã com refeição",dose:"2.000–5.000 UI",cor:"#fbbf24"},
+    {nome:"Ômega 3",quando:"Refeição principal",dose:"2–3g/dia",cor:"#4ade80"}
+  ]
+};
 
-return h("div",{style:{minHeight:"100vh",paddingBottom:st?130:40,background:"#07070d",color:"#e8e8f0",fontFamily:"'SF Pro Display',system-ui,-apple-system,sans-serif"}},
-h("div",{style:{padding:"24px 16px 0",textAlign:"center"}},
-h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:3,color:"#ef4444",textTransform:"uppercase",marginBottom:6}},"Roberto Garcia \u2022 Home Gym"),
-h("h1",{style:{fontSize:26,fontWeight:800,letterSpacing:-.5,margin:0,color:"#fff"}},"Guia de Exerc\u00edcios"),
-h("p",{style:{color:"#555",fontSize:12,marginTop:6}},"MC-1000 + Halteres + Banco + Sandbag")),
-h("div",{style:{position:"sticky",top:0,zIndex:100,background:"#07070d",padding:"14px 16px 8px",borderBottom:"1px solid #111"}},
-h("div",{style:{display:"flex",alignItems:"center",gap:10,background:"#111118",border:"1px solid #1a1a25",borderRadius:14,padding:"11px 14px"}},
-h("span",{style:{color:"#444",fontSize:16}},"\uD83D\uDD0D"),
-h("input",{value:sr,onChange:e=>setSr(e.target.value),placeholder:"Buscar exerc\u00edcio ou m\u00fasculo...",style:{flex:1,background:"none",border:"none",outline:"none",color:"#e8e8f0",fontSize:15,fontFamily:"inherit"}}),
-sr&&h("button",{onClick:()=>setSr(""),style:{background:"none",border:"none",color:"#555",fontSize:16,cursor:"pointer",padding:0}},"\u2715"))),
-h("div",{style:{display:"flex",gap:6,padding:"8px 16px 4px",overflowX:"auto",WebkitOverflowScrolling:"touch"}},SS.map(s=>h("button",{key:s,onClick:()=>{setAs(s);setAf("")},style:{padding:"7px 14px",borderRadius:20,border:s===as?"none":"1px solid #1a1a25",background:s===as?"#ef4444":"#111118",color:s===as?"#fff":"#666",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",flexShrink:0}},s))),
-h("div",{style:{display:"flex",gap:6,padding:"6px 16px 10px",overflowX:"auto",WebkitOverflowScrolling:"touch"}},FS.map(f=>h("button",{key:f,onClick:()=>setAf(af===f?"":f),style:{padding:"5px 12px",borderRadius:14,border:f===af?"none":"1px solid #1a1a25",background:f===af?FC[f]+"20":"transparent",color:f===af?FC[f]:"#555",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",flexShrink:0}},f))),
-h("div",{style:{padding:"0 16px 8px",fontSize:12,color:"#444"}},h("span",{style:{color:"#ef4444",fontWeight:700}},fl.length)," exerc\u00edcio",fl.length!==1?"s":""),
-h("div",{style:{padding:"0 16px"}},
-!Object.keys(gp).length&&h("div",{style:{textAlign:"center",padding:48,color:"#444"}},"Nenhum exerc\u00edcio encontrado"),
-Object.entries(gp).map(([sn,exs])=>{const sc=SC[sn];return h("div",{key:sn,style:{marginBottom:20}},
-h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10,padding:"8px 12px",background:sc.bg,borderRadius:10,borderLeft:"3px solid "+sc.t}},
-h("span",{style:{fontSize:12,fontWeight:700,color:sc.t,letterSpacing:.5}},sn.toUpperCase()),
-h("span",{style:{fontSize:10,color:"#444"}},"\u2022"),
-h("span",{style:{fontSize:11,color:"#555"}},exs[0].d),
-h("span",{style:{fontSize:10,color:"#444"}},"\u2022"),
-h("span",{style:{fontSize:10,color:"#555"}},exs.length+" exerc.")),
-exs.map(ex=>{const io=oc===ex.id;const eb=EB[ex.eq]||EB.corporal;return h("div",{key:ex.id,style:{background:"#0d0d14",border:"1px solid "+(io?sc.t+"33":"#151520"),borderRadius:14,marginBottom:8,overflow:"hidden",transition:"all .2s"}},
-h("div",{onClick:()=>setOc(io?null:ex.id),style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px",cursor:"pointer"}},
-h("div",{style:{flex:1}},h("div",{style:{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}},h("span",{style:{fontSize:15,fontWeight:600}},ex.n),h("span",{style:{display:"inline-block",fontSize:9,fontWeight:700,letterSpacing:.8,padding:"2px 8px",borderRadius:4,background:eb.bg,color:eb.c}},eb.l)),h("div",{style:{fontSize:11,color:"#555",marginTop:3}},ex.m)),
-h("span",{style:{color:"#444",fontSize:11,transition:"transform .3s",transform:io?"rotate(180deg)":"none",flexShrink:0,marginLeft:8}},"\u25BC")),
-io&&h("div",{style:{padding:"0 14px 14px",animation:"fadeIn .25s ease"}},
-h("div",{style:{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}},BK.map((b,i)=>h("button",{key:b,onClick:()=>setSb(sb===ex.id+b?null:ex.id+b),style:{padding:"4px 10px",borderRadius:6,border:"1px solid "+BC[i]+"33",background:sb===ex.id+b?BC[i]+"22":"transparent",color:sb===ex.id+b?BC[i]:"#555",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},BL[i]))),
-sb&&sb.startsWith(String(ex.id))&&h("div",{style:{background:"#0a0a12",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:13,fontWeight:600,color:BC[BK.indexOf(sb.replace(String(ex.id),""))]}},ex[sb.replace(String(ex.id),"")]||"\u2014"),
-h("div",{style:{marginBottom:14}},h("div",{style:{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:sc.t,marginBottom:10}},"Como executar"),ex.st.map((s,i)=>h("div",{key:i,style:{display:"flex",gap:10,marginBottom:7}},h("div",{style:{width:20,height:20,borderRadius:"50%",background:"#111118",border:"1px solid #1e1e30",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:sc.t,flexShrink:0,marginTop:2}},i+1),h("p",{style:{fontSize:13,lineHeight:1.55,color:"#bbb",margin:0}},s)))),
-h("div",{style:{background:"#0a1a0a",borderLeft:"3px solid #16a34a",borderRadius:"0 8px 8px 0",padding:"10px 12px",marginBottom:8}},h("div",{style:{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#16a34a",marginBottom:4}},"\uD83D\uDCA1 DICA DO COACH"),h("p",{style:{fontSize:12.5,lineHeight:1.5,color:"#888",margin:0}},ex.t)),
-h("div",{style:{background:"#1a0a0a",borderLeft:"3px solid #ef4444",borderRadius:"0 8px 8px 0",padding:"10px 12px",marginBottom:12}},h("div",{style:{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#ef4444",marginBottom:4}},"\u26A0\uFE0F ERROS COMUNS"),h("p",{style:{fontSize:12.5,lineHeight:1.5,color:"#995555",margin:0}},ex.e)),
-h("div",{style:{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}},h("span",{style:{fontSize:10,color:"#444",fontWeight:600}},"DESCANSO:"),[45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),style:{padding:"5px 12px",borderRadius:8,border:"1px solid #1e1e30",background:"#111118",color:"#666",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},s+"s")))))}))})
-),
-st&&h("div",{style:{position:"fixed",bottom:0,left:0,right:0,background:"#0d0d14ee",backdropFilter:"blur(16px)",borderTop:"1px solid #1a1a25",padding:"14px 20px",zIndex:200,display:"flex",alignItems:"center",justifyContent:"space-between"}},
-h("div",null,h("div",{style:{fontSize:10,color:"#555",fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Descanso"),h("div",{style:{fontSize:38,fontWeight:800,fontVariantNumeric:"tabular-nums",letterSpacing:-1,color:tl===0?"#22c55e":tl<=10?"#ef4444":"#fff"}},Math.floor(tl/60)+":"+String(tl%60).padStart(2,"0")),tl===0&&h("div",{style:{fontSize:12,color:"#22c55e",fontWeight:700}},"\uD83D\uDCAA Pr\u00f3xima s\u00e9rie!")),
-h("div",{style:{display:"flex",gap:8}},!tr&&tl>0&&h("button",{onClick:()=>setTr(true),style:{padding:"10px 20px",borderRadius:10,background:"#22c55e",border:"none",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},"\u25B6"),tr&&h("button",{onClick:()=>setTr(false),style:{padding:"10px 20px",borderRadius:10,background:"#ef4444",border:"none",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},"\u23F8"),h("button",{onClick:rt,style:{padding:"10px 16px",borderRadius:10,background:"#151520",border:"1px solid #1e1e30",color:"#666",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"\u21BA"),h("button",{onClick:()=>{setSt(false);setTr(false)},style:{padding:"10px 16px",borderRadius:10,background:"#151520",border:"1px solid #1e1e30",color:"#666",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"\u2715")))
-)}
+const COACH={
+  agenda:[
+    {dia:"Segunda",sessao:"Upper A",foco:"Peito + Costas (compostos) + Ombro + Braços",cor:"#60a5fa",treino:true},
+    {dia:"Terça",sessao:"Lower A",foco:"Quadríceps dominante + Posterior + Core",cor:"#4ade80",treino:true},
+    {dia:"Quarta",sessao:"Descanso",foco:"Recuperação ativa — caminhada leve ou alongamento",cor:"#333",treino:false},
+    {dia:"Quinta",sessao:"Upper B",foco:"Ombros + Braços (foco) + Peito/Costas (suporte)",cor:"#c084fc",treino:true},
+    {dia:"Sexta",sessao:"Descanso",foco:"Recuperação — sono e hidratação",cor:"#333",treino:false},
+    {dia:"Sábado",sessao:"Lower B",foco:"Posterior dominante + Quadríceps + Core",cor:"#fbbf24",treino:true},
+    {dia:"Domingo",sessao:"Descanso",foco:"Descanso total — ciclo reinicia na Segunda",cor:"#333",treino:false}
+  ],
+  blocos:[
+    {nome:"Bloco 1 — Volume",semanas:"1–4",series:"3",reps:"10-12 compostos / 12-15 acessórios",pse:"6-7",cor:"#1e40af",foco:"Aprender os padrões de movimento e calibrar pesos"},
+    {nome:"Bloco 2 — Intensidade",semanas:"5–8",series:"3-4",reps:"8-10 / 10-12",pse:"7-8",cor:"#ef4444",foco:"Aumentar carga progressivamente a cada 2 sessões"},
+    {nome:"Bloco 3 — Carga",semanas:"9–11",series:"4",reps:"6-8 / 10-12",pse:"8-9",cor:"#7c3aed",foco:"Máxima intensidade — pesos pesados, foco em força"},
+    {nome:"Deload",semanas:"12",series:"2",reps:"10-12 / 12-15",pse:"5-6",cor:"#16a34a",foco:"Recuperação — metade das séries, peso do Bloco 2"}
+  ],
+  progressao:[
+    "Atingiu o topo das reps no PSE alvo por 2 sessões consecutivas → +2,5 kg",
+    "Acessórios: suba as reps primeiro, depois o peso",
+    "Estagnação 2+ semanas: troque a variação do exercício ou ajuste volume",
+    "Nunca pule o Deload — é onde o músculo consolida os ganhos",
+    "Semana 1 = calibração — todos os pesos são estimativas iniciais"
+  ],
+  descanso:[
+    {tipo:"Compostos — Bloco 1",tempo:"60–90s"},
+    {tipo:"Compostos — Blocos 2 e 3",tempo:"90–120s"},
+    {tipo:"Acessórios",tempo:"45–60s"},
+    {tipo:"Core",tempo:"30–45s"}
+  ],
+  bonus:[
+    {nome:"Pull-Up Pronada",passos:["Negativas: suba na caixa, desça em 5s","Assistido: band elástica ou polia","Completo: 3x5 limpos","Avançado: +peso no cinto"],obs:"Substitui Lat Pulldown quando conseguir 3×8"},
+    {nome:"Chin-Up Supinada",passos:["Geralmente mais fácil que pull-up","Envolve mais bíceps — ótima transição","Alterne: Upper A = pull-up, Upper B = chin-up"],obs:"Completa cobertura de costas + bíceps"}
+  ]
+};
+
+function MacroBar({label,val,max,cor}){
+  return h("div",{style:{marginBottom:8}},
+    h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:3}},
+      h("span",{style:{fontSize:11,color:"#888"}},"label",label),
+      h("span",{style:{fontSize:11,fontWeight:700,color:cor}},val,"g")
+    ),
+    h("div",{style:{height:4,background:"#1a1a25",borderRadius:2}},
+      h("div",{style:{height:4,borderRadius:2,background:cor,width:Math.min(100,val/max*100)+"%",transition:"width .5s"}})
+    )
+  );
+}
+
+function TreinoView(){
+  const[sr,setSr]=useState("");
+  const[as,setAs]=useState("Todos");
+  const[af,setAf]=useState("");
+  const[oc,setOc]=useState(null);
+  const[sb,setSb]=useState(null);
+  const[st,setSt]=useState(false);
+  const[ts,setTs]=useState(90);
+  const[tr,setTr]=useState(false);
+  const[tl,setTl]=useState(90);
+  const tf=useRef(null);
+  useEffect(()=>{if(tr&&tl>0)tf.current=setTimeout(()=>setTl(v=>v-1),1000);else if(tl===0&&tr){setTr(false);try{navigator.vibrate&&navigator.vibrate([200,100,200,100,200])}catch(e){}}return()=>clearTimeout(tf.current)},[tr,tl]);
+  const stT=(s)=>{setTs(s);setTl(s);setTr(true);setSt(true)};
+  const rt=()=>{setTr(false);setTl(ts)};
+  const SS=["Todos","Upper A","Lower A","Upper B","Lower B","Bônus"];
+  const FS=["Peito","Costas","Ombro","Pernas","Braços","Core"];
+  const fl=EX.filter(x=>{if(as!=="Todos"&&x.s!==as)return false;if(af&&x.f!==af)return false;if(sr){const q=sr.toLowerCase();return x.n.toLowerCase().includes(q)||x.m.toLowerCase().includes(q)}return true});
+  const gp={};fl.forEach(x=>{if(!gp[x.s])gp[x.s]=[];gp[x.s].push(x)});
+  return h("div",{style:{paddingBottom:st?130:20}},
+    h("div",{style:{position:"sticky",top:0,zIndex:100,background:"#07070d",padding:"14px 16px 8px",borderBottom:"1px solid #111"}},
+      h("div",{style:{display:"flex",alignItems:"center",gap:10,background:"#111118",border:"1px solid #1a1a25",borderRadius:14,padding:"11px 14px"}},
+        h("span",{style:{color:"#444",fontSize:16}},"🔍"),
+        h("input",{value:sr,onChange:e=>setSr(e.target.value),placeholder:"Buscar exercício ou músculo...",style:{flex:1,background:"none",border:"none",outline:"none",color:"#e8e8f0",fontSize:15,fontFamily:"inherit"}}),
+        sr&&h("button",{onClick:()=>setSr(""),style:{background:"none",border:"none",color:"#555",fontSize:16,cursor:"pointer",padding:0}},"✕"))),
+    h("div",{style:{display:"flex",gap:6,padding:"8px 16px 4px",overflowX:"auto",WebkitOverflowScrolling:"touch"}},SS.map(s=>h("button",{key:s,onClick:()=>{setAs(s);setAf("")},style:{padding:"7px 14px",borderRadius:20,border:s===as?"none":"1px solid #1a1a25",background:s===as?"#ef4444":"#111118",color:s===as?"#fff":"#666",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",flexShrink:0}},s))),
+    h("div",{style:{display:"flex",gap:6,padding:"6px 16px 10px",overflowX:"auto",WebkitOverflowScrolling:"touch"}},FS.map(f=>h("button",{key:f,onClick:()=>setAf(af===f?"":f),style:{padding:"5px 12px",borderRadius:14,border:f===af?"none":"1px solid #1a1a25",background:f===af?FC[f]+"20":"transparent",color:f===af?FC[f]:"#555",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",flexShrink:0}},f))),
+    h("div",{style:{padding:"0 16px 8px",fontSize:12,color:"#444"}},h("span",{style:{color:"#ef4444",fontWeight:700}},fl.length)," exercício",fl.length!==1?"s":""),
+    h("div",{style:{padding:"0 16px"}},
+      !Object.keys(gp).length&&h("div",{style:{textAlign:"center",padding:48,color:"#444"}},"Nenhum exercício encontrado"),
+      Object.entries(gp).map(([sn,exs])=>{const sc=SC[sn];return h("div",{key:sn,style:{marginBottom:20}},
+        h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10,padding:"8px 12px",background:sc.bg,borderRadius:10,borderLeft:"3px solid "+sc.t}},
+          h("span",{style:{fontSize:12,fontWeight:700,color:sc.t,letterSpacing:.5}},sn.toUpperCase()),
+          h("span",{style:{fontSize:10,color:"#444"}},"•"),
+          h("span",{style:{fontSize:11,color:"#555"}},exs[0].d),
+          h("span",{style:{fontSize:10,color:"#444"}},"•"),
+          h("span",{style:{fontSize:10,color:"#555"}},exs.length+" exerc.")),
+        exs.map(ex=>{const io=oc===ex.id;const eb=EB[ex.eq]||EB.corporal;return h("div",{key:ex.id,style:{background:"#0d0d14",border:"1px solid "+(io?sc.t+"33":"#151520"),borderRadius:14,marginBottom:8,overflow:"hidden",transition:"all .2s"}},
+          h("div",{onClick:()=>setOc(io?null:ex.id),style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px",cursor:"pointer"}},
+            h("div",{style:{flex:1}},h("div",{style:{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}},h("span",{style:{fontSize:15,fontWeight:600}},ex.n),h("span",{style:{display:"inline-block",fontSize:9,fontWeight:700,letterSpacing:.8,padding:"2px 8px",borderRadius:4,background:eb.bg,color:eb.c}},eb.l)),h("div",{style:{fontSize:11,color:"#555",marginTop:3}},ex.m)),
+            h("span",{style:{color:"#444",fontSize:11,transition:"transform .3s",transform:io?"rotate(180deg)":"none",flexShrink:0,marginLeft:8}},"▼")),
+          io&&h("div",{style:{padding:"0 14px 14px",animation:"fadeIn .25s ease"}},
+            h("div",{style:{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}},BK.map((b,i)=>h("button",{key:b,onClick:()=>setSb(sb===ex.id+b?null:ex.id+b),style:{padding:"4px 10px",borderRadius:6,border:"1px solid "+BC[i]+"33",background:sb===ex.id+b?BC[i]+"22":"transparent",color:sb===ex.id+b?BC[i]:"#555",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},BL[i]))),
+            sb&&sb.startsWith(String(ex.id))&&h("div",{style:{background:"#0a0a12",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:13,fontWeight:600,color:BC[BK.indexOf(sb.replace(String(ex.id),""))]}},ex[sb.replace(String(ex.id),"")]||"—"),
+            h("div",{style:{marginBottom:14}},h("div",{style:{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:sc.t,marginBottom:10}},"Como executar"),ex.st.map((s,i)=>h("div",{key:i,style:{display:"flex",gap:10,marginBottom:7}},h("div",{style:{width:20,height:20,borderRadius:"50%",background:"#111118",border:"1px solid #1e1e30",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:sc.t,flexShrink:0,marginTop:2}},i+1),h("p",{style:{fontSize:13,lineHeight:1.55,color:"#bbb",margin:0}},s)))),
+            h("div",{style:{background:"#0a1a0a",borderLeft:"3px solid #16a34a",borderRadius:"0 8px 8px 0",padding:"10px 12px",marginBottom:8}},h("div",{style:{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#16a34a",marginBottom:4}},"💡 DICA DO COACH"),h("p",{style:{fontSize:12.5,lineHeight:1.5,color:"#888",margin:0}},ex.t)),
+            h("div",{style:{background:"#1a0a0a",borderLeft:"3px solid #ef4444",borderRadius:"0 8px 8px 0",padding:"10px 12px",marginBottom:12}},h("div",{style:{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#ef4444",marginBottom:4}},"⚠️ ERROS COMUNS"),h("p",{style:{fontSize:12.5,lineHeight:1.5,color:"#995555",margin:0}},ex.e)),
+            h("div",{style:{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}},h("span",{style:{fontSize:10,color:"#444",fontWeight:600}},"DESCANSO:"),[45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),style:{padding:"5px 12px",borderRadius:8,border:"1px solid #1e1e30",background:"#111118",color:"#666",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},s+"s")))))}))})
+    ),
+    st&&h("div",{style:{position:"fixed",bottom:64,left:0,right:0,background:"#0d0d14ee",backdropFilter:"blur(16px)",borderTop:"1px solid #1a1a25",padding:"14px 20px",zIndex:200,display:"flex",alignItems:"center",justifyContent:"space-between"}},
+      h("div",null,h("div",{style:{fontSize:10,color:"#555",fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Descanso"),h("div",{style:{fontSize:38,fontWeight:800,fontVariantNumeric:"tabular-nums",letterSpacing:-1,color:tl===0?"#22c55e":tl<=10?"#ef4444":"#fff"}},Math.floor(tl/60)+":"+String(tl%60).padStart(2,"0")),tl===0&&h("div",{style:{fontSize:12,color:"#22c55e",fontWeight:700}},"💪 Próxima série!")),
+      h("div",{style:{display:"flex",gap:8}},!tr&&tl>0&&h("button",{onClick:()=>setTr(true),style:{padding:"10px 20px",borderRadius:10,background:"#22c55e",border:"none",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},"▶"),tr&&h("button",{onClick:()=>setTr(false),style:{padding:"10px 20px",borderRadius:10,background:"#ef4444",border:"none",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},"⏸"),h("button",{onClick:rt,style:{padding:"10px 16px",borderRadius:10,background:"#151520",border:"1px solid #1e1e30",color:"#666",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"↺"),h("button",{onClick:()=>{setSt(false);setTr(false)},style:{padding:"10px 16px",borderRadius:10,background:"#151520",border:"1px solid #1e1e30",color:"#666",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"✕")))
+    )
+  );
+}
+
+function DietaView(){
+  const[od,setOd]=useState(null);
+  const[om,setOm]=useState(null);
+  const dias=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+  const hoje=dias[new Date().getDay()];
+  return h("div",{style:{padding:"0 0 20px"}},
+    h("div",{style:{margin:"16px 16px 0",background:"linear-gradient(135deg,#1a0a0a,#0d0d14)",border:"1px solid #2a1515",borderRadius:16,padding:16}},
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}},
+        h("div",null,
+          h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#ef4444",textTransform:"uppercase",marginBottom:4}},"Meta Diária"),
+          h("div",{style:{fontSize:36,fontWeight:800,color:"#fff",letterSpacing:-1}},DIET.kcal,h("span",{style:{fontSize:14,color:"#555",fontWeight:400}}," kcal"))
+        ),
+        h("div",{style:{textAlign:"right"}},
+          h("div",{style:{fontSize:10,color:"#555",marginBottom:2}},"Déficit ~350 kcal"),
+          h("div",{style:{fontSize:10,color:"#555"}},"TDEE: 2.565 kcal"),
+          h("div",{style:{marginTop:6,fontSize:9,padding:"3px 8px",borderRadius:6,background:"#2a1515",color:"#ef4444",fontWeight:700}},"💊 Mounjaro")
+        )
+      ),
+      h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}},
+        [{l:"Proteína",v:DIET.prot,c:"#60a5fa",u:"g"},{l:"Carboidrato",v:DIET.carb,c:"#fbbf24",u:"g"},{l:"Gordura",v:DIET.fat,c:"#f472b6",u:"g"}].map(m=>
+          h("div",{key:m.l,style:{background:"#0d0d14",borderRadius:10,padding:"10px 8px",textAlign:"center",border:"1px solid #1a1a25"}},
+            h("div",{style:{fontSize:20,fontWeight:800,color:m.c}},m.v,h("span",{style:{fontSize:11}},"g")),
+            h("div",{style:{fontSize:10,color:"#555",marginTop:2}},m.l)
+          )
+        )
+      ),
+      h("div",{style:{marginTop:12,background:"#1a1a0a",borderLeft:"3px solid #fbbf24",borderRadius:"0 8px 8px 0",padding:"8px 10px"}},
+        h("p",{style:{fontSize:11.5,lineHeight:1.5,color:"#888",margin:0}},DIET.mounjaro)
+      )
+    ),
+    h("div",{style:{padding:"16px 16px 0"}},
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#555",textTransform:"uppercase",marginBottom:10}},"Plano de 7 Dias"),
+      DIET.dias.map((d,i)=>{
+        const isOpen=od===i;
+        const isHoje=d.dia.startsWith(hoje)||d.dia.startsWith(hoje.substring(0,3));
+        return h("div",{key:i,style:{marginBottom:8,background:"#0d0d14",border:"1px solid "+(isOpen?d.cor+"44":"#151520"),borderRadius:14,overflow:"hidden"}},
+          h("div",{onClick:()=>setOd(isOpen?null:i),style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px",cursor:"pointer"}},
+            h("div",{style:{display:"flex",alignItems:"center",gap:10}},
+              h("div",{style:{width:36,height:36,borderRadius:10,background:d.cor+"22",border:"1px solid "+d.cor+"44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:d.cor}},d.dia.substring(0,3).toUpperCase()),
+              h("div",null,
+                h("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                  h("span",{style:{fontSize:14,fontWeight:600,color:"#e8e8f0"}},d.dia),
+                  isHoje&&h("span",{style:{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:"#ef4444",color:"#fff"}},"HOJE")
+                ),
+                h("div",{style:{fontSize:11,color:"#555",marginTop:2}},d.treino)
+              )
+            ),
+            h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+              h("span",{style:{fontSize:12,color:"#444",fontWeight:600}},DIET.kcal," kcal"),
+              h("span",{style:{color:"#333",fontSize:11,transition:"transform .3s",transform:isOpen?"rotate(180deg)":"none"}},"▼")
+            )
+          ),
+          isOpen&&h("div",{style:{padding:"0 14px 14px",animation:"fadeIn .2s ease"}},
+            d.refeicoes.map((r,j)=>{
+              const key=i+"-"+j;
+              const isRM=om===key;
+              return h("div",{key:j,style:{marginBottom:6,background:"#111118",borderRadius:10,overflow:"hidden",border:"1px solid "+(isRM?"#2a2a3a":"#1a1a25")}},
+                h("div",{onClick:()=>setOm(isRM?null:key),style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 12px",cursor:"pointer"}},
+                  h("div",null,
+                    h("div",{style:{fontSize:13,fontWeight:600,color:"#e8e8f0"}},r.nome),
+                    h("div",{style:{fontSize:11,color:"#444",marginTop:1}},r.hora," • ",r.kcal," kcal • P:",r.p,"g")
+                  ),
+                  h("span",{style:{color:"#333",fontSize:10,transition:"transform .3s",transform:isRM?"rotate(180deg)":"none"}},"▼")
+                ),
+                isRM&&h("div",{style:{padding:"0 12px 10px",animation:"fadeIn .2s ease"}},
+                  r.itens.map((it,k)=>h("div",{key:k,style:{display:"flex",alignItems:"flex-start",gap:8,marginBottom:5}},
+                    h("span",{style:{color:d.cor,fontSize:12,marginTop:1,flexShrink:0}},"•"),
+                    h("span",{style:{fontSize:12.5,color:"#999",lineHeight:1.4}},it)
+                  )),
+                  h("div",{style:{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}},
+                    [{l:"Prot",v:r.p,c:"#60a5fa"},{l:"Carb",v:r.c,c:"#fbbf24"},{l:"Gord",v:r.g,c:"#f472b6"}].map(m=>
+                      h("div",{key:m.l,style:{padding:"3px 10px",borderRadius:6,background:m.c+"15",border:"1px solid "+m.c+"33",fontSize:10,fontWeight:700,color:m.c}},m.l+": "+m.v+"g")
+                    )
+                  )
+                )
+              );
+            })
+          )
+        );
+      })
+    ),
+    h("div",{style:{padding:"16px 16px 0"}},
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#555",textTransform:"uppercase",marginBottom:10}},"Regras do Plano"),
+      h("div",{style:{background:"#0d0d14",border:"1px solid #151520",borderRadius:14,padding:14}},
+        DIET.regras.map((r,i)=>h("div",{key:i,style:{display:"flex",gap:10,marginBottom:i<DIET.regras.length-1?10:0}},
+          h("div",{style:{width:20,height:20,borderRadius:"50%",background:"#1a1a25",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#ef4444",flexShrink:0,marginTop:1}},i+1),
+          h("span",{style:{fontSize:13,lineHeight:1.5,color:"#bbb"}},r)
+        ))
+      )
+    ),
+    h("div",{style:{padding:"16px 16px 0"}},
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#555",textTransform:"uppercase",marginBottom:10}},"Suplementos"),
+      h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+        DIET.suplementos.map((s,i)=>h("div",{key:i,style:{background:"#0d0d14",border:"1px solid "+s.cor+"22",borderRadius:12,padding:12}},
+          h("div",{style:{fontSize:11,fontWeight:700,color:s.cor,marginBottom:4}},s.nome),
+          h("div",{style:{fontSize:10,color:"#555",marginBottom:4}},s.quando),
+          h("div",{style:{fontSize:13,fontWeight:700,color:"#e8e8f0"}},s.dose)
+        ))
+      )
+    )
+  );
+}
+
+function CoachView(){
+  const[ob,setOb]=useState(null);
+  return h("div",{style:{padding:"0 0 20px"}},
+    h("div",{style:{padding:"16px 16px 0"}},
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#555",textTransform:"uppercase",marginBottom:10}},"Agenda Semanal"),
+      COACH.agenda.map((d,i)=>h("div",{key:i,style:{display:"flex",alignItems:"center",gap:12,marginBottom:6,background:"#0d0d14",border:"1px solid "+(d.treino?"#1a1a25":"#111"),borderRadius:12,padding:"12px 14px",opacity:d.treino?1:0.6}},
+        h("div",{style:{width:38,height:38,borderRadius:10,background:d.treino?d.cor+"22":"#111",border:"1px solid "+(d.treino?d.cor+"44":"#1a1a25"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
+          h("span",{style:{fontSize:10,fontWeight:800,color:d.treino?d.cor:"#333"}},d.dia.substring(0,3).toUpperCase())
+        ),
+        h("div",{style:{flex:1}},
+          h("div",{style:{fontSize:13,fontWeight:700,color:d.treino?"#e8e8f0":"#444"}},d.sessao),
+          h("div",{style:{fontSize:11,color:"#555",marginTop:2}},d.foco)
+        ),
+        d.treino&&h("div",{style:{width:6,height:6,borderRadius:"50%",background:d.cor,flexShrink:0}})
+      ))
+    ),
+    h("div",{style:{padding:"16px 16px 0"}},
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#555",textTransform:"uppercase",marginBottom:10}},"Periodização — 12 Semanas"),
+      COACH.blocos.map((b,i)=>{
+        const isOpen=ob===i;
+        return h("div",{key:i,style:{marginBottom:8,background:"#0d0d14",border:"1px solid "+(isOpen?b.cor+"44":"#151520"),borderRadius:14,overflow:"hidden"}},
+          h("div",{onClick:()=>setOb(isOpen?null:i),style:{display:"flex",alignItems:"center",gap:12,padding:"14px",cursor:"pointer"}},
+            h("div",{style:{width:4,alignSelf:"stretch",borderRadius:2,background:b.cor,flexShrink:0}}),
+            h("div",{style:{flex:1}},
+              h("div",{style:{fontSize:14,fontWeight:700,color:"#e8e8f0"}},b.nome),
+              h("div",{style:{fontSize:11,color:"#555",marginTop:2}},"Semanas ",b.semanas," • PSE ",b.pse)
+            ),
+            h("span",{style:{color:"#333",fontSize:11,transition:"transform .3s",transform:isOpen?"rotate(180deg)":"none"}},"▼")
+          ),
+          isOpen&&h("div",{style:{padding:"0 14px 14px",animation:"fadeIn .2s ease"}},
+            h("div",{style:{background:"#111118",borderRadius:10,padding:12,marginBottom:8}},
+              h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:6}},
+                h("span",{style:{fontSize:10,color:"#555"}},"SÉRIES"),
+                h("span",{style:{fontSize:13,fontWeight:700,color:b.cor}},b.series)
+              ),
+              h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:6}},
+                h("span",{style:{fontSize:10,color:"#555"}},"REPS"),
+                h("span",{style:{fontSize:13,fontWeight:700,color:b.cor}},b.reps)
+              ),
+              h("div",{style:{display:"flex",justifyContent:"space-between"}},
+                h("span",{style:{fontSize:10,color:"#555"}},"PSE"),
+                h("span",{style:{fontSize:13,fontWeight:700,color:b.cor}},b.pse)
+              )
+            ),
+            h("p",{style:{fontSize:12.5,color:"#888",lineHeight:1.5,margin:0}},b.foco)
+          )
+        );
+      })
+    ),
+    h("div",{style:{padding:"16px 16px 0"}},
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#555",textTransform:"uppercase",marginBottom:10}},"Regras de Progressão"),
+      h("div",{style:{background:"#0d0d14",border:"1px solid #151520",borderRadius:14,padding:14}},
+        COACH.progressao.map((r,i)=>h("div",{key:i,style:{display:"flex",gap:10,marginBottom:i<COACH.progressao.length-1?10:0}},
+          h("div",{style:{width:20,height:20,borderRadius:"50%",background:"#1e40af22",border:"1px solid #1e40af44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#60a5fa",flexShrink:0,marginTop:1}},i+1),
+          h("span",{style:{fontSize:13,lineHeight:1.5,color:"#bbb"}},r)
+        ))
+      )
+    ),
+    h("div",{style:{padding:"16px 16px 0"}},
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#555",textTransform:"uppercase",marginBottom:10}},"Descanso entre Séries"),
+      h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+        COACH.descanso.map((d,i)=>h("div",{key:i,style:{background:"#0d0d14",border:"1px solid #151520",borderRadius:12,padding:12}},
+          h("div",{style:{fontSize:11,color:"#555",marginBottom:4,lineHeight:1.3}},d.tipo),
+          h("div",{style:{fontSize:18,fontWeight:800,color:"#ef4444"}},d.tempo)
+        ))
+      )
+    ),
+    h("div",{style:{padding:"16px 16px 0"}},
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#555",textTransform:"uppercase",marginBottom:10}},"Progressão Bônus — Pull-Ups"),
+      COACH.bonus.map((b,i)=>h("div",{key:i,style:{marginBottom:8,background:"#0d0d14",border:"1px solid #1a1a25",borderRadius:14,padding:14}},
+        h("div",{style:{fontSize:14,fontWeight:700,color:"#f472b6",marginBottom:8}},b.nome),
+        b.passos.map((p,j)=>h("div",{key:j,style:{display:"flex",gap:8,marginBottom:6}},
+          h("div",{style:{width:18,height:18,borderRadius:"50%",background:"#2d0a1e",border:"1px solid #f472b633",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#f472b6",flexShrink:0,marginTop:1}},j+1),
+          h("span",{style:{fontSize:12.5,color:"#bbb",lineHeight:1.4}},p)
+        )),
+        h("div",{style:{marginTop:8,background:"#1a1a0a",borderLeft:"3px solid #fbbf24",borderRadius:"0 6px 6px 0",padding:"6px 10px"}},
+          h("span",{style:{fontSize:12,color:"#888"}},"💡 ",b.obs)
+        )
+      ))
+    )
+  );
+}
+
+function App(){
+  const[tab,setTab]=useState("treino");
+  const TABS=[
+    {id:"treino",label:"Treino",icon:"🏋️"},
+    {id:"dieta",label:"Dieta",icon:"🥗"},
+    {id:"coach",label:"Coach",icon:"🎯"}
+  ];
+  return h("div",{style:{minHeight:"100vh",background:"#07070d",color:"#e8e8f0",fontFamily:"'SF Pro Display',system-ui,-apple-system,sans-serif",paddingBottom:64}},
+    h("div",{style:{padding:"24px 16px 12px",textAlign:"center",borderBottom:"1px solid #111"}},
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:3,color:"#ef4444",textTransform:"uppercase",marginBottom:4}},"Roberto Garcia • Home Gym"),
+      h("h1",{style:{fontSize:24,fontWeight:800,letterSpacing:-.5,margin:0,color:"#fff"}},
+        tab==="treino"?"Guia de Exercícios":tab==="dieta"?"Plano Nutricional":"Coach de Treino"
+      ),
+      h("p",{style:{color:"#555",fontSize:11,marginTop:4}},
+        tab==="treino"?"MC-1000 + Halteres + Banco + Sandbag":
+        tab==="dieta"?"2.200 kcal • 154g prot • 258g carb • 62g gord":
+        "12 semanas • 4x/semana • Hipertrofia + Perda de Gordura"
+      )
+    ),
+    tab==="treino"&&h(TreinoView,null),
+    tab==="dieta"&&h(DietaView,null),
+    tab==="coach"&&h(CoachView,null),
+    h("div",{style:{position:"fixed",bottom:0,left:0,right:0,background:"#0d0d14",borderTop:"1px solid #1a1a25",display:"flex",zIndex:300,paddingBottom:"env(safe-area-inset-bottom)"}},
+      TABS.map(t=>h("button",{key:t.id,onClick:()=>setTab(t.id),style:{flex:1,padding:"10px 0 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,fontFamily:"inherit"}},
+        h("span",{style:{fontSize:20,filter:tab===t.id?"none":"grayscale(1) opacity(0.4)"}},t.icon),
+        h("span",{style:{fontSize:10,fontWeight:700,color:tab===t.id?"#ef4444":"#444",letterSpacing:.5}},t.label)
+      ))
+    )
+  );
+}
 ReactDOM.createRoot(document.getElementById("root")).render(h(App));
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
