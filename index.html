@@ -455,7 +455,7 @@ function TreinoView(){
   const nextEx=sesEx[sesEx.indexOf(ex)+1]||null;
   const exLog=JSON.parse(localStorage.getItem("workout_log")||"[]").filter(e=>e.exerciseId===ex.id).slice(-4).reverse();
   const saveSeries=(pse)=>{const entry={id:Date.now()+"",ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,pse,carga};const log=JSON.parse(localStorage.getItem("workout_log")||"[]");log.push(entry);localStorage.setItem("workout_log",JSON.stringify(log));setShowPse(false);setExTime(0);setCarga(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
-  return h("div",{style:{paddingBottom:80}},
+  return h("div",{style:{paddingBottom:nextEx&&seriesCt>=3?148:80}},
     h("div",{style:{position:"sticky",top:0,zIndex:100,background:"#07070d",padding:"12px 16px 10px",borderBottom:"1px solid "+sc.t+"33"}},
       h("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
         h("button",{onClick:()=>{setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);},style:{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:20,border:"1px solid #1a1a25",background:"#111118",color:"#888",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}},"← "+selS),
@@ -503,9 +503,9 @@ function TreinoView(){
             h("div",{style:{fontSize:12,fontWeight:700,color:"#aaa",marginTop:4}},fmtT(e.duration)),
             e.carga>0&&h("div",{style:{fontSize:11,fontWeight:700,color:"#888",marginTop:2}},e.carga+"kg"),
             h("div",{style:{fontSize:9,color:"#444",marginTop:2}},e.date));})))  ,
-    nextEx&&h("div",{style:{padding:"16px 16px 32px"}},
+    nextEx&&seriesCt>=3&&h("div",{style:{position:"fixed",bottom:64,left:0,right:0,zIndex:190,background:"#0d0d14f2",backdropFilter:"blur(16px)",borderTop:"1px solid #1a1a25",padding:"10px 16px"}},
       h("button",{onClick:()=>{setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);setSelEx(nextEx);},
-        style:{width:"100%",padding:"16px",borderRadius:14,border:"1px solid #1a1a25",background:"#111118",color:"#555",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3}},
+        style:{width:"100%",padding:"15px",borderRadius:14,border:"1px solid #1e1e30",background:"#111118",color:"#aaa",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3}},
         "Próximo exercício  →")),
     st&&!exRun&&h("div",{style:{position:"fixed",inset:0,background:"rgba(7,7,13,0.96)",backdropFilter:"blur(20px)",zIndex:200,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
       h("div",{style:{fontSize:11,color:"#555",fontWeight:700,letterSpacing:3,textTransform:"uppercase",marginBottom:24}},"Descanso"),
