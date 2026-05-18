@@ -236,6 +236,7 @@ const EB={mc1000:{bg:"#1e3a5f",c:"#60a5fa",l:"MC-1000"},halter:{bg:"#2d1f06",c:"
 const BC=["#1e40af","#ef4444","#7c3aed","#16a34a"];
 const BL=["Bloco 1","Bloco 2","Bloco 3","Deload"];
 const BK=["b1","b2","b3","dl"];
+const fmtT=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
 
 const DIET={
   kcal:2200,prot:154,carb:258,fat:62,
@@ -432,8 +433,17 @@ function TreinoView(){
   const[tr,setTr]=useState(false);
   const[tl,setTl]=useState(90);
   const[selS,setSelS]=useState(null);
+  const[cntd,setCntd]=useState(null);
+  const[exRun,setExRun]=useState(false);
+  const[exTime,setExTime]=useState(0);
+  const[showPse,setShowPse]=useState(false);
+  const[lastDur,setLastDur]=useState(0);
   const tf=useRef(null);
+  const cdRef=useRef(null);
+  const etRef=useRef(null);
   useEffect(()=>{if(tr&&tl>0)tf.current=setTimeout(()=>setTl(v=>v-1),1000);else if(tl===0&&tr){setTr(false);try{navigator.vibrate&&navigator.vibrate([200,100,200,100,200])}catch(e){}}return()=>clearTimeout(tf.current)},[tr,tl]);
+  useEffect(()=>{if(cntd===null||cntd<=0)return;cdRef.current=setTimeout(()=>{if(cntd===1){setCntd(null);setExRun(true);setExTime(0);}else setCntd(v=>v-1);try{navigator.vibrate&&navigator.vibrate(60);}catch(e){}},1000);return()=>clearTimeout(cdRef.current);},[cntd]);
+  useEffect(()=>{if(exRun)etRef.current=setInterval(()=>setExTime(v=>v+1),1000);else clearInterval(etRef.current);return()=>clearInterval(etRef.current);},[exRun]);
   const stT=(s)=>{setTs(s);setTl(s);setTr(true);setSt(true)};
   const rt=()=>{setTr(false);setTl(ts)};
   if(selS===null)return h(SessionHomeView,{onSelect:setSelS});
@@ -441,6 +451,8 @@ function TreinoView(){
   const fl=EX.filter(x=>{if(x.s!==selS)return false;if(af&&x.f!==af)return false;if(sr){const q=sr.toLowerCase();return x.n.toLowerCase().includes(q)||x.m.toLowerCase().includes(q)}return true});
   if(selEx===null)return h(ExerciseGridView,{selS,fl,sc,onBack:()=>{setSelS(null);setSr("");setAf("")},onSelect:setSelEx,sr,setSr,af,setAf});
   const ex=selEx;const eb=EB[ex.eq]||EB.corporal;const sesEx=EX.filter(x=>x.s===selS);const num=sesEx.indexOf(ex)+1;
+  const exLog=JSON.parse(localStorage.getItem("workout_log")||"[]").filter(e=>e.exerciseId===ex.id).slice(-4).reverse();
+  const saveSeries=(pse)=>{const entry={id:Date.now()+"",ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,pse};const log=JSON.parse(localStorage.getItem("workout_log")||"[]");log.push(entry);localStorage.setItem("workout_log",JSON.stringify(log));setShowPse(false);setExTime(0);setSt(true);setTl(ts);setTr(true);};
   return h("div",{style:{paddingBottom:st?160:80}},
     h("div",{style:{position:"sticky",top:0,zIndex:100,background:"#07070d",padding:"12px 16px 10px",borderBottom:"1px solid "+sc.t+"33"}},
       h("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
@@ -469,10 +481,25 @@ function TreinoView(){
       h("div",{style:{background:"#1a0a0a",borderLeft:"3px solid #ef4444",borderRadius:"0 10px 10px 0",padding:"12px 14px",marginBottom:16}},
         h("div",{style:{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#ef4444",marginBottom:5}},"⚠️ ERROS COMUNS"),
         h("p",{style:{fontSize:13,lineHeight:1.5,color:"#995555",margin:0}},ex.e)),
-      h("div",{style:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}},
-        h("span",{style:{fontSize:11,color:"#444",fontWeight:600}},"DESCANSO:"),
-        [45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),style:{padding:"7px 16px",borderRadius:10,border:"1px solid #1e1e30",background:"#111118",color:"#666",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},s+"s")))),
-    st&&h("div",{style:{position:"fixed",bottom:64,left:0,right:0,background:"#0d0d14ee",backdropFilter:"blur(16px)",borderTop:"1px solid #1a1a25",padding:"14px 20px",zIndex:200,display:"flex",alignItems:"center",justifyContent:"space-between"}},
+      h("div",{style:{marginBottom:16}},
+        h("button",{onClick:()=>{setCntd(3);setSt(false);setTr(false);},disabled:exRun||cntd!==null,
+          style:{width:"100%",padding:"18px",borderRadius:14,border:"none",color:"#fff",
+            fontSize:17,fontWeight:800,cursor:exRun||cntd!==null?"not-allowed":"pointer",
+            fontFamily:"inherit",letterSpacing:.5,
+            background:exRun||cntd!==null?"#1a1a25":sc.t}},"▶  Iniciar Série"),
+        h("div",{style:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginTop:12}},
+          h("span",{style:{fontSize:11,color:"#444",fontWeight:600}},"DESCANSO:"),
+          [45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),style:{padding:"7px 16px",borderRadius:10,border:"1px solid #1e1e30",background:"#111118",color:"#666",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},s+"s")))),
+    exLog.length>0&&h("div",{style:{padding:"0 16px 20px",borderTop:"1px solid #1a1a25",marginTop:4}},
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#444",textTransform:"uppercase",padding:"16px 0 10px"}},"Histórico de séries"),
+      h("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}},
+        exLog.map(e=>{const pc=e.pse<=3?"#22c55e":e.pse<=6?"#f59e0b":e.pse<=8?"#ef4444":"#dc2626";
+          return h("div",{key:e.id,style:{background:"#111118",borderRadius:10,padding:"10px 8px",textAlign:"center",border:"1px solid #1a1a25"}},
+            h("div",{style:{fontSize:22,fontWeight:800,color:pc}},e.pse),
+            h("div",{style:{fontSize:9,color:"#555",marginTop:1}},"PSE"),
+            h("div",{style:{fontSize:12,fontWeight:700,color:"#aaa",marginTop:4}},fmtT(e.duration)),
+            h("div",{style:{fontSize:9,color:"#444",marginTop:2}},e.date));})))  ,
+    st&&!exRun&&h("div",{style:{position:"fixed",bottom:64,left:0,right:0,background:"#0d0d14ee",backdropFilter:"blur(16px)",borderTop:"1px solid #1a1a25",padding:"14px 20px",zIndex:200,display:"flex",alignItems:"center",justifyContent:"space-between"}},
       h("div",null,
         h("div",{style:{fontSize:10,color:"#555",fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Descanso"),
         h("div",{style:{fontSize:38,fontWeight:800,fontVariantNumeric:"tabular-nums",letterSpacing:-1,color:tl===0?"#22c55e":tl<=10?"#ef4444":"#fff"}},Math.floor(tl/60)+":"+String(tl%60).padStart(2,"0")),
@@ -481,7 +508,30 @@ function TreinoView(){
         !tr&&tl>0&&h("button",{onClick:()=>setTr(true),style:{padding:"10px 20px",borderRadius:10,background:"#22c55e",border:"none",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},"▶"),
         tr&&h("button",{onClick:()=>setTr(false),style:{padding:"10px 20px",borderRadius:10,background:"#ef4444",border:"none",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},"⏸"),
         h("button",{onClick:rt,style:{padding:"10px 16px",borderRadius:10,background:"#151520",border:"1px solid #1e1e30",color:"#666",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"↺"),
-        h("button",{onClick:()=>{setSt(false);setTr(false)},style:{padding:"10px 16px",borderRadius:10,background:"#151520",border:"1px solid #1e1e30",color:"#666",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"✕")))
+        h("button",{onClick:()=>{setSt(false);setTr(false)},style:{padding:"10px 16px",borderRadius:10,background:"#151520",border:"1px solid #1e1e30",color:"#666",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"✕"))),
+    exRun&&h("div",{style:{position:"fixed",bottom:64,left:0,right:0,background:"#0d0d14f2",backdropFilter:"blur(16px)",borderTop:"2px solid "+sc.t+"66",padding:"16px 20px",zIndex:200,display:"flex",alignItems:"center",justifyContent:"space-between"}},
+      h("div",null,
+        h("div",{style:{fontSize:10,color:sc.t,fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Série em andamento"),
+        h("div",{style:{fontSize:44,fontWeight:900,fontVariantNumeric:"tabular-nums",letterSpacing:-1,color:"#fff"}},fmtT(exTime))),
+      h("button",{onClick:()=>{setExRun(false);setLastDur(exTime);setShowPse(true);},style:{padding:"14px 28px",borderRadius:12,background:sc.t,border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}},"Finalizar Série")),
+    cntd!==null&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:500,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
+      h("div",{style:{fontSize:11,color:"#555",fontWeight:700,letterSpacing:3,textTransform:"uppercase",marginBottom:24}},"Prepare-se"),
+      h("div",{style:{fontSize:160,fontWeight:900,color:sc.t,lineHeight:1,fontVariantNumeric:"tabular-nums",textShadow:"0 0 80px "+sc.t+"55"}},cntd),
+      h("div",{style:{fontSize:16,color:"#888",marginTop:28,fontWeight:600,textAlign:"center"}},ex.n),
+      h("button",{onClick:()=>setCntd(null),style:{marginTop:44,padding:"10px 28px",borderRadius:20,border:"1px solid #333",background:"transparent",color:"#555",fontSize:13,cursor:"pointer",fontFamily:"inherit"}},"Cancelar")),
+    showPse&&h("div",{style:{position:"fixed",inset:0,background:"rgba(7,7,13,0.97)",zIndex:600,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}},
+      h("div",{style:{width:"100%",maxWidth:640}},
+        h("div",{style:{textAlign:"center",marginBottom:36}},
+          h("div",{style:{fontSize:12,color:"#555",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:10}},"Como foi a série?"),
+          h("div",{style:{fontSize:24,fontWeight:800,color:"#fff",marginBottom:8}},ex.n),
+          h("div",{style:{fontSize:16,color:"#888"}},"Duração: ",h("span",{style:{color:"#fff",fontWeight:700}},fmtT(lastDur)))),
+        h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:10,fontSize:11,color:"#555",padding:"0 4px"}},
+          h("span",null,"Muito fácil"),h("span",null,"Moderado"),h("span",null,"Máximo")),
+        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}},
+          [1,2,3,4,5,6,7,8,9,10].map(n=>{
+            const pc=n<=3?"#22c55e":n<=5?"#84cc16":n<=6?"#f59e0b":n<=8?"#ef4444":"#dc2626";
+            return h("button",{key:n,onClick:()=>saveSeries(n),style:{padding:"22px 0",borderRadius:14,border:"2px solid "+pc+"44",background:pc+"22",color:pc,fontSize:28,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}},n);})),
+        h("button",{onClick:()=>setShowPse(false),style:{width:"100%",padding:"14px",borderRadius:12,border:"1px solid #222",background:"transparent",color:"#444",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"Cancelar")))
   );
 }
 
