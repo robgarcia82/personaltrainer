@@ -383,7 +383,7 @@ function SessionHomeView({onSelect}){
   );
 }
 
-function ExerciseGridView({selS,fl,sc,onBack,onSelect,sr,setSr,af,setAf}){
+function ExerciseGridView({selS,fl,sc,onBack,onSelect,af,setAf}){
   const FS=["Peito","Costas","Ombro","Pernas","Braços","Core"];
   const sesEx=EX.filter(x=>x.s===selS);
   return h("div",{style:{paddingBottom:20}},
@@ -392,10 +392,6 @@ function ExerciseGridView({selS,fl,sc,onBack,onSelect,sr,setSr,af,setAf}){
         h("button",{onClick:onBack,style:{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:20,border:"1px solid #1a1a25",background:"#111118",color:"#888",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}},"← Sessões"),
         h("span",{style:{fontSize:13,fontWeight:800,color:sc.t,letterSpacing:.5,flex:1}},selS.toUpperCase()),
         h("span",{style:{fontSize:11,color:"#444",flexShrink:0}},EX.find(x=>x.s===selS)?.d||"")),
-      h("div",{style:{display:"flex",alignItems:"center",gap:10,background:"#111118",border:"1px solid #1a1a25",borderRadius:14,padding:"11px 14px",marginBottom:8}},
-        h("span",{style:{color:"#444",fontSize:16}},"🔍"),
-        h("input",{value:sr,onChange:e=>setSr(e.target.value),placeholder:"Buscar exercício ou músculo...",style:{flex:1,background:"none",border:"none",outline:"none",color:"#e8e8f0",fontSize:15,fontFamily:"inherit"}}),
-        sr&&h("button",{onClick:()=>setSr(""),style:{background:"none",border:"none",color:"#555",fontSize:16,cursor:"pointer",padding:0}},"✕")),
       h("div",{style:{display:"flex",gap:6,overflowX:"auto",WebkitOverflowScrolling:"touch"}},
         FS.map(f=>h("button",{key:f,onClick:()=>setAf(af===f?"":f),style:{padding:"5px 12px",borderRadius:14,border:f===af?"none":"1px solid #1a1a25",background:f===af?FC[f]+"20":"transparent",color:f===af?FC[f]:"#555",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",flexShrink:0}},f)))),
     h("div",{style:{padding:"8px 16px 4px",fontSize:12,color:"#444"}},
@@ -424,7 +420,6 @@ function ExerciseGridView({selS,fl,sc,onBack,onSelect,sr,setSr,af,setAf}){
 }
 
 function TreinoView(){
-  const[sr,setSr]=useState("");
   const[af,setAf]=useState("");
   const[sb,setSb]=useState(null);
   const[selEx,setSelEx]=useState(null);
@@ -447,12 +442,12 @@ function TreinoView(){
   useEffect(()=>{if(tr&&tl>0)tf.current=setTimeout(()=>setTl(v=>v-1),1000);else if(tl===0&&tr){setTr(false);setSt(false);try{navigator.vibrate&&navigator.vibrate([200,100,200,100,200])}catch(e){}try{const ac=new(window.AudioContext||window.webkitAudioContext)();[0,.35,.7].forEach(t=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.setValueAtTime(.6,ac.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+t+.28);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.3);});}catch(e){}}return()=>clearTimeout(tf.current);},[tr,tl]);
   useEffect(()=>{if(cntd===null||cntd<=0)return;cdRef.current=setTimeout(()=>{if(cntd===1){setCntd(null);setExRun(true);setExTime(0);}else setCntd(v=>v-1);try{navigator.vibrate&&navigator.vibrate(60);}catch(e){}},1000);return()=>clearTimeout(cdRef.current);},[cntd]);
   useEffect(()=>{if(exRun)etRef.current=setInterval(()=>setExTime(v=>v+1),1000);else clearInterval(etRef.current);return()=>clearInterval(etRef.current);},[exRun]);
-  const stT=(s)=>{setTs(s);setTl(s);setTr(true);setSt(true)};
+  const stT=(s)=>{setTs(s);setTl(s)};
   const rt=()=>{setTr(false);setTl(ts)};
   if(selS===null)return h(SessionHomeView,{onSelect:setSelS});
   const sc=SC[selS]||{t:"#ef4444",bg:"#2a0808"};
-  const fl=EX.filter(x=>{if(x.s!==selS)return false;if(af&&x.f!==af)return false;if(sr){const q=sr.toLowerCase();return x.n.toLowerCase().includes(q)||x.m.toLowerCase().includes(q)}return true});
-  if(selEx===null)return h(ExerciseGridView,{selS,fl,sc,onBack:()=>{setSelS(null);setSr("");setAf("")},onSelect:setSelEx,sr,setSr,af,setAf});
+  const fl=EX.filter(x=>{if(x.s!==selS)return false;if(af&&x.f!==af)return false;return true});
+  if(selEx===null)return h(ExerciseGridView,{selS,fl,sc,onBack:()=>{setSelS(null);setAf("")},onSelect:setSelEx,af,setAf});
   const ex=selEx;const eb=EB[ex.eq]||EB.corporal;const sesEx=EX.filter(x=>x.s===selS);const num=sesEx.indexOf(ex)+1;
   const blocoKey=sb&&sb.startsWith(String(ex.id))?sb.replace(String(ex.id),""):null;
   const plannedSeries=blocoKey?parseInt((ex[blocoKey]||"").split("x")[0])||0:0;
@@ -704,9 +699,6 @@ function App(){
     coach:"12 semanas • 4x/semana • Hipertrofia + Perda de Gordura"
   };
   return h("div",{style:{minHeight:"100vh",background:"#07070d",color:"#e8e8f0",fontFamily:"'SF Pro Display',system-ui,-apple-system,sans-serif",paddingBottom:64}},
-    h("div",{style:{padding:"24px 16px 12px",textAlign:"center",borderBottom:"1px solid #111"}},
-      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:3,color:"#ef4444",textTransform:"uppercase",marginBottom:4}},"Roberto Garcia • Home Gym"),
-      h("p",{style:{color:"#555",fontSize:11,marginTop:4}},subtitulo[tab])),
     tab==="treino"&&h(TreinoView,null),
     tab==="dieta"&&h(DietaView,null),
     tab==="coach"&&h(CoachView,null),
