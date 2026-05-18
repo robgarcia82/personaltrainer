@@ -382,12 +382,51 @@ function SessionHomeView({onSelect}){
   );
 }
 
+function ExerciseGridView({selS,fl,sc,onBack,onSelect,sr,setSr,af,setAf}){
+  const FS=["Peito","Costas","Ombro","Pernas","Braços","Core"];
+  const sesEx=EX.filter(x=>x.s===selS);
+  return h("div",{style:{paddingBottom:20}},
+    h("div",{style:{position:"sticky",top:0,zIndex:100,background:"#07070d",padding:"12px 16px 8px",borderBottom:"1px solid #111"}},
+      h("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
+        h("button",{onClick:onBack,style:{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:20,border:"1px solid #1a1a25",background:"#111118",color:"#888",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}},"← Sessões"),
+        h("span",{style:{fontSize:13,fontWeight:800,color:sc.t,letterSpacing:.5,flex:1}},selS.toUpperCase()),
+        h("span",{style:{fontSize:11,color:"#444",flexShrink:0}},EX.find(x=>x.s===selS)?.d||"")),
+      h("div",{style:{display:"flex",alignItems:"center",gap:10,background:"#111118",border:"1px solid #1a1a25",borderRadius:14,padding:"11px 14px",marginBottom:8}},
+        h("span",{style:{color:"#444",fontSize:16}},"🔍"),
+        h("input",{value:sr,onChange:e=>setSr(e.target.value),placeholder:"Buscar exercício ou músculo...",style:{flex:1,background:"none",border:"none",outline:"none",color:"#e8e8f0",fontSize:15,fontFamily:"inherit"}}),
+        sr&&h("button",{onClick:()=>setSr(""),style:{background:"none",border:"none",color:"#555",fontSize:16,cursor:"pointer",padding:0}},"✕")),
+      h("div",{style:{display:"flex",gap:6,overflowX:"auto",WebkitOverflowScrolling:"touch"}},
+        FS.map(f=>h("button",{key:f,onClick:()=>setAf(af===f?"":f),style:{padding:"5px 12px",borderRadius:14,border:f===af?"none":"1px solid #1a1a25",background:f===af?FC[f]+"20":"transparent",color:f===af?FC[f]:"#555",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",flexShrink:0}},f)))),
+    h("div",{style:{padding:"8px 16px 4px",fontSize:12,color:"#444"}},
+      h("span",{style:{color:sc.t,fontWeight:700}},fl.length)," exercício",fl.length!==1?"s":""),
+    !fl.length&&h("div",{style:{textAlign:"center",padding:48,color:"#444"}},"Nenhum exercício encontrado"),
+    h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,padding:"4px 16px 16px"}},
+      fl.map((ex)=>{
+        const eb=EB[ex.eq]||EB.corporal;
+        const num=sesEx.indexOf(ex)+1;
+        return h("div",{key:ex.id,onClick:()=>onSelect(ex),
+          style:{position:"relative",height:200,borderRadius:16,overflow:"hidden",cursor:"pointer",
+            border:"1px solid "+sc.t+"33",background:sc.bg}},
+          EX_IMGS[ex.id]&&h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
+            style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"top"},
+            onError:e=>{e.target.style.display="none"}}),
+          h("div",{style:{position:"absolute",inset:0,background:"linear-gradient(to bottom,#0003 0%,#000b 60%,#000f 100%)"}}),
+          h("div",{style:{position:"absolute",top:10,left:10,right:10,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+            h("span",{style:{fontSize:9,fontWeight:800,letterSpacing:.8,padding:"3px 8px",borderRadius:8,background:eb.bg,color:eb.c,border:"1px solid "+eb.c+"44"}},eb.l),
+            h("span",{style:{fontSize:10,fontWeight:800,width:22,height:22,borderRadius:"50%",background:sc.t+"33",border:"1px solid "+sc.t+"55",color:sc.t,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},num)),
+          h("div",{style:{position:"absolute",bottom:10,left:12,right:12}},
+            h("div",{style:{fontSize:14,fontWeight:800,color:"#fff",letterSpacing:-.2,marginBottom:3,lineHeight:1.2}},ex.n),
+            h("div",{style:{fontSize:10,color:"#aaa",fontWeight:500}},ex.m)),
+          h("div",{style:{position:"absolute",bottom:0,left:0,right:0,height:3,background:sc.t+"bb"}}));
+      }))
+  );
+}
+
 function TreinoView(){
   const[sr,setSr]=useState("");
-  const[as,setAs]=useState("Todos");
   const[af,setAf]=useState("");
-  const[oc,setOc]=useState(null);
   const[sb,setSb]=useState(null);
+  const[selEx,setSelEx]=useState(null);
   const[st,setSt]=useState(false);
   const[ts,setTs]=useState(90);
   const[tr,setTr]=useState(false);
@@ -399,63 +438,40 @@ function TreinoView(){
   const rt=()=>{setTr(false);setTl(ts)};
   if(selS===null)return h(SessionHomeView,{onSelect:setSelS});
   const sc=SC[selS]||{t:"#ef4444",bg:"#2a0808"};
-  const FS=["Peito","Costas","Ombro","Pernas","Braços","Core"];
   const fl=EX.filter(x=>{if(x.s!==selS)return false;if(af&&x.f!==af)return false;if(sr){const q=sr.toLowerCase();return x.n.toLowerCase().includes(q)||x.m.toLowerCase().includes(q)}return true});
-  const gp={};fl.forEach(x=>{if(!gp[x.s])gp[x.s]=[];gp[x.s].push(x)});
-  return h("div",{style:{paddingBottom:st?130:20}},
-    h("div",{style:{position:"sticky",top:0,zIndex:100,background:"#07070d",padding:"12px 16px 8px",borderBottom:"1px solid #111"}},
+  if(selEx===null)return h(ExerciseGridView,{selS,fl,sc,onBack:()=>{setSelS(null);setSr("");setAf("")},onSelect:setSelEx,sr,setSr,af,setAf});
+  const ex=selEx;const eb=EB[ex.eq]||EB.corporal;const sesEx=EX.filter(x=>x.s===selS);const num=sesEx.indexOf(ex)+1;
+  return h("div",{style:{paddingBottom:st?160:80}},
+    h("div",{style:{position:"sticky",top:0,zIndex:100,background:"#07070d",padding:"12px 16px 10px",borderBottom:"1px solid "+sc.t+"33"}},
       h("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
-        h("button",{onClick:()=>{setSelS(null);setSr("");setAf("")},style:{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:20,border:"1px solid #1a1a25",background:"#111118",color:"#888",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}},"← Sessões"),
-        h("span",{style:{fontSize:13,fontWeight:800,color:sc.t,letterSpacing:.5,flex:1}},selS.toUpperCase()),
-        h("span",{style:{fontSize:11,color:"#444",flexShrink:0}},EX.find(x=>x.s===selS)?.d||"")),
-      h("div",{style:{display:"flex",alignItems:"center",gap:10,background:"#111118",border:"1px solid #1a1a25",borderRadius:14,padding:"11px 14px"}},
-        h("span",{style:{color:"#444",fontSize:16}},"🔍"),
-        h("input",{value:sr,onChange:e=>setSr(e.target.value),placeholder:"Buscar exercício ou músculo...",style:{flex:1,background:"none",border:"none",outline:"none",color:"#e8e8f0",fontSize:15,fontFamily:"inherit"}}),
-        sr&&h("button",{onClick:()=>setSr(""),style:{background:"none",border:"none",color:"#555",fontSize:16,cursor:"pointer",padding:0}},"✕"))),
-    h("div",{style:{display:"flex",gap:6,padding:"6px 16px 10px",overflowX:"auto",WebkitOverflowScrolling:"touch"}},
-      FS.map(f=>h("button",{key:f,onClick:()=>setAf(af===f?"":f),style:{padding:"5px 12px",borderRadius:14,border:f===af?"none":"1px solid #1a1a25",background:f===af?FC[f]+"20":"transparent",color:f===af?FC[f]:"#555",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",flexShrink:0}},f))),
-    h("div",{style:{padding:"0 16px 8px",fontSize:12,color:"#444"}},h("span",{style:{color:"#ef4444",fontWeight:700}},fl.length)," exercício",fl.length!==1?"s":""),
-    h("div",{style:{padding:"0 16px"}},
-      !Object.keys(gp).length&&h("div",{style:{textAlign:"center",padding:48,color:"#444"}},"Nenhum exercício encontrado"),
-      Object.entries(gp).map(([sn,exs])=>{const sc=SC[sn];return h("div",{key:sn,style:{marginBottom:20}},
-        h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10,padding:"8px 12px",background:sc.bg,borderRadius:10,borderLeft:"3px solid "+sc.t}},
-          h("span",{style:{fontSize:12,fontWeight:700,color:sc.t,letterSpacing:.5}},sn.toUpperCase()),
-          h("span",{style:{fontSize:10,color:"#444"}},"•"),
-          h("span",{style:{fontSize:11,color:"#555"}},exs[0].d),
-          h("span",{style:{fontSize:10,color:"#444"}},"•"),
-          h("span",{style:{fontSize:10,color:"#555"}},exs.length+" exerc.")),
-        exs.map(ex=>{const io=oc===ex.id;const eb=EB[ex.eq]||EB.corporal;return h("div",{key:ex.id,style:{background:"#0d0d14",border:"1px solid "+(io?sc.t+"33":"#151520"),borderRadius:14,marginBottom:8,overflow:"hidden",transition:"all .2s"}},
-          h("div",{onClick:()=>setOc(io?null:ex.id),style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px",cursor:"pointer"}},
-            h("div",{style:{flex:1}},
-              h("div",{style:{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}},
-                h("span",{style:{fontSize:15,fontWeight:600}},ex.n),
-                h("span",{style:{display:"inline-block",fontSize:9,fontWeight:700,letterSpacing:.8,padding:"2px 8px",borderRadius:4,background:eb.bg,color:eb.c}},eb.l)),
-              h("div",{style:{fontSize:11,color:"#555",marginTop:3}},ex.m)),
-            h("span",{style:{color:"#444",fontSize:11,transition:"transform .3s",transform:io?"rotate(180deg)":"none",flexShrink:0,marginLeft:8}},"▼")),
-          io&&h("div",{style:{padding:"0 14px 14px",animation:"fadeIn .25s ease"}},
-            h("div",{style:{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}},
-              BK.map((b,i)=>h("button",{key:b,onClick:()=>setSb(sb===ex.id+b?null:ex.id+b),style:{padding:"4px 10px",borderRadius:6,border:"1px solid "+BC[i]+"33",background:sb===ex.id+b?BC[i]+"22":"transparent",color:sb===ex.id+b?BC[i]:"#555",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},BL[i]))),
-            sb&&sb.startsWith(String(ex.id))&&h("div",{style:{background:"#0a0a12",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:13,fontWeight:600,color:BC[BK.indexOf(sb.replace(String(ex.id),""))]}},ex[sb.replace(String(ex.id),"")]||"—"),
-            EX_IMGS[ex.id]&&h("div",{style:{marginBottom:14,borderRadius:12,overflow:"hidden",background:"#111118",border:"1px solid #1a1a25",position:"relative"}},
-              h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
-                onError:e=>{e.target.parentElement.style.display="none"},
-                style:{width:"100%",height:200,objectFit:"cover",objectPosition:"top",display:"block"}}),
-              h("div",{style:{position:"absolute",bottom:0,left:0,right:0,padding:"6px 10px",background:"linear-gradient(transparent,#0d0d14cc)",fontSize:10,color:"#555",fontWeight:600,letterSpacing:.5,textTransform:"uppercase"}},"Demonstração")),
-            h("div",{style:{marginBottom:14}},
-              h("div",{style:{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:sc.t,marginBottom:10}},"Como executar"),
-              ex.st.map((s,i)=>h("div",{key:i,style:{display:"flex",gap:10,marginBottom:7}},
-                h("div",{style:{width:20,height:20,borderRadius:"50%",background:"#111118",border:"1px solid #1e1e30",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:sc.t,flexShrink:0,marginTop:2}},i+1),
-                h("p",{style:{fontSize:13,lineHeight:1.55,color:"#bbb",margin:0}},s)))),
-            h("div",{style:{background:"#0a1a0a",borderLeft:"3px solid #16a34a",borderRadius:"0 8px 8px 0",padding:"10px 12px",marginBottom:8}},
-              h("div",{style:{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#16a34a",marginBottom:4}},"💡 DICA DO COACH"),
-              h("p",{style:{fontSize:12.5,lineHeight:1.5,color:"#888",margin:0}},ex.t)),
-            h("div",{style:{background:"#1a0a0a",borderLeft:"3px solid #ef4444",borderRadius:"0 8px 8px 0",padding:"10px 12px",marginBottom:12}},
-              h("div",{style:{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#ef4444",marginBottom:4}},"⚠️ ERROS COMUNS"),
-              h("p",{style:{fontSize:12.5,lineHeight:1.5,color:"#995555",margin:0}},ex.e)),
-            h("div",{style:{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}},
-              h("span",{style:{fontSize:10,color:"#444",fontWeight:600}},"DESCANSO:"),
-              [45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),style:{padding:"5px 12px",borderRadius:8,border:"1px solid #1e1e30",background:"#111118",color:"#666",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},s+"s")))))}))})
-    ),
+        h("button",{onClick:()=>{setSelEx(null);setSb(null)},style:{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:20,border:"1px solid #1a1a25",background:"#111118",color:"#888",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}},"← "+selS),
+        h("span",{style:{fontSize:11,color:"#444",flexShrink:0}},num+" / "+sesEx.length)),
+      h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+        h("span",{style:{fontSize:15,fontWeight:700,color:"#fff",flex:1,lineHeight:1.3}},ex.n),
+        h("span",{style:{display:"inline-block",fontSize:9,fontWeight:700,letterSpacing:.8,padding:"3px 8px",borderRadius:6,background:eb.bg,color:eb.c,flexShrink:0}},eb.l))),
+    h("div",{style:{padding:"16px 16px 0"}},
+      h("div",{style:{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}},
+        BK.map((b,i)=>h("button",{key:b,onClick:()=>setSb(sb===ex.id+b?null:ex.id+b),style:{padding:"5px 14px",borderRadius:8,border:"1px solid "+BC[i]+"33",background:sb===ex.id+b?BC[i]+"22":"transparent",color:sb===ex.id+b?BC[i]:"#555",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},BL[i]))),
+      sb&&sb.startsWith(String(ex.id))&&h("div",{style:{background:"#0a0a12",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:14,fontWeight:600,color:BC[BK.indexOf(sb.replace(String(ex.id),""))]}},ex[sb.replace(String(ex.id),"")]||"—"),
+      EX_IMGS[ex.id]&&h("div",{style:{marginBottom:16,borderRadius:14,overflow:"hidden",background:"#111118",border:"1px solid #1a1a25",position:"relative"}},
+        h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
+          onError:e=>{e.target.parentElement.style.display="none"},
+          style:{width:"100%",height:260,objectFit:"cover",objectPosition:"top",display:"block"}}),
+        h("div",{style:{position:"absolute",bottom:0,left:0,right:0,padding:"8px 12px",background:"linear-gradient(transparent,#0d0d14cc)",fontSize:10,color:"#555",fontWeight:600,letterSpacing:.5,textTransform:"uppercase"}},"Demonstração")),
+      h("div",{style:{marginBottom:16}},
+        h("div",{style:{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:sc.t,marginBottom:12}},"Como executar"),
+        ex.st.map((s,i)=>h("div",{key:i,style:{display:"flex",gap:10,marginBottom:8}},
+          h("div",{style:{width:22,height:22,borderRadius:"50%",background:"#111118",border:"1px solid #1e1e30",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:sc.t,flexShrink:0,marginTop:2}},i+1),
+          h("p",{style:{fontSize:13,lineHeight:1.6,color:"#bbb",margin:0}},s)))),
+      h("div",{style:{background:"#0a1a0a",borderLeft:"3px solid #16a34a",borderRadius:"0 10px 10px 0",padding:"12px 14px",marginBottom:10}},
+        h("div",{style:{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#16a34a",marginBottom:5}},"💡 DICA DO COACH"),
+        h("p",{style:{fontSize:13,lineHeight:1.5,color:"#888",margin:0}},ex.t)),
+      h("div",{style:{background:"#1a0a0a",borderLeft:"3px solid #ef4444",borderRadius:"0 10px 10px 0",padding:"12px 14px",marginBottom:16}},
+        h("div",{style:{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:"#ef4444",marginBottom:5}},"⚠️ ERROS COMUNS"),
+        h("p",{style:{fontSize:13,lineHeight:1.5,color:"#995555",margin:0}},ex.e)),
+      h("div",{style:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}},
+        h("span",{style:{fontSize:11,color:"#444",fontWeight:600}},"DESCANSO:"),
+        [45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),style:{padding:"7px 16px",borderRadius:10,border:"1px solid #1e1e30",background:"#111118",color:"#666",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}},s+"s")))),
     st&&h("div",{style:{position:"fixed",bottom:64,left:0,right:0,background:"#0d0d14ee",backdropFilter:"blur(16px)",borderTop:"1px solid #1a1a25",padding:"14px 20px",zIndex:200,display:"flex",alignItems:"center",justifyContent:"space-between"}},
       h("div",null,
         h("div",{style:{fontSize:10,color:"#555",fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Descanso"),
