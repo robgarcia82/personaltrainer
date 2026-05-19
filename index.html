@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v69";
+const APP_VERSION="v70";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -484,7 +484,7 @@ function SessionHomeView({onSelect}){
             h("div",{style:{minWidth:0,flex:1}},
               h("div",{style:{fontSize:20,fontWeight:700,color:"rgba(255,255,255,.72)",marginBottom:6,letterSpacing:-.3}},rec.nextLabel||sesHoje.sub),
               h("div",{style:{fontFamily:"'Bebas Neue','SF Pro Display',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif",
-                fontSize:"clamp(56px, 9vw, 104px)",fontWeight:900,color:"#FFFFFF",
+                fontSize:60,fontWeight:900,color:"#FFFFFF",
                 letterSpacing:"-0.06em",lineHeight:.85,marginBottom:8,
                 textTransform:"uppercase",textShadow:"0 6px 24px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.5)"}},sesHoje.s),
               h("div",{style:{fontSize:18,fontWeight:600,color:"rgba(255,255,255,.58)",letterSpacing:-.1}},EX.filter(x=>x.s===sesHoje.s).length+" exercícios")),
