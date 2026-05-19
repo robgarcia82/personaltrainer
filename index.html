@@ -17,7 +17,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body,#root{height:100%;background:#050505;color:#F5F5F5;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body,p,span,div,a,label,button,input,textarea,select{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif}
-h1,h2,h3,h4,h5,h6,.bn{font-family:'Bebas Neue',-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;text-transform:uppercase;letter-spacing:.02em}
+h1,h2,h3,h4,h5,h6,.bn{font-family:'Bebas Neue',-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;text-transform:uppercase;letter-spacing:.06em}
 ::-webkit-scrollbar{display:none}
 input::placeholder{color:#333}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
@@ -29,7 +29,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v55";
+const APP_VERSION="v56";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -674,13 +674,20 @@ function TreinoView(){
         exLog.length===0
           ?h("div",null,
               h("div",{style:{fontSize:10,color:"#A3A3A3",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}},"Primeira série"),
-              blocoKey&&parsedPrescription&&h("div",null,
-                h("div",{style:{fontSize:20,fontWeight:800,color:BC[BK.indexOf(blocoKey)],marginBottom:4}},
-                  parsedPrescription.seriesMin+(parsedPrescription.seriesMax!==parsedPrescription.seriesMin?"–"+parsedPrescription.seriesMax:"")+" séries  ·  "+
+              h("div",{style:{fontSize:12,color:"#A3A3A3",marginBottom:14,fontWeight:500}},"Sem histórico ainda. Escolha uma carga confortável."),
+              h("div",{style:{height:1,background:"#252525",marginBottom:12}}),
+              h("div",{style:{fontSize:10,color:"#A3A3A3",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}},"Hoje tente"),
+              h("div",{style:{display:"flex",gap:12,alignItems:"baseline",marginBottom:6,flexWrap:"wrap"}},
+                h("span",{className:"bn",style:{fontSize:32,fontWeight:900,color:"#F5F5F5",letterSpacing:-.5}},"—"),
+                parsedPrescription&&h("span",{style:{fontSize:18,color:"#A3A3A3",fontWeight:700}},
                   parsedPrescription.rMin+(parsedPrescription.rMax!==parsedPrescription.rMin?"–"+parsedPrescription.rMax:"")+" reps"),
-                h("div",{style:{fontSize:13,fontWeight:700,color:"#f59e0b",marginBottom:6}},
-                  "PSE alvo: "+parsedPrescription.pMin+(parsedPrescription.pMax!==parsedPrescription.pMin?"–"+parsedPrescription.pMax:""))),
-              h("div",{style:{fontSize:12,color:"#A3A3A3",fontStyle:"italic",lineHeight:1.5,marginTop:8}},firstSentence(ex.t)))
+                parsedPrescription&&h("span",{style:{fontSize:14,fontWeight:700,color:"#f59e0b"}},
+                  "PSE "+parsedPrescription.pMin+(parsedPrescription.pMax!==parsedPrescription.pMin?"–"+parsedPrescription.pMax:""))),
+              blocoKey&&h("div",{style:{fontSize:11,color:"#666666",fontWeight:600,letterSpacing:.3,marginTop:2}},
+                BLOCO_NAMES[blocoKey]||""),
+              h("div",{style:{borderTop:"1px solid #252525",paddingTop:10,marginTop:12,display:"flex",gap:8,alignItems:"flex-start"}},
+                h("span",{style:{fontSize:10,color:"#C6FF00",fontWeight:900,textTransform:"uppercase",letterSpacing:.8,flexShrink:0,marginTop:1}},"Foco"),
+                h("span",{style:{fontSize:12,color:"#A3A3A3",lineHeight:1.4}},firstSentence(ex.t))))
           :h("div",null,
               h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
                 h("div",{style:{fontSize:10,color:"#A3A3A3",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase"}},"Última vez"),
