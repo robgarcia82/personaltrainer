@@ -55,7 +55,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v109";
+const APP_VERSION="v110";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1452,12 +1452,16 @@ function TreinoView(){
       background:"linear-gradient(180deg,rgba(5,5,5,0) 0%,rgba(5,5,5,0.92) 35%,#050505 100%)",
       padding:"24px 24px calc(24px + env(safe-area-inset-bottom,0px))"}},
       h("div",{style:{maxWidth:860,margin:"0 auto",width:"100%"}},
-        allSeriesDone
-          ?h("button",{onClick:()=>{if(nextEx){setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);setExOpen(true);setCoachFeedback(null);setSelEx(nextEx);}else{saveWorkoutSession();}},
-              style:{width:"100%",height:72,borderRadius:24,border:"none",color:"#fff",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,background:nextEx?"#16a34a":"#7c3aed",boxShadow:"0 18px 50px "+(nextEx?"rgba(22,163,74,.30)":"rgba(124,58,237,.30)")}},
-              nextEx?"Próximo Exercício  →":"✓  Encerrar Treino")
-          :h("button",{onClick:()=>{setCoachFeedback(null);setCntd(3);setSt(false);setTr(false);},
-              style:{width:"100%",height:72,borderRadius:24,border:"none",color:"#050505",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,background:"#C6FF00",boxShadow:"0 18px 50px rgba(198,255,0,.30)"}},"▶  Iniciar Série"))),
+        // Botão único na action bar — 3 estados, mesmo visual lime/preto:
+        // 1. ainda faltam séries → "Iniciar Série" (abre countdown)
+        // 2. allSeriesDone + nextEx → "Próximo exercício" (avança)
+        // 3. allSeriesDone + último → "Treino concluído" (saveWorkoutSession)
+        h("button",{
+          onClick:allSeriesDone
+            ?()=>{if(nextEx){setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);setExOpen(true);setCoachFeedback(null);setSelEx(nextEx);}else{saveWorkoutSession();}}
+            :()=>{setCoachFeedback(null);setCntd(3);setSt(false);setTr(false);},
+          style:{width:"100%",height:72,borderRadius:24,border:"none",color:"#050505",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,background:"#C6FF00",boxShadow:"0 18px 50px rgba(198,255,0,.30)"}
+        },allSeriesDone?(nextEx?"Próximo exercício":"Treino concluído"):"Iniciar Série"))),
     // ── FLOW SHELL ────────────────────────────────────────────────
     // Wrapper persistente cobrindo todas as etapas do fluxo de série.
     // Mantém #050505 sólido entre transições — sem flicker. Cada etapa
