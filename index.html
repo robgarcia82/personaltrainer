@@ -578,24 +578,40 @@ function TreinoView(){
   }
   const showExSteps=exOpen!==null?exOpen:exLog.length===0;
   return h("div",{style:{paddingBottom:(canEndWorkout||(nextEx&&seriesCt>=(plannedSeries>0?plannedSeries:3)))?148:80,background:"#F7F7F3",minHeight:"100vh"}},
-    h("div",{style:{position:"sticky",top:0,zIndex:100,background:"rgba(247,247,243,0.96)",backdropFilter:"blur(12px)",padding:"12px 16px 10px",borderBottom:"1px solid #EAEAE6"}},
-      h("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
-        h("button",{onClick:()=>{setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);setExOpen(null);setCoachFeedback(null);},style:{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:20,border:"1px solid #EAEAE6",background:"#FFFFFF",color:"#6B6B6B",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}},"← "+selS),
-        h("span",{style:{fontSize:11,color:"#8A8A8A",flexShrink:0}},num+" / "+sesEx.length)),
-      h("div",{style:{display:"flex",alignItems:"center",gap:8}},
-        h("span",{style:{fontSize:15,fontWeight:700,color:"#151515",flex:1,lineHeight:1.3}},ex.n),
-        h("span",{style:{display:"inline-block",fontSize:9,fontWeight:700,letterSpacing:.8,padding:"3px 8px",borderRadius:6,background:eb.bg,color:eb.c,flexShrink:0}},eb.l))),
-    h("div",{style:{maxWidth:740,margin:"0 auto",padding:"12px 16px 16px"}},
+    // ── HERO ───────────────────────────────────────────────────
+    h("div",{style:{position:"relative",width:"100%",height:380,overflow:"hidden",background:"linear-gradient(135deg,#2a2a2a,#151515)"}},
+      EX_IMGS[ex.id]&&h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
+        onError:e=>{e.target.style.display="none"},
+        style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top"}}),
+      h("div",{style:{position:"absolute",inset:0,
+        background:"linear-gradient(to bottom,rgba(0,0,0,.55) 0%,rgba(0,0,0,.15) 28%,transparent 48%,rgba(0,0,0,.88) 100%)"}}),
+      // Top bar (glass)
+      h("div",{style:{position:"absolute",top:0,left:0,right:0,
+        padding:"calc(env(safe-area-inset-top,0px) + 14px) 16px 14px",
+        display:"flex",alignItems:"center",gap:10}},
+        h("button",{onClick:()=>{setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);setExOpen(null);setCoachFeedback(null);},
+          style:{display:"flex",alignItems:"center",gap:5,padding:"8px 16px",borderRadius:22,
+            border:"1px solid rgba(255,255,255,.25)",background:"rgba(255,255,255,.15)",
+            backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
+            color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}},"← "+selS),
+        h("span",{style:{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:600,flexShrink:0}},num+" / "+sesEx.length),
+        h("span",{style:{flex:1}}),
+        h("span",{style:{display:"inline-block",fontSize:10,fontWeight:700,letterSpacing:1,
+          padding:"5px 10px",borderRadius:8,background:"rgba(255,255,255,.15)",
+          backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
+          border:"1px solid rgba(255,255,255,.25)",color:"#fff",flexShrink:0}},eb.l)),
+      // Bottom info
+      h("div",{style:{position:"absolute",bottom:72,left:0,right:0,padding:"0 20px"}},
+        h("div",{style:{maxWidth:740,margin:"0 auto"}},
+          h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,.7)",textTransform:"uppercase",marginBottom:6}},selS),
+          h("div",{style:{fontSize:30,fontWeight:800,color:"#fff",letterSpacing:-.5,lineHeight:1.15,marginBottom:6,textShadow:"0 2px 12px rgba(0,0,0,.4)"}},ex.n),
+          h("div",{style:{fontSize:13,color:"rgba(255,255,255,.7)",fontWeight:500}},ex.m+" · "+eb.l)))),
 
-      // ── IMAGEM DO EXERCÍCIO ────────────────────────────────────
-      EX_IMGS[ex.id]&&h("div",{style:{marginBottom:18,borderRadius:28,overflow:"hidden",height:220,boxShadow:"0 4px 20px rgba(0,0,0,.10)"}},
-        h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
-          style:{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top"},
-          onError:e=>{e.target.parentElement.style.display="none"}})),
+    h("div",{style:{maxWidth:740,margin:"0 auto",padding:"0 20px 16px",marginTop:-56,position:"relative",zIndex:2}},
 
       // ── CARD PRÓXIMA SÉRIE ──────────────────────────────────────
-      h("div",{style:{background:"#FFFFFF",borderRadius:24,padding:"20px",
-        border:"1px solid #EAEAE6",marginBottom:14,boxShadow:"0 2px 12px rgba(0,0,0,.07)"}},
+      h("div",{style:{background:"#FFFFFF",borderRadius:28,padding:"24px",
+        border:"1px solid #EAEAE6",marginBottom:16,boxShadow:"0 12px 40px rgba(0,0,0,.10)"}},
         exLog.length===0
           ?h("div",null,
               h("div",{style:{fontSize:10,color:"#8A8A8A",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}},"Primeira série"),
@@ -651,10 +667,10 @@ function TreinoView(){
       h("div",{style:{marginBottom:14}},
         allSeriesDone
           ?h("button",{onClick:()=>{if(nextEx){setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);setExOpen(null);setCoachFeedback(null);setSelEx(nextEx);}else{saveWorkoutSession();}},
-              style:{width:"100%",height:64,borderRadius:14,border:"none",color:"#fff",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"inherit",letterSpacing:.5,background:nextEx?"#16a34a":"#7c3aed"}},
+              style:{width:"100%",height:72,borderRadius:24,border:"none",color:"#fff",fontSize:22,fontWeight:800,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,background:nextEx?"#16a34a":"#7c3aed",boxShadow:"0 8px 24px "+(nextEx?"rgba(22,163,74,.35)":"rgba(124,58,237,.35)")}},
               nextEx?"Próximo Exercício  →":"✓  Encerrar Treino")
           :h("button",{onClick:()=>{setCoachFeedback(null);setCntd(3);setSt(false);setTr(false);},disabled:exRun||cntd!==null,
-              style:{width:"100%",height:64,borderRadius:18,border:"none",color:"#fff",fontSize:17,fontWeight:800,cursor:exRun||cntd!==null?"not-allowed":"pointer",fontFamily:"inherit",letterSpacing:.5,background:exRun||cntd!==null?"#C8C8C4":sc.t,opacity:exRun||cntd!==null?.6:1}},"▶  Iniciar Série")),
+              style:{width:"100%",height:72,borderRadius:24,border:"none",color:"#fff",fontSize:22,fontWeight:800,cursor:exRun||cntd!==null?"not-allowed":"pointer",fontFamily:"inherit",letterSpacing:.3,background:exRun||cntd!==null?"#C8C8C4":"#EF4444",opacity:exRun||cntd!==null?.6:1,boxShadow:exRun||cntd!==null?"none":"0 8px 24px rgba(239,68,68,.35)"}},"▶  Iniciar Série")),
 
       // ── CHIPS DE BLOCO ────────────────────────────────────────────
       h("div",{style:{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}},
