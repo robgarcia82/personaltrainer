@@ -34,7 +34,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v93";
+const APP_VERSION="v94";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1515,6 +1515,7 @@ function CoachView(){
   const[diagOpen,setDiagOpen]=useState(false);
   const[diagResult,setDiagResult]=useState(null);
   const[currentUid,setCurrentUid]=useState(()=>{try{return getUserId();}catch(e){return"";}});
+  const[dataVersion,setDataVersion]=useState(0);
   const[openIds,setOpenIds]=useState(()=>{
     try{const r=localStorage.getItem("workout_log");const arr=r?JSON.parse(r):[];if(!Array.isArray(arr)||arr.length===0)return new Set();
       let maxTs=0,key=null;
@@ -1772,8 +1773,8 @@ function CoachView(){
         h("button",{onClick:()=>{
             if(confirm("Tem certeza que deseja apagar todo o histórico de treinos deste dispositivo? Essa ação não pode ser desfeita.")){
               clearWorkoutHistory();
-              alert("Histórico apagado.");
-              location.reload();
+              setDataVersion(v=>v+1);
+              alert("Histórico apagado deste dispositivo. Os dados na nuvem permanecem como backup.");
             }
           },
           style:{width:"100%",padding:"13px 14px",borderRadius:12,border:"1px solid #252525",background:"transparent",color:"#EF4444",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:10,letterSpacing:.2}},
