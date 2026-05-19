@@ -687,11 +687,61 @@ function TreinoView(){
         tr&&h("button",{onClick:()=>setTr(false),style:{padding:"16px 36px",borderRadius:14,background:"#ef4444",border:"none",color:"#fff",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}},"⏸"),
         h("button",{onClick:rt,style:{padding:"16px 24px",borderRadius:14,background:"#151520",border:"1px solid #1e1e30",color:"#888",fontSize:18,cursor:"pointer",fontFamily:"inherit"}},"↺"),
         h("button",{onClick:()=>{setSt(false);setTr(false)},style:{padding:"16px 24px",borderRadius:14,background:"#151520",border:"1px solid #1e1e30",color:"#888",fontSize:18,cursor:"pointer",fontFamily:"inherit"}},"✕"))),
-    exRun&&h("div",{style:{position:"fixed",bottom:64,left:0,right:0,background:"#0d0d14f2",backdropFilter:"blur(16px)",borderTop:"2px solid "+sc.t+"66",padding:"16px 20px",zIndex:200,display:"flex",alignItems:"center",justifyContent:"space-between"}},
-      h("div",null,
-        h("div",{style:{fontSize:10,color:sc.t,fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Série em andamento"),
-        h("div",{style:{fontSize:44,fontWeight:900,fontVariantNumeric:"tabular-nums",letterSpacing:-1,color:"#fff"}},fmtT(exTime))),
-      h("button",{onClick:()=>{setExRun(false);setLastDur(exTime);setCarga(exLog[0]?.carga??0);setReps(exLog[0]?.reps??0);setShowCarga(true);},style:{padding:"14px 28px",borderRadius:12,background:sc.t,border:"none",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}},"Finalizar Série")),
+    exRun&&h("div",{style:{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",overflow:"hidden"}},
+      // Fundo — imagem ou cor sólida
+      EX_IMGS[ex.id]
+        ?h("img",{src:EX_IMGS[ex.id],alt:ex.n,
+            style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top"}})
+        :h("div",{style:{position:"absolute",inset:0,background:"#151515"}}),
+      // Gradiente de legibilidade
+      h("div",{style:{position:"absolute",inset:0,
+        background:"linear-gradient(to bottom,rgba(0,0,0,.55) 0%,rgba(0,0,0,.2) 40%,rgba(0,0,0,.88) 100%)"}}),
+      // Conteúdo
+      h("div",{style:{position:"relative",zIndex:1,display:"flex",flexDirection:"column",
+        height:"100%",maxWidth:740,margin:"0 auto",width:"100%",
+        padding:"0 24px",boxSizing:"border-box",
+        paddingBottom:"max(32px,env(safe-area-inset-bottom,32px))"}},
+        // ── TOPO ──────────────────────────────────────────────────
+        h("div",{style:{display:"flex",alignItems:"center",gap:12,
+          paddingTop:"calc(env(safe-area-inset-top,0px) + 52px)",paddingBottom:16}},
+          h("button",{onClick:()=>{setExRun(false);setExTime(0);},
+            style:{padding:"8px 18px",borderRadius:22,cursor:"pointer",fontFamily:"inherit",
+              background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.25)",
+              color:"#fff",fontSize:13,fontWeight:600,backdropFilter:"blur(8px)"}},
+            "← Cancelar"),
+          h("div",{style:{flex:1,minWidth:0}},
+            h("div",{style:{fontSize:16,fontWeight:700,color:"#fff",lineHeight:1.2,
+              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},ex.n),
+            h("div",{style:{fontSize:12,color:"rgba(255,255,255,.55)",marginTop:2}},
+              ex.m+(eb.l?" · "+eb.l:"")))),
+        // ── ESPAÇADOR ─────────────────────────────────────────────
+        h("div",{style:{flex:1}}),
+        // ── CENTRO ────────────────────────────────────────────────
+        h("div",{style:{textAlign:"center",marginBottom:48}},
+          // Série N de M
+          h("div",{style:{fontSize:13,fontWeight:700,letterSpacing:2,
+            color:"rgba(255,255,255,.55)",textTransform:"uppercase",marginBottom:20}},
+            "SÉRIE "+(seriesCt+1)+(plannedSeries>0?" DE "+plannedSeries:"")),
+          // Timer grande
+          h("div",{style:{fontSize:88,fontWeight:900,color:"#fff",
+            fontVariantNumeric:"tabular-nums",letterSpacing:-4,lineHeight:1,
+            textShadow:"0 4px 32px rgba(0,0,0,.4)"}},fmtT(exTime)),
+          h("div",{style:{fontSize:11,fontWeight:600,letterSpacing:2,
+            color:"rgba(255,255,255,.45)",textTransform:"uppercase",marginTop:10}},
+            "tempo da série"),
+          // Meta de reps/PSE
+          sug.rMin>0&&h("div",{style:{marginTop:28,fontSize:19,fontWeight:600,
+            color:"rgba(255,255,255,.8)",letterSpacing:-.2}},
+            sug.rMin+(sug.rMax!==sug.rMin?"–"+sug.rMax:"")+" reps · PSE "+
+            sug.pMin+(sug.pMax!==sug.pMin?"–"+sug.pMax:""))),
+        // ── BOTÃO FINALIZAR ────────────────────────────────────────
+        h("button",{
+          onClick:()=>{setExRun(false);setLastDur(exTime);setCarga(exLog[0]?.carga??0);setReps(exLog[0]?.reps??0);setShowCarga(true);},
+          style:{width:"100%",height:72,borderRadius:24,border:"none",
+            background:"#EF4444",color:"#fff",fontSize:22,fontWeight:800,
+            cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,
+            boxShadow:"0 8px 40px rgba(239,68,68,.55)"}},
+          "Finalizar Série"))),
     cntd!==null&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:500,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
       h("div",{style:{fontSize:11,color:"#555",fontWeight:700,letterSpacing:3,textTransform:"uppercase",marginBottom:24}},"Prepare-se"),
       h("div",{style:{fontSize:160,fontWeight:900,color:sc.t,lineHeight:1,fontVariantNumeric:"tabular-nums",textShadow:"0 0 80px "+sc.t+"55"}},cntd),
