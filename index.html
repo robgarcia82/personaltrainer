@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v82";
+const APP_VERSION="v83";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -396,7 +396,7 @@ function clearWorkoutHistory(){
   try{localStorage.removeItem(STORAGE_KEY);}catch(e){console.error("clearWorkoutHistory",e);}
 }
 async function resetAppData(){
-  const APP_KEYS=["workout_log","workout_sessions","guia_user_id"];
+  const APP_KEYS=["workout_log","workout_sessions","guia_user_id","guia_user_id_override"];
   APP_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
   try{sessionStorage.removeItem("__guia_restored_session");}catch(e){}
   // IndexedDB
@@ -485,12 +485,34 @@ function importWorkoutData(file){
 // ─────────────────────────────────────────────────────────
 const SUPABASE_URL="https://htfpzsxuoiwimnryrimc.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_ZZ-gvN6s-a03eR12vbUROA_FxF73jKZ";
-// User ID FIXO — sobrevive a limpeza de cache/localStorage.
-// Se você quiser múltiplos usuários no mesmo Supabase, troque
-// este valor por algo único por pessoa.
+// User ID base — fixo, sobrevive a limpeza de cache.
+// Pode ser sobrescrito por localStorage["guia_user_id_override"]
+// pra recuperar dados antigos salvos sob outro user_id.
 const STABLE_USER_ID="roberto-garcia";
+const USER_ID_OVERRIDE_KEY="guia_user_id_override";
 function isSupabaseConfigured(){return !!(SUPABASE_URL&&SUPABASE_ANON_KEY);}
-function getUserId(){return STABLE_USER_ID;}
+function getUserId(){
+  try{const o=localStorage.getItem(USER_ID_OVERRIDE_KEY);if(o)return o;}catch(e){}
+  return STABLE_USER_ID;
+}
+function setUserIdOverride(id){
+  try{if(id&&id.trim())localStorage.setItem(USER_ID_OVERRIDE_KEY,id.trim());else localStorage.removeItem(USER_ID_OVERRIDE_KEY);}catch(e){}
+}
+// Lista user_ids distintos na nuvem (debug/diagnóstico)
+async function listCloudUserIds(){
+  if(!isSupabaseConfigured())return{ok:false,reason:"not_configured"};
+  try{
+    const res=await fetch(SUPABASE_URL+"/rest/v1/workout_logs?select=user_id&limit=1000",{
+      headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY}
+    });
+    if(!res.ok)return{ok:false,reason:"http_"+res.status,body:await res.text().catch(()=>"")};
+    const rows=await res.json();
+    const counts={};
+    rows.forEach(r=>{if(r&&r.user_id){counts[r.user_id]=(counts[r.user_id]||0)+1;}});
+    const sorted=Object.entries(counts).map(([id,n])=>({id,n})).sort((a,b)=>b.n-a.n);
+    return{ok:true,users:sorted};
+  }catch(e){return{ok:false,reason:"network",error:e.message};}
+}
 function entryToRow(e,userId){return{
   id:String(e.id),user_id:userId,ts:Number(e.ts)||0,
   date:e.date||null,session:e.session||null,
@@ -559,14 +581,22 @@ async function syncBidirectional(){
   const push=await syncWorkoutLogToCloud();
   return{ok:true,fetched:remote.entries.length,merged:merged.length,pushed:push.pushed||0};
 }
-// Debounce do push após salvar série
+// Debounce do push após salvar série; primeira chamada após boot
+// é imediata pra garantir replicação rápida em caso de fechamento.
 let _syncTimer=null;
+let _syncedOnceThisSession=false;
+window._lastSyncResult=null;
 function _scheduleSync(){
   if(!isSupabaseConfigured())return;
   clearTimeout(_syncTimer);
+  const delay=_syncedOnceThisSession?1200:0;
   _syncTimer=setTimeout(()=>{
-    syncWorkoutLogToCloud().then(r=>{if(!r.ok)console.warn("Push Supabase:",r);else console.log("Push Supabase OK ("+r.pushed+")");});
-  },1200);
+    syncWorkoutLogToCloud().then(r=>{
+      window._lastSyncResult=r;
+      if(!r.ok)console.warn("Push Supabase:",r);
+      else{console.log("Push Supabase OK ("+r.pushed+")");_syncedOnceThisSession=true;}
+    });
+  },delay);
 }
 // Auto-restore + sync no boot — IDB primeiro, depois Supabase.
 // Se trouxer dados novos, recarrega a página UMA vez (guard por
@@ -1423,6 +1453,9 @@ function CoachView(){
   const[guiaOpen,setGuiaOpen]=useState(false);
   const[syncStatus,setSyncStatus]=useState("idle");
   const[syncMsg,setSyncMsg]=useState("");
+  const[diagOpen,setDiagOpen]=useState(false);
+  const[diagResult,setDiagResult]=useState(null);
+  const[currentUid,setCurrentUid]=useState(()=>{try{return getUserId();}catch(e){return"";}});
   const[openIds,setOpenIds]=useState(()=>{
     try{const r=localStorage.getItem("workout_log");const arr=r?JSON.parse(r):[];if(!Array.isArray(arr)||arr.length===0)return new Set();
       let maxTs=0,key=null;
@@ -1696,8 +1729,49 @@ function CoachView(){
               alert("Texto não confere. Reset cancelado.");
             }
           },
-          style:{width:"100%",padding:"13px 14px",borderRadius:12,border:"1px solid rgba(239,68,68,0.35)",background:"rgba(239,68,68,0.12)",color:"#EF4444",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,textTransform:"uppercase"}},
-          "⚠  Resetar app")))
+          style:{width:"100%",padding:"13px 14px",borderRadius:12,border:"1px solid rgba(239,68,68,0.35)",background:"rgba(239,68,68,0.12)",color:"#EF4444",fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,textTransform:"uppercase",marginBottom:isSupabaseConfigured()?16:0}},
+          "⚠  Resetar app"),
+        // ── Diagnóstico Supabase (recuperação de dados antigos) ──
+        isSupabaseConfigured()&&h("div",{style:{borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:14,marginTop:6}},
+          h("button",{onClick:()=>setDiagOpen(v=>!v),
+            style:{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 12px",borderRadius:10,border:"1px solid #252525",background:"transparent",color:"#A3A3A3",fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",cursor:"pointer",fontFamily:"inherit"}},
+            h("span",null,"Diagnóstico nuvem"),
+            h("span",{style:{fontSize:10,transition:"transform .2s",transform:diagOpen?"rotate(180deg)":"none"}},"▼")),
+          diagOpen&&h("div",{style:{marginTop:12,padding:"12px 14px",background:"#0D0D0D",borderRadius:10}},
+            h("div",{style:{fontSize:11,color:"#A3A3A3",marginBottom:6}},
+              h("span",{style:{color:"#666666"}},"User ID atual: "),
+              h("span",{style:{color:"#C6FF00",fontWeight:700,fontFamily:"monospace"}},currentUid)),
+            h("div",{style:{fontSize:11,color:"#A3A3A3",marginBottom:10,lineHeight:1.4}},
+              "Se você tinha dados salvos sob outro user_id, liste a nuvem abaixo e cole o ID antigo pra recuperar."),
+            h("button",{onClick:async()=>{
+                setDiagResult({loading:true});
+                const r=await listCloudUserIds();
+                setDiagResult(r);
+              },
+              style:{width:"100%",padding:"9px 12px",borderRadius:10,border:"1px solid #252525",background:"#121212",color:"#A3A3A3",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,textTransform:"uppercase",marginBottom:10}},
+              "Listar user_ids na nuvem"),
+            diagResult&&diagResult.loading&&h("div",{style:{fontSize:11,color:"#A3A3A3",marginBottom:10}},"Carregando..."),
+            diagResult&&!diagResult.loading&&!diagResult.ok&&h("div",{style:{fontSize:11,color:"#EF4444",marginBottom:10}},"Erro: "+(diagResult.reason||"?")+(diagResult.body?" · "+String(diagResult.body).slice(0,200):"")),
+            diagResult&&diagResult.ok&&h("div",{style:{marginBottom:10}},
+              diagResult.users.length===0
+                ?h("div",{style:{fontSize:11,color:"#A3A3A3"}},"Nuvem vazia (0 séries em qualquer user_id).")
+                :h("div",{style:{display:"flex",flexDirection:"column",gap:4}},
+                    diagResult.users.map(u=>h("button",{key:u.id,onClick:()=>{
+                        if(confirm("Trocar user_id local para \""+u.id+"\"? Vai puxar essas "+u.n+" séries.")){
+                          setUserIdOverride(u.id);setCurrentUid(u.id);location.reload();
+                        }
+                      },
+                      style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid #252525",background:u.id===currentUid?"rgba(198,255,0,0.10)":"transparent",color:u.id===currentUid?"#C6FF00":"#F5F5F5",fontSize:11,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}},
+                      h("span",{style:{fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:"1 1 0"}},u.id),
+                      h("span",{style:{color:"#A3A3A3",fontWeight:700,flexShrink:0}},u.n+" séries"))))),
+            h("input",{type:"text",placeholder:"ou cole um user_id manualmente",
+              defaultValue:"",
+              onKeyDown:e=>{if(e.key==="Enter"){const v=e.target.value.trim();if(v){setUserIdOverride(v);setCurrentUid(v);location.reload();}}},
+              style:{width:"100%",padding:"9px 12px",borderRadius:10,border:"1px solid #252525",background:"#121212",color:"#F5F5F5",fontSize:11,fontFamily:"monospace",boxSizing:"border-box",outline:"none"}}),
+            h("div",{style:{fontSize:10,color:"#666666",marginTop:6}},"Pressione Enter pra aplicar (recarrega o app)."),
+            localStorage.getItem(USER_ID_OVERRIDE_KEY)&&h("button",{onClick:()=>{setUserIdOverride(null);setCurrentUid(STABLE_USER_ID);location.reload();},
+              style:{marginTop:10,width:"100%",padding:"8px 12px",borderRadius:10,border:"1px solid #252525",background:"transparent",color:"#A3A3A3",fontSize:10,cursor:"pointer",fontFamily:"inherit",letterSpacing:.5,textTransform:"uppercase"}},
+              "Limpar override · voltar para "+STABLE_USER_ID)))))
   );
 }
 
