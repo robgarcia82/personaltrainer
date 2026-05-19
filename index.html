@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v64";
+const APP_VERSION="v65";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -466,10 +466,13 @@ function SessionHomeView({onSelect}){
   );
 }
 
-function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock}){
+function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock,setCurrentBlock,setSb}){
   const sesEx=EX.filter(x=>x.s===selS);
   const sess=SESSIONS.find(s=>s.s===selS)||{};
   const bk=currentBlock||"b1";
+  const BK_LOCAL=["b1","b2","b3","dl"];
+  const BLOCO_NAMES_LOCAL={b1:"Bloco 1 · Volume",b2:"Bloco 2 · Intensidade",b3:"Bloco 3 · Carga",dl:"Deload · Recuperação"};
+  const BLOCO_BENEFITS_LOCAL={b1:"Constrói base, técnica e resistência muscular.",b2:"Aumenta o estímulo e aproxima da falha com controle.",b3:"Foca força, progressão de peso e séries mais pesadas.",dl:"Reduz fadiga e prepara o corpo para evoluir de novo."};
   function fmtPres(ex){
     const str=ex[bk];if(!str)return null;
     const sm=str.match(/(\d+)(?:-\d+)?\s*[x×]/i);
@@ -480,6 +483,20 @@ function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock}){
     const p=pm?(pm[2]?pm[1]+"–"+pm[2]:pm[1]):null;
     return sm[1]+"×"+r+(p?" · PSE "+p:"");
   }
+  function fmtBlockPres(blockKey){
+    // Pega prescrição genérica do primeiro exercício da sessão como amostra
+    const sample=sesEx.find(x=>x[blockKey])||sesEx[0];
+    if(!sample||!sample[blockKey])return null;
+    const str=sample[blockKey];
+    const sm=str.match(/(\d+)(?:-(\d+))?\s*[x×]/i);
+    const rm=str.match(/[x×]\s*(\d+)(?:-(\d+))?/i);
+    const pm=str.match(/PSE\s*(\d+)(?:-(\d+))?/i);
+    if(!sm||!rm)return null;
+    const ss=sm[2]?sm[1]+"–"+sm[2]:sm[1];
+    const r=rm[2]?rm[1]+"–"+rm[2]:rm[1];
+    const p=pm?(pm[2]?pm[1]+"–"+pm[2]:pm[1]):null;
+    return ss+"×"+r+(p?" · PSE "+p:"");
+  }
   return h("div",{style:{background:"#050505",minHeight:"100vh",paddingBottom:24}},
     h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
       // ── Botão voltar ────────────────────────────────────────────
@@ -489,11 +506,33 @@ function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock}){
           fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",marginBottom:24}},
         "← Voltar"),
       // ── Header editorial ────────────────────────────────────────
-      h("div",{style:{marginBottom:36}},
+      h("div",{style:{marginBottom:28}},
         h("h1",{style:{fontSize:"clamp(48px, 8vw, 60px)",fontWeight:900,letterSpacing:-2,
           color:"#F5F5F5",margin:0,lineHeight:1}},selS),
         h("div",{style:{fontSize:15,color:"#A3A3A3",marginTop:12,fontWeight:500,letterSpacing:-.1}},
           (sess.sub||"")+(sess.sub?" · ":"")+sesEx.length+" exercícios")),
+      // ── PERIODIZAÇÃO (cards lado a lado) ───────────────────────
+      h("div",{style:{marginBottom:28}},
+        h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"#666666",textTransform:"uppercase",marginBottom:12}},"Periodização"),
+        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:10}},
+          BK_LOCAL.map(b=>{
+            const active=bk===b;
+            const parts=(BLOCO_NAMES_LOCAL[b]||"").split(" · ");
+            const title=parts[0]||"";
+            const sub=parts[1]||"";
+            const pres=fmtBlockPres(b);
+            return h("div",{key:b,
+              onClick:()=>{if(setCurrentBlock)setCurrentBlock(b);if(setSb)setSb(null);},
+              style:{padding:"14px 14px",borderRadius:16,
+                background:active?"rgba(198,255,0,0.10)":"#121212",
+                border:"1px solid "+(active?"#C6FF00":"transparent"),
+                cursor:"pointer",fontFamily:"inherit",
+                boxShadow:active?"0 8px 24px rgba(198,255,0,.15)":"0 4px 14px rgba(0,0,0,.22)"}},
+              h("div",{style:{fontFamily:"-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',sans-serif",fontSize:18,fontWeight:800,color:active?"#C6FF00":"#F5F5F5",lineHeight:1.1,letterSpacing:-.3}},title),
+              h("div",{style:{fontSize:11,color:active?"#C6FF00":"#A3A3A3",fontWeight:600,marginTop:3,letterSpacing:.2,opacity:active?.85:1}},sub),
+              pres&&h("div",{style:{fontSize:10,color:active?"#C6FF00":"#A3A3A3",fontWeight:700,marginTop:10,letterSpacing:.2,opacity:active?.9:.8}},pres),
+              h("div",{style:{fontSize:11,color:active?"rgba(255,255,255,.7)":"#A3A3A3",fontWeight:500,lineHeight:1.4,marginTop:8}},BLOCO_BENEFITS_LOCAL[b]));
+          }))),
       // ── Label "Exercícios" ──────────────────────────────────────
       h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"#666666",
         textTransform:"uppercase",marginBottom:14}},"Exercícios"),
@@ -578,7 +617,7 @@ function TreinoView(){
   if(selS===null)return h(SessionHomeView,{onSelect:setSelS});
   const sc=SC[selS]||{t:"#ef4444",bg:"#2a0808"};
   const fl=EX.filter(x=>{if(x.s!==selS)return false;if(af&&x.f!==af)return false;return true});
-  if(selEx===null)return h(ExerciseGridView,{selS,sc,onBack:()=>{setSelS(null)},onSelect:setSelEx,currentBlock});
+  if(selEx===null)return h(ExerciseGridView,{selS,sc,onBack:()=>{setSelS(null)},onSelect:setSelEx,currentBlock,setCurrentBlock,setSb});
   const ex=selEx;const eb=EB[ex.eq]||EB.corporal;const sesEx=EX.filter(x=>x.s===selS);const num=sesEx.indexOf(ex)+1;
   const blocoKey=sb&&sb.startsWith(String(ex.id))?sb.replace(String(ex.id),""):currentBlock;
   const plannedSeries=blocoKey?parseInt((ex[blocoKey]||"").match(/(\d+)/)?.[1]||"0")||0:0;
@@ -743,35 +782,6 @@ function TreinoView(){
           :h("button",{onClick:()=>{setCoachFeedback(null);setCntd(3);setSt(false);setTr(false);},disabled:exRun||cntd!==null,
               style:{width:"100%",height:72,borderRadius:24,border:"none",color:exRun||cntd!==null?"#666666":"#050505",fontSize:22,fontWeight:900,cursor:exRun||cntd!==null?"not-allowed":"pointer",fontFamily:"inherit",letterSpacing:.3,background:exRun||cntd!==null?"#252525":"#C6FF00",opacity:exRun||cntd!==null?.7:1,boxShadow:exRun||cntd!==null?"none":"0 8px 24px rgba(198,255,0,.35)"}},"▶  Iniciar Série")),
 
-      // ── PERIODIZAÇÃO (4 cards lado a lado, sem scroll) ───────────
-      h("div",{style:{marginBottom:14}},
-        h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:1.5,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Periodização"),
-        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:8}},
-          BK.map(b=>{
-            const active=blocoKey===b;
-            const parts=(BLOCO_NAMES[b]||"").split(" · ");
-            const title=parts[0]||"";
-            const sub=parts[1]||"";
-            const p=parseBloco(ex[b]||"");
-            let pres=null;
-            if(p){
-              const rr=p.rMax!==p.rMin?p.rMin+"–"+p.rMax:String(p.rMin);
-              const pp=p.pMax!==p.pMin?p.pMin+"–"+p.pMax:String(p.pMin);
-              const ss=p.seriesMax!==p.seriesMin?p.seriesMin+"–"+p.seriesMax:String(p.seriesMin);
-              pres=ss+"×"+rr+" · PSE "+pp;
-            }
-            return h("div",{key:b,
-              onClick:()=>{setSb(ex.id+b);setCurrentBlock(b);},
-              style:{padding:"14px 14px",borderRadius:16,
-                background:active?"rgba(198,255,0,0.10)":"#121212",
-                border:"1px solid "+(active?"#C6FF00":"transparent"),
-                cursor:"pointer",fontFamily:"inherit",
-                boxShadow:active?"0 8px 24px rgba(198,255,0,.15)":"0 4px 14px rgba(0,0,0,.22)"}},
-              h("div",{style:{fontFamily:"-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',sans-serif",fontSize:18,fontWeight:800,color:active?"#C6FF00":"#F5F5F5",lineHeight:1.1,letterSpacing:-.3}},title),
-              h("div",{style:{fontSize:11,color:active?"#C6FF00":"#A3A3A3",fontWeight:600,marginTop:3,letterSpacing:.2,opacity:active?.85:1}},sub),
-              pres&&h("div",{style:{fontSize:10,color:active?"#C6FF00":"#A3A3A3",fontWeight:700,marginTop:10,letterSpacing:.2,opacity:active?.9:.8}},pres),
-              h("div",{style:{fontSize:11,color:active?"rgba(255,255,255,.7)":"#A3A3A3",fontWeight:500,lineHeight:1.4,marginTop:8}},BLOCO_BENEFITS[b]));
-          }))),
 
       // ── HISTÓRICO ─────────────────────────────────────────────────
       exLog.length>0&&h("div",{style:{marginBottom:14}},
