@@ -355,6 +355,32 @@ function SessionHomeView({onSelect}){
   const hoje=diasSessao[new Date().getDay()]||null;
   const sesHoje=hoje?SESSIONS.find(s=>s.s===hoje):null;
   const sesOutras=sesHoje?SESSIONS.filter(s=>s.s!==sesHoje.s):SESSIONS;
+  // ── Métricas do mês ──────────────────────────────────────────
+  const log=(()=>{try{const r=localStorage.getItem("workout_log");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}})();
+  const now=new Date(),Y=now.getFullYear(),M=now.getMonth();
+  const inMonth=log.filter(e=>{const d=new Date(e.ts);return d.getFullYear()===Y&&d.getMonth()===M;});
+  const treinosNoMes=new Set(inMonth.map(e=>new Date(e.ts).toDateString())).size;
+  const seriesEf=inMonth.reduce((a,e)=>{const p=Number(e.pse||0);return a+(p>=7?1:p>=5?0.5:0);},0);
+  const repsTotais=inMonth.reduce((a,e)=>a+(Number(e.reps)||0),0);
+  const pseValidos=inMonth.map(e=>Number(e.pse)).filter(p=>p>0);
+  const pseMed=pseValidos.length?(pseValidos.reduce((a,b)=>a+b,0)/pseValidos.length):0;
+  const fmtSer=v=>Number.isInteger(v)?String(v):v.toFixed(1);
+  const fmtPse=v=>v>0?v.toFixed(1):"–";
+  // ── Destaque de evolução ─────────────────────────────────────
+  const byEx={};
+  inMonth.forEach(e=>{if(Number(e.carga||0)<=0)return;if(!byEx[e.exerciseId])byEx[e.exerciseId]=[];byEx[e.exerciseId].push(e);});
+  let bestEvo=null;
+  Object.values(byEx).forEach(arr=>{
+    if(arr.length<2)return;
+    arr.sort((a,b)=>a.ts-b.ts);
+    const first=Number(arr[0].carga),last=Number(arr[arr.length-1].carga);
+    const delta=parseFloat((last-first).toFixed(1));
+    if(delta>0&&(!bestEvo||delta>bestEvo.delta)){bestEvo={name:arr[0].exerciseName||"Exercício",delta};}
+  });
+  // ── Card de métrica (helper local) ───────────────────────────
+  const metricCard=(value,label)=>h("div",{style:{background:"#FFFFFF",border:"1px solid #EAEAE6",borderRadius:20,padding:"20px 18px",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}},
+    h("div",{style:{fontSize:38,fontWeight:900,color:"#151515",letterSpacing:-1.5,lineHeight:1}},value),
+    h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#8A8A8A",textTransform:"uppercase",marginTop:10}},label));
   return h("div",{style:{background:"#F7F7F3",minHeight:"100vh",paddingBottom:32}},
     h("div",{style:{maxWidth:740,margin:"0 auto",padding:"28px 20px 0"}},
       // Header
@@ -380,6 +406,27 @@ function SessionHomeView({onSelect}){
               h("div",{style:{fontSize:12,color:"rgba(255,255,255,.50)"}},EX.filter(x=>x.s===sesHoje.s).length+" exercícios")),
             h("div",{style:{width:58,height:58,borderRadius:"50%",background:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 24px rgba(239,68,68,.55)",flexShrink:0,marginLeft:16}},
               h("span",{style:{fontSize:24,color:"#fff",marginLeft:4}},"▶"))))),
+      // ── Seção "Este mês" (2x2 big numbers) ──────────────────
+      h("div",{style:{marginBottom:20}},
+        h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"#C0C0BC",textTransform:"uppercase",marginBottom:14}},"Este mês"),
+        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12}},
+          metricCard(String(treinosNoMes),"Treinos"),
+          metricCard(fmtSer(seriesEf),"Séries efetivas"),
+          metricCard(String(repsTotais),"Reps totais"),
+          metricCard(fmtPse(pseMed),"PSE médio"))),
+      // ── Destaque de evolução ────────────────────────────────
+      h("div",{style:{marginBottom:28}},
+        h("div",{style:{background:"#FFFFFF",border:"1px solid #EAEAE6",borderRadius:20,padding:"14px 16px",display:"flex",alignItems:"center",gap:14,boxShadow:"0 1px 4px rgba(0,0,0,.05)"}},
+          h("div",{style:{width:44,height:44,borderRadius:14,background:bestEvo?"#ECFDF5":"#F2F2EF",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
+            h("span",{style:{fontSize:22,color:bestEvo?"#16A34A":"#8A8A8A",lineHeight:1,fontWeight:700}},bestEvo?"↗":"·")),
+          h("div",{style:{flex:1,minWidth:0}},
+            h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#8A8A8A",textTransform:"uppercase",marginBottom:3}},"Destaque de evolução"),
+            bestEvo
+              ?h("div",{style:{fontSize:14,fontWeight:600,color:"#151515",lineHeight:1.3}},
+                  bestEvo.name+" · ",
+                  h("span",{style:{color:"#16A34A",fontWeight:800}},"+"+bestEvo.delta+"kg"),
+                  h("span",{style:{color:"#8A8A8A",fontWeight:500}}," este mês"))
+              :h("div",{style:{fontSize:13,color:"#8A8A8A",lineHeight:1.3}},"Ainda sem progressão detectada este mês")))),
       // Seção outros/todos
       h("div",null,
         h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"#C0C0BC",textTransform:"uppercase",marginBottom:14}},
