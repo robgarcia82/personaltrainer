@@ -55,7 +55,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v105";
+const APP_VERSION="v106";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -396,13 +396,50 @@ const TRAINING_CYCLE=[
 
 // ── Persistência: workout_log + backup IndexedDB ───────────────
 const STORAGE_KEY="workout_log";
-const WORKOUT_LOG_DELETED_KEY="workout_log_deleted";
+const WORKOUT_LOG_DELETED_AT_KEY="workout_log_deleted_at";
+// Chaves antigas de backup que precisam ser limpas defensivamente
+const LEGACY_BACKUP_KEYS=["workout_log_deleted","workout_backup","guia_treino_backup","workout_log_backup"];
 const DB_NAME="guia_treino_db";
 const DB_STORE="backups";
 const MAX_BACKUPS=20;
-function isWorkoutLogDeleted(){try{return localStorage.getItem(WORKOUT_LOG_DELETED_KEY)==="true";}catch(e){return false;}}
-function getWorkoutLog(){try{const r=localStorage.getItem(STORAGE_KEY);const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}}
-function setWorkoutLog(log){try{if(Array.isArray(log)&&log.length>0){try{localStorage.removeItem(WORKOUT_LOG_DELETED_KEY);}catch(e){}}localStorage.setItem(STORAGE_KEY,JSON.stringify(log));saveBackupIDB(log);_scheduleSync();}catch(e){console.error("setWorkoutLog",e);}}
+// Flag setada quando o usuário apaga histórico OU reseta app. Bloqueia
+// TODA tentativa de restore (IDB, Cloud, leituras diretas via getWorkoutLog).
+// Só é limpa quando: (1) usuário salva uma série nova, ou (2) usuário muda
+// user_id via Diagnóstico nuvem (intenção explícita de restaurar).
+function isWorkoutLogDeleted(){
+  try{
+    const at=Number(localStorage.getItem(WORKOUT_LOG_DELETED_AT_KEY)||0);
+    if(at>0)return true;
+    // backward compat: flag legada (v97-v105) "workout_log_deleted"="true"
+    if(localStorage.getItem("workout_log_deleted")==="true")return true;
+    return false;
+  }catch(e){return false;}
+}
+function markWorkoutLogDeleted(){
+  try{localStorage.setItem(WORKOUT_LOG_DELETED_AT_KEY,String(Date.now()));}catch(e){}
+}
+function clearDeletionFlag(){
+  try{localStorage.removeItem(WORKOUT_LOG_DELETED_AT_KEY);}catch(e){}
+  try{localStorage.removeItem("workout_log_deleted");}catch(e){}
+}
+function getWorkoutLog(){
+  // Defesa #1: se a flag está setada, retorna [] mesmo que algum write
+  // tenha bypassed setWorkoutLog e injetado dados em localStorage["workout_log"].
+  if(isWorkoutLogDeleted()){
+    console.log("[GuiaTreino] getWorkoutLog: flag setada, retornando [] (bloqueando restore tardio)");
+    return[];
+  }
+  try{const r=localStorage.getItem(STORAGE_KEY);const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}
+}
+function setWorkoutLog(log){
+  try{
+    // Salvar log não-vazio = intenção de continuar com novos dados → libera a flag
+    if(Array.isArray(log)&&log.length>0){clearDeletionFlag();}
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(log||[]));
+    saveBackupIDB(log);
+    _scheduleSync();
+  }catch(e){console.error("setWorkoutLog",e);}
+}
 function openIDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error("no indexedDB"));return;}const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(DB_STORE))db.createObjectStore(DB_STORE,{keyPath:"id",autoIncrement:true});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
 function saveBackupIDB(log){
   openIDB().then(db=>{
@@ -422,52 +459,73 @@ function getLastBackupIDB(){return new Promise(resolve=>{openIDB().then(db=>{con
 function clearIDBBackups(){return new Promise(resolve=>{openIDB().then(db=>{const tx=db.transaction(DB_STORE,"readwrite");const store=tx.objectStore(DB_STORE);const req=store.clear();req.onsuccess=()=>resolve(true);req.onerror=()=>resolve(false);}).catch(()=>resolve(false));});}
 // (auto-restore movido para autoRestoreAndSync, no final do bloco Supabase)
 async function clearWorkoutHistory(){
-  // 1. Marca flag ANTES de qualquer remoção — se algo falhar no meio,
-  //    a flag por si só já impede o restore automático no próximo boot.
-  try{localStorage.setItem(WORKOUT_LOG_DELETED_KEY,"true");}catch(e){}
-  // 2. Remove log local
-  try{localStorage.removeItem(STORAGE_KEY);}catch(e){console.error("clearWorkoutHistory",e);}
-  // 3. Limpa backups do IndexedDB (defesa contra restore via getLastBackupIDB)
-  try{await clearIDBBackups();}catch(e){console.warn("clearIDBBackups",e);}
-  // 4. Apaga dados do usuário no Supabase (best-effort). Se a policy de
-  //    DELETE não existir, falha silenciosamente — a flag local ainda
-  //    bloqueia restore na próxima sessão.
+  console.log("[GuiaTreino] clearWorkoutHistory: iniciando apagamento definitivo");
+  // 1. Marca flag de deleção com timestamp ANTES de qualquer remoção. Mesmo
+  //    se etapas subsequentes falharem, a flag sozinha já bloqueia o restore.
+  markWorkoutLogDeleted();
+  console.log("[GuiaTreino] flag workout_log_deleted_at setada =",localStorage.getItem(WORKOUT_LOG_DELETED_AT_KEY));
+  // 2. Remove log principal
+  try{localStorage.removeItem(STORAGE_KEY);}catch(e){console.error("clearWorkoutHistory STORAGE_KEY",e);}
+  // 3. Defesa: limpa qualquer chave de backup legada/desconhecida que possa
+  //    existir em localStorage. Não apaga settings nem user_id_override —
+  //    só backups e flags antigas.
+  LEGACY_BACKUP_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+  // 4. Limpa backups do IndexedDB (defesa contra restore via getLastBackupIDB)
+  try{await clearIDBBackups();console.log("[GuiaTreino] IndexedDB backups limpos");}catch(e){console.warn("clearIDBBackups",e);}
+  // 5. Apaga dados do usuário no Supabase (best-effort). Se a policy "anon
+  //    delete" não existir, falha — mas a flag local ainda bloqueia restore.
   let cloudResult=null;
   if(isSupabaseConfigured()){
-    try{cloudResult=await deleteCloudUserLog();}catch(e){cloudResult={ok:false,reason:"exception",error:e.message};}
+    try{cloudResult=await deleteCloudUserLog();console.log("[GuiaTreino] cloud delete:",cloudResult);}catch(e){cloudResult={ok:false,reason:"exception",error:e.message};}
   }
   return{ok:true,cloudResult};
 }
 async function resetAppData(){
-  const APP_KEYS=["workout_log",WORKOUT_LOG_DELETED_KEY,"workout_sessions","guia_user_id","guia_user_id_override"];
+  console.log("[GuiaTreino] resetAppData: iniciando wipe completo");
+  // 1. Cloud primeiro (usa config ainda em memória antes de derrubar IDB)
+  if(isSupabaseConfigured()){
+    try{const cr=await deleteCloudUserLog();console.log("[GuiaTreino] reset cloud delete:",cr);}catch(e){}
+  }
+  // 2. Remove TODAS as chaves do app de localStorage
+  const APP_KEYS=[
+    "workout_log","workout_log_deleted_at","workout_log_deleted",
+    "workout_sessions","workout_backup","guia_treino_backup","workout_log_backup",
+    "currentBlock","training_cycle","guia_treino_settings",
+    "guia_user_id","guia_user_id_override"
+  ];
   APP_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
   try{sessionStorage.removeItem("__guia_restored_session");}catch(e){}
   try{sessionStorage.removeItem("__guia_restore_msg");}catch(e){}
-  // Supabase (best-effort — antes do IDB pra usar a config que ainda está em memória)
-  if(isSupabaseConfigured()){
-    try{await deleteCloudUserLog();}catch(e){}
-  }
-  // IndexedDB
+  // 3. Re-marca flag de deleção APÓS limpar tudo. Isso garante que, se o cloud
+  //    delete falhou (policy anon delete ausente), o próximo boot ainda
+  //    bloqueia o restore. Sem isso, o reset deixava brecha pro cloud
+  //    ressuscitar tudo via autoRestoreAndSync.
+  markWorkoutLogDeleted();
+  console.log("[GuiaTreino] reset: flag re-setada pra bloquear cloud restore");
+  // 4. IndexedDB — apaga DB inteiro
   try{
     if(window.indexedDB){
       await new Promise(resolve=>{
         const req=indexedDB.deleteDatabase(DB_NAME);
         req.onsuccess=()=>resolve();req.onerror=()=>resolve();req.onblocked=()=>resolve();
       });
+      console.log("[GuiaTreino] reset: IDB deletado");
     }
   }catch(e){}
-  // Cache API (PWA)
+  // 5. Cache API (PWA)
   try{
     if(window.caches){
       const keys=await caches.keys();
       await Promise.all(keys.filter(k=>k.startsWith("guia-treino")).map(k=>caches.delete(k)));
+      console.log("[GuiaTreino] reset: Cache API limpa");
     }
   }catch(e){}
-  // Service Worker
+  // 6. Service Worker
   try{
     if(navigator.serviceWorker){
       const regs=await navigator.serviceWorker.getRegistrations();
       await Promise.all(regs.map(r=>r.unregister()));
+      console.log("[GuiaTreino] reset: SW unregistered");
     }
   }catch(e){}
 }
@@ -545,7 +603,17 @@ function getUserId(){
   return STABLE_USER_ID;
 }
 function setUserIdOverride(id){
-  try{if(id&&id.trim())localStorage.setItem(USER_ID_OVERRIDE_KEY,id.trim());else localStorage.removeItem(USER_ID_OVERRIDE_KEY);}catch(e){}
+  try{
+    if(id&&id.trim()){
+      localStorage.setItem(USER_ID_OVERRIDE_KEY,id.trim());
+      // Mudar user_id manualmente = intenção explícita de restaurar dados
+      // desse ID — libera a flag de deleção pra permitir o restore.
+      clearDeletionFlag();
+      console.log("[GuiaTreino] setUserIdOverride: flag liberada (user trocou user_id)");
+    }else{
+      localStorage.removeItem(USER_ID_OVERRIDE_KEY);
+    }
+  }catch(e){}
 }
 // Lista user_ids distintos na nuvem (debug/diagnóstico)
 async function listCloudUserIds(){
@@ -637,6 +705,12 @@ function mergeWorkoutLogs(local,remote){
 }
 async function syncBidirectional(){
   if(!isSupabaseConfigured())return{ok:false,reason:"not_configured"};
+  // Defesa #2: se flag setada, NÃO restaura da nuvem nem escreve em local.
+  // Botão "Sincronizar agora" no Coach é o único trigger desta função.
+  if(isWorkoutLogDeleted()){
+    console.log("[GuiaTreino] syncBidirectional bloqueado pela flag workout_log_deleted_at");
+    return{ok:false,reason:"workout_log_deleted_blocked"};
+  }
   const remote=await fetchWorkoutLogFromCloud();
   if(!remote.ok)return remote;
   const local=getWorkoutLog();
@@ -699,7 +773,7 @@ try{
     //    nem de IDB local nem de Supabase. A flag só é limpa quando uma
     //    nova série é salva (ver setWorkoutLog) ou via Resetar app.
     if(isWorkoutLogDeleted()){
-      console.log("Guia Treino: workout_log marcado como apagado — restore automático pulado.");
+      console.log("[GuiaTreino] autoRestoreAndSync: flag workout_log_deleted_at setada — restore pulado (IDB + Cloud bloqueados)");
       return;
     }
     let cur=getWorkoutLog();
@@ -753,7 +827,7 @@ try{
 
 function SessionHomeView({onSelect}){
   // ── Log + helpers de ciclo ──────────────────────────────────
-  const log=(()=>{try{const r=localStorage.getItem("workout_log");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}})();
+  const log=getWorkoutLog();
   function dateKey(ts){const d=new Date(ts);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
   const todayK=dateKey(Date.now());
   function getCompletedWorkoutDays(){
@@ -1596,13 +1670,13 @@ function CoachView(){
   const[currentUid,setCurrentUid]=useState(()=>{try{return getUserId();}catch(e){return"";}});
   const[dataVersion,setDataVersion]=useState(0);
   const[openIds,setOpenIds]=useState(()=>{
-    try{const r=localStorage.getItem("workout_log");const arr=r?JSON.parse(r):[];if(!Array.isArray(arr)||arr.length===0)return new Set();
+    try{const arr=getWorkoutLog();if(!Array.isArray(arr)||arr.length===0)return new Set();
       let maxTs=0,key=null;
       arr.forEach(e=>{if(e&&e.session&&e.ts>maxTs){maxTs=e.ts;key=e.date+"|"+e.session;}});
       return key?new Set([key]):new Set();}catch(e){return new Set();}
   });
   function toggleOpen(key){setOpenIds(prev=>{const next=new Set(prev);if(next.has(key))next.delete(key);else next.add(key);return next;});}
-  function getLog(){try{const r=localStorage.getItem("workout_log");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}}
+  function getLog(){return getWorkoutLog();}
   function parseRange(str){if(!str)return null;const m=str.match(/PSE\s*([0-9]+)(?:-([0-9]+))?/i);if(!m)return null;return{pMin:parseInt(m[1]),pMax:parseInt(m[2]||m[1])};}
   function fmtDate(d){const p=String(d).split("/");return p.length===3?p[0]+"/"+p[1]:d;}
   function pseClr(p){return p<=4?"#A3A3A3":p<=6?"#F59E0B":p<=8?"#C6FF00":"#EF4444";}
