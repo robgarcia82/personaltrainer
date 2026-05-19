@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v84";
+const APP_VERSION="v85";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -598,15 +598,40 @@ function _scheduleSync(){
     });
   },delay);
 }
-// Auto-restore + sync no boot — IDB primeiro, depois Supabase.
-// Se trouxer dados novos, recarrega a página UMA vez (guard por
-// sessionStorage) para o React renderizar com tudo populado.
+// Banner visível pra debug rápido (top fixo, dismissable em erro)
+function showCloudBanner(text,type){
+  let b=document.getElementById("__cloud_banner");
+  if(!b){
+    b=document.createElement("div");
+    b.id="__cloud_banner";
+    b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:10000;padding:10px 16px;text-align:center;font:600 12px -apple-system,'SF Pro Text',sans-serif;letter-spacing:.3px;transition:opacity .3s;cursor:pointer;";
+    b.onclick=()=>{b.style.opacity="0";setTimeout(()=>b.remove(),300);};
+    document.body.appendChild(b);
+  }
+  b.textContent=text+"  ✕";
+  b.style.opacity="1";
+  const bg=type==="ok"?"rgba(198,255,0,.18)":type==="err"?"rgba(239,68,68,.20)":"rgba(245,158,11,.18)";
+  const fg=type==="ok"?"#C6FF00":type==="err"?"#EF4444":"#F59E0B";
+  const bd=type==="ok"?"rgba(198,255,0,.35)":type==="err"?"rgba(239,68,68,.4)":"rgba(245,158,11,.35)";
+  b.style.background=bg;b.style.color=fg;b.style.borderBottom="1px solid "+bd;
+  if(type==="ok"){setTimeout(()=>{if(b.parentNode){b.style.opacity="0";setTimeout(()=>b.remove(),300);}},4000);}
+}
+// Mostra banner pós-reload se houve restore
+try{
+  const restoreMsg=sessionStorage.getItem("__guia_restore_msg");
+  if(restoreMsg){
+    sessionStorage.removeItem("__guia_restore_msg");
+    setTimeout(()=>showCloudBanner(restoreMsg,"ok"),500);
+  }
+}catch(e){}
+// Auto-restore + sync no boot
 (async function autoRestoreAndSync(){
   const FLAG="__guia_restored_session";
+  const uid=getUserId();
   try{
     let cur=getWorkoutLog();
     let changed=false;
-    // 1. IDB local (sobrevive a limpeza parcial de cache em alguns casos)
+    // 1. IDB local
     if(cur.length===0){
       const backup=await getLastBackupIDB();
       if(backup&&Array.isArray(backup.workout_log)&&backup.workout_log.length>0){
@@ -615,7 +640,7 @@ function _scheduleSync(){
         changed=true;cur=backup.workout_log;
       }
     }
-    // 2. Supabase — puxa nuvem, mescla, salva
+    // 2. Supabase
     if(isSupabaseConfigured()){
       const remote=await fetchWorkoutLogFromCloud();
       if(remote.ok){
@@ -623,20 +648,34 @@ function _scheduleSync(){
         if(merged.length>cur.length){
           localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));
           saveBackupIDB(merged);
-          console.log("Guia Treino: Supabase trouxe "+(merged.length-cur.length)+" séries (total "+merged.length+")");
+          const newCount=merged.length-cur.length;
+          console.log("Guia Treino: Supabase trouxe "+newCount+" séries (total "+merged.length+")");
+          try{sessionStorage.setItem("__guia_restore_msg","☁ Nuvem: "+newCount+" séries restauradas ("+uid+")");}catch(e){}
           changed=true;cur=merged;
+        }else if(cur.length===0&&remote.entries.length===0){
+          // cur vazio e nuvem vazia — ALERTA visível
+          showCloudBanner("☁ Nuvem vazia para user_id \""+uid+"\". Tap p/ fechar.","err");
         }
-        // push delta (idempotente)
-        syncWorkoutLogToCloud().then(r=>{if(r.ok)console.log("Push OK ("+r.pushed+")");else console.warn("Push:",r);});
-      }else{console.warn("Fetch Supabase:",remote);}
+        syncWorkoutLogToCloud().then(r=>{
+          window._lastSyncResult=r;
+          if(r.ok)console.log("Push OK ("+r.pushed+")");
+          else{console.warn("Push:",r);showCloudBanner("☁ Push falhou: "+(r.reason||"?"),"err");}
+        });
+      }else{
+        console.warn("Fetch Supabase:",remote);
+        showCloudBanner("☁ Fetch falhou: "+(remote.reason||"?")+(remote.body?" · "+String(remote.body).slice(0,80):""),"err");
+      }
     }
-    // 3. Reload uma única vez se restaurou dados (React precisa re-render)
+    // 3. Reload se restaurou
     if(changed&&!sessionStorage.getItem(FLAG)){
       sessionStorage.setItem(FLAG,"1");
       console.log("Guia Treino: reload para aplicar restore");
       location.reload();
     }
-  }catch(e){console.error("autoRestoreAndSync",e);}
+  }catch(e){
+    console.error("autoRestoreAndSync",e);
+    showCloudBanner("☁ Erro: "+e.message,"err");
+  }
 })();
 
 function SessionHomeView({onSelect}){
