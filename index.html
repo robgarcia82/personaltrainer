@@ -25,6 +25,7 @@ input::placeholder{color:#333}
 @keyframes screenDissolve{from{opacity:0;transform:translateY(8px);filter:blur(2px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
 .screen-enter{animation:screenDissolve 220ms ease-out both}
 @media (prefers-reduced-motion:reduce){.screen-enter{animation:none !important}}
+body.in-exercise .app-navbar{display:none}
 </style>
 </head>
 <body>
@@ -33,7 +34,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v87";
+const APP_VERSION="v88";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1003,6 +1004,7 @@ function TreinoView(){
   useEffect(()=>{if(tr&&tl>0)tf.current=setTimeout(()=>setTl(v=>v-1),1000);else if(tl===0&&tr){setTr(false);setSt(false);try{navigator.vibrate&&navigator.vibrate([200,100,200,100,200])}catch(e){}try{const ac=new(window.AudioContext||window.webkitAudioContext)();[0,.35,.7].forEach(t=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.setValueAtTime(.6,ac.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+t+.28);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.3);});}catch(e){}}return()=>clearTimeout(tf.current);},[tr,tl]);
   useEffect(()=>{if(cntd===null||cntd<=0)return;cdRef.current=setTimeout(()=>{if(cntd===1){setCntd(null);setExRun(true);setExTime(0);}else setCntd(v=>v-1);try{navigator.vibrate&&navigator.vibrate(60);}catch(e){}},1000);return()=>clearTimeout(cdRef.current);},[cntd]);
   useEffect(()=>{if(exRun)etRef.current=setInterval(()=>setExTime(v=>v+1),1000);else clearInterval(etRef.current);return()=>clearInterval(etRef.current);},[exRun]);
+  useEffect(()=>{if(selEx)document.body.classList.add("in-exercise");else document.body.classList.remove("in-exercise");return()=>document.body.classList.remove("in-exercise");},[selEx]);
   const stT=(s)=>{setTs(s);setTl(s)};
   const rt=()=>{setTr(false);setTl(ts)};
   if(selS===null)return h(SessionHomeView,{onSelect:setSelS});
@@ -1919,7 +1921,7 @@ function App(){
     tab==="treino"&&h(TreinoView,null),
     tab==="dieta"&&h(DietaView,null),
     tab==="coach"&&h(CoachView,null),
-    h("div",{style:{position:"fixed",bottom:0,left:0,right:0,background:"#0D0D0D",borderTop:"1px solid #252525",display:"flex",zIndex:300,paddingBottom:"env(safe-area-inset-bottom)"}},
+    h("div",{className:"app-navbar",style:{position:"fixed",bottom:0,left:0,right:0,background:"#0D0D0D",borderTop:"1px solid #252525",display:"flex",zIndex:300,paddingBottom:"env(safe-area-inset-bottom)"}},
       TABS.map(t=>h("button",{key:t.id,onClick:()=>setTab(t.id),style:{flex:1,padding:"10px 0 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,fontFamily:"inherit"}},
         h("span",{style:{fontSize:20,filter:tab===t.id?"none":"grayscale(1) opacity(0.45)"}},t.icon),
         h("span",{style:{fontSize:10,fontWeight:700,color:tab===t.id?"#C6FF00":"#666666",letterSpacing:.5}},t.label))))
