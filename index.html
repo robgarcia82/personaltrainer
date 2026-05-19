@@ -565,16 +565,20 @@ function TreinoView(){
   const cfChip=coachFeedback?(SUG_CHIPS[coachFeedback.status]||SUG_CHIPS.ideal):null;
   const cargaProg=getWorkoutLog().filter(e=>e.exerciseId===ex.id&&Number(e.carga)>0).sort((a,b)=>a.ts-b.ts).slice(-6);
   const showProg=cargaProg.length>=6;
-  let progColor="#8A8A8A",progLabel="Carga estável",progPath="",progPts=[];
+  let progDir="stable",progStatus="Estável",progColor="#8A8A8A",progPillBg="#F2F2EF",progPillC="#8A8A8A",progMainNumber="",progFirst=0,progLast=0,progPath="",progPts=[];
   if(showProg){
     const cs=cargaProg.map(e=>Number(e.carga));
-    const first=cs[0],last=cs[cs.length-1];
-    if(last>first){progColor="#16A34A";progLabel="Tendência subindo";}
-    else if(last<first){progColor="#EF4444";progLabel="Carga caiu";}
-    const W=240,H=44,pad=6;
-    const mn=Math.min(...cs),mx=Math.max(...cs),rg=Math.max(1,mx-mn);
-    progPts=cs.map((c,i)=>{const x=pad+(i*(W-2*pad)/(cs.length-1));const y=H-pad-((c-mn)/rg)*(H-2*pad);return[x,y];});
-    progPath="M"+progPts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" L");
+    progFirst=cs[0];progLast=cs[cs.length-1];
+    const delta=progLast-progFirst;
+    if(delta===0){progDir="stable";progStatus="Estável";progColor="#8A8A8A";progPillBg="#F2F2EF";progPillC="#8A8A8A";progMainNumber=progLast+"kg";}
+    else if(delta>0){progDir="up";progStatus="Subindo";progColor="#16A34A";progPillBg="#ECFDF5";progPillC="#16A34A";progMainNumber="+"+delta+"kg";}
+    else{progDir="down";progStatus="Caiu";progColor="#EF4444";progPillBg="#FEF2F2";progPillC="#EF4444";progMainNumber=delta+"kg";}
+    if(progDir!=="stable"){
+      const W=240,H=44,pad=4;
+      const mn=Math.min(...cs),mx=Math.max(...cs),rg=Math.max(1,mx-mn);
+      progPts=cs.map((c,i)=>{const x=pad+(i*(W-2*pad)/(cs.length-1));const y=H-pad-((c-mn)/rg)*(H-2*pad);return[x,y];});
+      progPath="M"+progPts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" L");
+    }
   }
   const showExSteps=exOpen!==null?exOpen:exLog.length===0;
   return h("div",{style:{paddingBottom:(canEndWorkout||(nextEx&&seriesCt>=(plannedSeries>0?plannedSeries:3)))?148:80,background:"#F7F7F3",minHeight:"100vh"}},
@@ -643,16 +647,21 @@ function TreinoView(){
                 h("span",{style:{fontSize:14,color:"#6B7280",fontWeight:600,lineHeight:1.4,flex:1,minWidth:0}},coachFeedback.motivo)),
               h("div",{style:{borderTop:"1px solid #F0F0EC",paddingTop:10,marginTop:coachFeedback?0:12,display:"flex",gap:8,alignItems:"flex-start"}},
                 h("span",{style:{fontSize:10,color:"#22c55e",fontWeight:800,textTransform:"uppercase",letterSpacing:.8,flexShrink:0,marginTop:1}},"Foco"),
-                h("span",{style:{fontSize:12,color:"#6B6B6B",lineHeight:1.4}},firstSentence(ex.t))),
-              showProg&&h("div",{style:{borderTop:"1px solid #EAEAE6",marginTop:16,paddingTop:14}},
-                h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,gap:8,flexWrap:"wrap"}},
-                  h("span",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"#8A8A8A"}},"Progressão de carga"),
-                  h("span",{style:{fontSize:11,fontWeight:700,color:progColor}},progLabel)),
-                h("svg",{viewBox:"0 0 240 44",preserveAspectRatio:"none",style:{width:"100%",height:44,display:"block",marginBottom:8}},
-                  h("path",{d:progPath,stroke:progColor,strokeWidth:2,fill:"none",strokeLinecap:"round",strokeLinejoin:"round",vectorEffect:"non-scaling-stroke"}),
-                  progPts.map((p,i)=>h("circle",{key:i,cx:p[0],cy:p[1],r:2.6,fill:progColor}))),
-                h("div",{style:{fontSize:11,color:"#151515",fontWeight:600,letterSpacing:.2,lineHeight:1.4}},
-                  cargaProg.map(e=>Number(e.carga)+"kg").join("  →  "))))),
+                h("span",{style:{fontSize:12,color:"#6B6B6B",lineHeight:1.4}},firstSentence(ex.t))))),
+
+      // ── PROGRESSÃO DE CARGA (card autônomo, só se ≥6 séries) ──
+      showProg&&h("div",{style:{background:"#FFFFFF",border:"1px solid #EAEAE6",borderRadius:24,padding:"18px 20px",boxShadow:"0 2px 12px rgba(0,0,0,.05)",marginTop:16,marginBottom:16}},
+        h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,gap:8}},
+          h("span",{style:{fontSize:11,fontWeight:900,letterSpacing:2,color:"#8A8A8A"}},"PROGRESSÃO DE CARGA"),
+          h("span",{style:{display:"inline-flex",alignItems:"center",padding:"4px 10px",borderRadius:999,background:progPillBg,fontSize:11,fontWeight:700,color:progPillC}},progStatus)),
+        h("div",{style:{fontSize:42,fontWeight:900,color:"#151515",letterSpacing:-1,lineHeight:1}},progMainNumber),
+        h("div",{style:{fontSize:12,color:"#8A8A8A",marginTop:4,fontWeight:600}},
+          progDir==="stable"?"carga atual":"nas últimas 6 séries"),
+        h("div",{style:{fontSize:14,color:"#8A8A8A",marginTop:8}},
+          progDir==="stable"?"Sem mudança nas últimas 6 séries.":progFirst+"kg → "+progLast+"kg"),
+        progDir!=="stable"&&h("svg",{viewBox:"0 0 240 44",preserveAspectRatio:"none",style:{width:"100%",height:44,display:"block",marginTop:12}},
+          h("path",{d:progPath,stroke:progColor,strokeWidth:3,fill:"none",strokeLinecap:"round",strokeLinejoin:"round",vectorEffect:"non-scaling-stroke"}),
+          progPts.map((p,i)=>h("circle",{key:i,cx:p[0],cy:p[1],r:1.5,fill:progColor})))),
 
       // ── DESCANSO ──────────────────────────────────────────────────
       h("div",{style:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:10}},
