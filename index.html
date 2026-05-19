@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v61";
+const APP_VERSION="v62";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -233,14 +233,14 @@ const EX_IMGS={
 };
 
 const SC={
-  "Superiores 1":{t:"#ef4444",bg:"#2a0808"},
-  "Superiores 2":{t:"#60a5fa",bg:"#0c1e3a"},
-  "Superiores 3":{t:"#f59e0b",bg:"#2a1a00"},
-  "Inferiores":{t:"#4ade80",bg:"#0a2618"},
-  "Bônus":{t:"#f472b6",bg:"#2d0a1e"}
+  "Superiores 1":{t:"#C6FF00",bg:"#1a2200"},
+  "Superiores 2":{t:"#00E5FF",bg:"#001f24"},
+  "Superiores 3":{t:"#A855F7",bg:"#1c0f2a"},
+  "Inferiores":{t:"#F59E0B",bg:"#2a1a00"},
+  "Bônus":{t:"#F43F5E",bg:"#2a0a13"}
 };
-const FC={"Peito":"#ef4444","Costas":"#3b82f6","Ombro":"#f59e0b","Pernas":"#22c55e","Braços":"#a855f7","Core":"#ec4899"};
-const EB={mc1000:{bg:"rgba(37,99,235,0.16)",c:"#60A5FA",l:"MC-1000"},halter:{bg:"rgba(198,255,0,0.14)",c:"#C6FF00",l:"HALTER"},sandbag:{bg:"rgba(34,197,94,0.14)",c:"#22C55E",l:"SANDBAG"},corporal:{bg:"rgba(168,85,247,0.16)",c:"#C084FC",l:"CORPORAL"}};
+const FC={"Peito":"#C6FF00","Costas":"#00E5FF","Ombro":"#A855F7","Pernas":"#F59E0B","Braços":"#22C55E","Core":"#F43F5E"};
+const EB={mc1000:{bg:"rgba(0,0,0,0.72)",c:"#60A5FA",l:"MC-1000"},halter:{bg:"rgba(0,0,0,0.72)",c:"#C6FF00",l:"HALTER"},sandbag:{bg:"rgba(0,0,0,0.72)",c:"#84CC16",l:"SANDBAG"},corporal:{bg:"rgba(0,0,0,0.72)",c:"#C084FC",l:"CORPORAL"}};
 const BC=["#1e40af","#ef4444","#7c3aed","#16a34a"];
 const BL=["Bloco 1","Bloco 2","Bloco 3","Deload"];
 const BK=["b1","b2","b3","dl"];
@@ -351,11 +351,11 @@ const COACH={
 };
 
 const SESSIONS=[
-  {s:"Superiores 1",dia:"Segunda",sub:"Peito + Tríceps",img:BASE+"Dumbbell_Bench_Press/0.jpg",cor:"#ef4444"},
-  {s:"Superiores 2",dia:"Terça",sub:"Costas + Bíceps",img:BASE+"Wide-Grip_Lat_Pulldown/0.jpg",cor:"#60a5fa"},
-  {s:"Superiores 3",dia:"Quinta",sub:"Ombros",img:BASE+"Dumbbell_Shoulder_Press/0.jpg",cor:"#f59e0b"},
-  {s:"Inferiores",dia:"Sábado",sub:"Pernas + Core",img:BASE+"Split_Squat_with_Dumbbells/0.jpg",cor:"#4ade80"},
-  {s:"Bônus",dia:"Progressão",sub:"Pull-ups",img:BASE+"Pullups/0.jpg",cor:"#f472b6"},
+  {s:"Superiores 1",dia:"Segunda",sub:"Peito + Tríceps",img:BASE+"Dumbbell_Bench_Press/0.jpg",cor:"#C6FF00"},
+  {s:"Superiores 2",dia:"Terça",sub:"Costas + Bíceps",img:BASE+"Wide-Grip_Lat_Pulldown/0.jpg",cor:"#00E5FF"},
+  {s:"Superiores 3",dia:"Quinta",sub:"Ombros",img:BASE+"Dumbbell_Shoulder_Press/0.jpg",cor:"#A855F7"},
+  {s:"Inferiores",dia:"Sábado",sub:"Pernas + Core",img:BASE+"Split_Squat_with_Dumbbells/0.jpg",cor:"#F59E0B"},
+  {s:"Bônus",dia:"Progressão",sub:"Pull-ups",img:BASE+"Pullups/0.jpg",cor:"#F43F5E"},
 ];
 
 function SessionHomeView({onSelect}){
@@ -455,7 +455,7 @@ function SessionHomeView({onSelect}){
                   style:{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top"},
                   onError:e=>{e.target.style.display="none"}}),
                 h("div",{style:{position:"absolute",inset:0,background:"linear-gradient(to right,transparent,rgba(0,0,0,.1))"}}),
-                h("div",{style:{position:"absolute",bottom:0,left:0,right:0,height:3,background:sess.cor}})),
+                h("div",{style:{position:"absolute",bottom:0,left:0,right:0,height:3,background:"linear-gradient(90deg,"+sess.cor+",transparent)"}})),
               h("div",{style:{flex:1,padding:"14px 16px"}},
                 h("div",{style:{fontSize:15,fontWeight:700,color:"#F5F5F5",letterSpacing:-.2,marginBottom:2}},sess.s),
                 h("div",{style:{fontSize:12,color:"#A3A3A3",marginBottom:3}},sess.sub),
