@@ -55,7 +55,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v108";
+const APP_VERSION="v109";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1311,7 +1311,11 @@ function TreinoView(){
   // Como executar fechado por padrão — só abre via clique do usuário.
   // Evita empurrar o botão "Iniciar Série" pra fora do viewport no iPad.
   const showExSteps=exOpen===true;
-  return h("div",{className:"screen-enter",key:"ex-"+ex.id,style:{paddingBottom:"calc(150px + env(safe-area-inset-bottom,0px))",background:"#050505",minHeight:"100vh"}},
+  // Action bar e flow-shell ficam FORA do .screen-enter via Fragment.
+  // O .screen-enter tem transform:translateZ(0) (anti-flicker), que cria
+  // containing block — o que faria o position:fixed do botão ficar relativo
+  // ao container em vez do viewport. Solução: mover pra fora via Fragment.
+  return h(React.Fragment,null,h("div",{className:"screen-enter",key:"ex-"+ex.id,style:{paddingBottom:"calc(160px + env(safe-area-inset-bottom,0px))",background:"#050505",minHeight:"100vh"}},
     // ── HERO ───────────────────────────────────────────────────
     h("div",{style:{position:"relative",width:"100%",height:"clamp(300px, 38dvh, 460px)",overflow:"hidden",background:"linear-gradient(135deg,#1A1A1A,#050505)"}},
       EX_IMGS[ex.id]&&h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
@@ -1440,10 +1444,12 @@ function TreinoView(){
           ex.st.map((s,i)=>h("div",{key:i,style:{display:"flex",gap:10,marginBottom:8,padding:"0 4px"}},
             h("div",{style:{width:22,height:22,borderRadius:"50%",background:"#252525",border:"1px solid #252525",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#C6FF00",flexShrink:0,marginTop:2}},i+1),
             h("p",{style:{fontSize:13,lineHeight:1.6,color:"#A3A3A3",margin:0}},s)))))
-    ),
-    // ── ACTION BAR FIXA NO BOTTOM (oculta sob overlays) ─────────────
-    !exRun&&cntd===null&&!showCarga&&!showPse&&!st&&h("div",{style:{position:"fixed",left:0,right:0,bottom:0,zIndex:250,pointerEvents:"auto",
-      background:"linear-gradient(180deg,rgba(5,5,5,0) 0%,#050505 35%,#050505 100%)",
+    )),
+    // ── ACTION BAR FLUTUANTE (fora do .screen-enter via Fragment) ───
+    // position:fixed agora relativo ao viewport — não pode mais ser
+    // empurrada por conteúdo que cresce dentro do .screen-enter.
+    !exRun&&cntd===null&&!showCarga&&!showPse&&!st&&h("div",{style:{position:"fixed",left:0,right:0,bottom:0,zIndex:420,pointerEvents:"auto",
+      background:"linear-gradient(180deg,rgba(5,5,5,0) 0%,rgba(5,5,5,0.92) 35%,#050505 100%)",
       padding:"24px 24px calc(24px + env(safe-area-inset-bottom,0px))"}},
       h("div",{style:{maxWidth:860,margin:"0 auto",width:"100%"}},
         allSeriesDone
