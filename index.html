@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v65";
+const APP_VERSION="v66";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -626,7 +626,7 @@ function TreinoView(){
   function getWorkoutLog(){try{const r=localStorage.getItem("workout_log");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}}
   function setWorkoutLog(l){try{localStorage.setItem("workout_log",JSON.stringify(l));}catch(e){console.error("Erro ao salvar workout_log",e);}}
   const exLog=getWorkoutLog().filter(e=>e.exerciseId===ex.id).slice(-4).reverse();
-  const saveSeries=(pse)=>{const entry={id:Date.now()+"",ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,reps,pse,carga,block:blocoKey,setNumber:seriesCt+1,restSeconds:ts};const log=getWorkoutLog();setWorkoutLog([...log,entry]);const fb=getSugestao(ex,entry,prescription);setCoachFeedback({status:fb.status,motivo:fb.motivo});setShowPse(false);setExTime(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
+  const saveSeries=(pse)=>{const entry={id:Date.now()+"",ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,reps,pse,carga,block:blocoKey,setNumber:seriesCt+1,restSeconds:ts};const log=getWorkoutLog();setWorkoutLog([...log,entry]);const fb=getSugestao(ex,entry,prescription,blocoKey);setCoachFeedback({status:fb.status,motivo:fb.motivo});setShowPse(false);setExTime(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
   const todayStr=new Date().toLocaleDateString("pt-BR");
   const sessionLog=getWorkoutLog().filter(e=>e.session===selS&&e.date===todayStr);
   const canEndWorkout=nextEx===null;
@@ -645,10 +645,82 @@ function TreinoView(){
   function firstSentence(str){if(!str)return "";const s=String(str).split(".")[0].trim();return s?s+".":String(str);}
   function getLoadStep(ex){if(!ex)return 2.5;if(ex.f==="Braços"||ex.f==="Ombro")return 1;if(ex.eq==="halter")return 2;if(ex.eq==="mc1000")return 2.5;return 2.5;}
   function parseBloco(str){if(!str)return null;try{const s=String(str);const seriesMatch=s.match(/(\d+)(?:-(\d+))?\s*[x×]/i);const repsMatch=s.match(/[x×]\s*([0-9]+)(?:-([0-9]+))?/i);const pseMatch=s.match(/PSE\s*([0-9]+)(?:-([0-9]+))?/i);if(!seriesMatch||!repsMatch)return null;const seriesMin=parseInt(seriesMatch[1]);const seriesMax=parseInt(seriesMatch[2]||seriesMatch[1]);const rMin=parseInt(repsMatch[1]);const rMax=parseInt(repsMatch[2]||repsMatch[1]);const pMin=pseMatch?parseInt(pseMatch[1]):6;const pMax=pseMatch?parseInt(pseMatch[2]||pseMatch[1]):8;return{seriesMin,seriesMax,rMin,rMax,pMin,pMax};}catch(e){return null;}}
-  function getSugestao(ex,ultima,blocoStr){const p=parseBloco(blocoStr);const def={carga:0,rMin:8,rMax:12,pMin:6,pMax:8,motivo:"Escolha uma carga confortável e mire no PSE alvo.",status:"first_time"};if(!p)return def;const base={...def,rMin:p.rMin,rMax:p.rMax,pMin:p.pMin,pMax:p.pMax};if(!ultima)return{...base,motivo:"Escolha uma carga confortável e mire no PSE alvo.",status:"first_time"};const pse=Number(ultima.pse||0);const carga=Number(ultima.carga||0);const r=Number(ultima.reps||0);const step=getLoadStep(ex);if(!r)return{...base,carga,motivo:"Ainda sem reps registradas. Use a última carga e mire na faixa alvo.",status:"missing_reps"};if(pse>p.pMax){const nc=Math.max(0,parseFloat((carga-step).toFixed(1)));return{...base,carga:nc,motivo:"PSE acima da meta. Reduza a carga ou pare com mais reserva.",status:"too_heavy"};}if(pse<p.pMin&&r>=p.rMax){const nc=parseFloat((carga+step).toFixed(1));return{...base,carga:nc,motivo:"Você bateu o topo das reps com esforço baixo. Aumente levemente a carga.",status:"easy"};}if(pse<p.pMin)return{...base,carga,motivo:"Esforço abaixo da meta. Mantenha a carga e busque mais reps ou mais controle.",status:"low_effort"};if(r<p.rMin)return{...base,carga,motivo:"Reps abaixo da faixa. Mantenha a carga e tente bater o mínimo.",status:"below_range"};if(pse>=p.pMin&&pse<=p.pMax&&r>=p.rMin&&r<=p.rMax)return{...base,carga,motivo:"Mantenha a carga e qualidade.",status:"ideal"};return{...base,carga,motivo:"Você está perto da meta. Ajuste reps ou carga com cuidado.",status:"progressing"};}
+  function getSugestao(ex,ultima,blocoStr,blocoKey){
+    const BL_NAMES={b1:"Bloco 1",b2:"Bloco 2",b3:"Bloco 3",dl:"Deload"};
+    const bName=BL_NAMES[blocoKey]||"";
+    const isDeload=blocoKey==="dl";
+    const isB1=blocoKey==="b1";
+    const isB2=blocoKey==="b2";
+    const isB3=blocoKey==="b3";
+    const p=parseBloco(blocoStr);
+    const def={carga:0,rMin:8,rMax:12,pMin:6,pMax:8,motivo:"Escolha uma carga confortável e mire no PSE alvo.",status:"first_time"};
+    if(!p)return def;
+    const base={...def,rMin:p.rMin,rMax:p.rMax,pMin:p.pMin,pMax:p.pMax};
+    if(!ultima){
+      let m="Escolha uma carga confortável e mire no PSE alvo.";
+      if(isDeload)m="Como é "+bName+", mantenha a carga leve e foque na recuperação.";
+      else if(isB1)m="Bloco 1: priorize técnica e mire no PSE alvo da faixa de volume.";
+      else if(isB3)m="Bloco 3: escolha uma carga firme e foque na execução pesada.";
+      else if(isB2)m="Bloco 2: carga consistente com controle e mire no PSE alvo.";
+      return{...base,motivo:m,status:"first_time"};
+    }
+    const pse=Number(ultima.pse||0);
+    const carga=Number(ultima.carga||0);
+    const r=Number(ultima.reps||0);
+    const step=getLoadStep(ex);
+    if(!r)return{...base,carga,motivo:"Ainda sem reps registradas. Use a última carga e mire na faixa do "+(bName||"bloco")+".",status:"missing_reps"};
+    // PSE acima da meta — PRIORIDADE (mesmo se reps estiverem ok)
+    if(pse>p.pMax){
+      const nc=Math.max(0,parseFloat((carga-step).toFixed(1)));
+      let m;
+      if(isDeload)m="Deload pede esforço leve. Reduza a carga e foque na recuperação.";
+      else if(isB1)m="Para o Bloco 1, o esforço ficou alto. Reduza carga para manter volume com qualidade.";
+      else if(isB3&&pse>=10)m="Bloco 3 aceita carga pesada, mas evite falhar toda série. Reduza levemente.";
+      else if(isB3)m="No Bloco 3, o esforço passou da meta. Segure ou reduza um pouco a carga.";
+      else if(isB2)m="Bloco 2: PSE acima do alvo. Segure a carga ou reduza levemente.";
+      else m="PSE acima da meta. Reduza a carga ou pare com mais reserva.";
+      return{...base,carga:nc,motivo:m,status:"too_heavy"};
+    }
+    // PSE baixo + reps no topo — sugere subir carga (exceto Deload)
+    if(pse<p.pMin&&r>=p.rMax){
+      if(isDeload)return{...base,carga,motivo:"Deload: mesmo parecendo fácil, mantenha a carga leve. Foco em recuperação.",status:"low_effort"};
+      const nc=parseFloat((carga+step).toFixed(1));
+      let m;
+      if(isB1)m="Bloco 1: bateu o topo das reps com esforço baixo. Suba carga levemente ou aumente o controle excêntrico.";
+      else if(isB3)m="Bloco 3 pede mais carga. Suba o peso para entrar na faixa de intensidade.";
+      else m="Bloco 2: bateu o topo das reps com esforço baixo. Aumente levemente a carga.";
+      return{...base,carga:nc,motivo:m,status:"easy"};
+    }
+    // PSE baixo sem reps no topo
+    if(pse<p.pMin){
+      let m;
+      if(isDeload)return{...base,carga,motivo:"Deload no alvo: esforço leve é o esperado. Mantenha assim.",status:"ideal"};
+      if(isB1)m="Bloco 1: esforço abaixo da meta. Busque mais reps ou cadência excêntrica mais lenta.";
+      else m=(bName||"Bloco")+": esforço abaixo da meta. Mantenha a carga e busque mais reps ou controle.";
+      return{...base,carga,motivo:m,status:"low_effort"};
+    }
+    // Reps abaixo da faixa
+    if(r<p.rMin){
+      let m=(bName||"Bloco")+": reps abaixo da faixa. Mantenha a carga e tente bater o mínimo.";
+      if(isDeload)m="Deload: reps abaixo da faixa. Mantenha leve e priorize qualidade do movimento.";
+      return{...base,carga,motivo:m,status:"below_range"};
+    }
+    // No alvo
+    if(pse>=p.pMin&&pse<=p.pMax&&r>=p.rMin&&r<=p.rMax){
+      let m;
+      if(isDeload)m="Deload no alvo. Carga leve e técnica em foco — exatamente o esperado.";
+      else if(isB1)m="Bloco 1 no alvo. Mantenha técnica e tente +1 rep na próxima.";
+      else if(isB3)m="Bloco 3 no alvo de carga. Mantenha a intensidade.";
+      else if(isB2)m="Bloco 2 no alvo. Mantenha a carga e busque +1 rep.";
+      else m="No alvo. Mantenha carga e qualidade.";
+      return{...base,carga,motivo:m,status:"ideal"};
+    }
+    // Fallback (perto da meta)
+    return{...base,carga,motivo:(bName||"Bloco")+": você está perto da meta. Ajuste reps ou carga com cuidado.",status:"progressing"};
+  }
   const prescription=blocoKey?ex[blocoKey]:"";
   const parsedPrescription=parseBloco(prescription);
-  const sug=getSugestao(ex,exLog[0]||null,prescription);
+  const sug=getSugestao(ex,exLog[0]||null,prescription,blocoKey);
   const SUG_CHIPS={ideal:{l:"NO ALVO",bg:"rgba(198,255,0,0.10)",bd:"rgba(198,255,0,0.35)",c:"#C6FF00"},progressing:{l:"AJUSTE FINO",bg:"rgba(198,255,0,0.10)",bd:"rgba(198,255,0,0.35)",c:"#C6FF00"},easy:{l:"LEVE",bg:"rgba(245,158,11,0.10)",bd:"rgba(245,158,11,0.35)",c:"#F59E0B"},low_effort:{l:"LEVE",bg:"rgba(245,158,11,0.10)",bd:"rgba(245,158,11,0.35)",c:"#F59E0B"},first_time:{l:"PRIMEIRA",bg:"rgba(245,158,11,0.10)",bd:"rgba(245,158,11,0.35)",c:"#F59E0B"},missing_reps:{l:"SEM REPS",bg:"rgba(245,158,11,0.10)",bd:"rgba(245,158,11,0.35)",c:"#F59E0B"},too_heavy:{l:"PESADO",bg:"rgba(239,68,68,0.10)",bd:"rgba(239,68,68,0.35)",c:"#EF4444"},below_range:{l:"ABAIXO",bg:"rgba(102,102,102,0.10)",bd:"#252525",c:"#A3A3A3"}};
   const cfChip=coachFeedback?(SUG_CHIPS[coachFeedback.status]||SUG_CHIPS.ideal):null;
   const cargaProg=getWorkoutLog().filter(e=>e.exerciseId===ex.id&&Number(e.carga)>0).sort((a,b)=>a.ts-b.ts).slice(-6);
