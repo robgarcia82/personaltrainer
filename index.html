@@ -11,13 +11,15 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Bebas+Neue&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geist:wght@100..900&display=swap">
 <title>Personal Trainer — Roberto Garcia</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body,#root{height:100%;min-height:100dvh;background:#050505 !important;color:#F5F5F5;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body,p,span,div,a,label,button,input,textarea,select{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif}
-h1,h2,h3,h4,h5,h6,.bn{font-family:'Bebas Neue',-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;text-transform:uppercase;letter-spacing:.08em}
+html,body,#root{height:100%;min-height:100dvh;background:#050505 !important;color:#F5F5F5;font-family:'Geist',system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body,p,span,div,a,label,button,input,textarea,select{font-family:'Geist',system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Arial,sans-serif}
+h1,h2,h3,h4,h5,h6,.bn{font-family:'Bebas Neue','Geist',system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;text-transform:uppercase;letter-spacing:.08em}
+/* Título grande/display — Bebas Neue 60px (clamp opcional via inline) */
+.display-title{font-family:'Bebas Neue','Geist',system-ui,sans-serif;font-size:60px;font-weight:400;line-height:.9;letter-spacing:.02em;text-transform:uppercase}
 h1{letter-spacing:.12em}
 ::-webkit-scrollbar{display:none}
 input::placeholder{color:#333}
@@ -47,7 +49,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v98";
+const APP_VERSION="v99";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1237,7 +1239,7 @@ function TreinoView(){
       h("div",{style:{position:"absolute",bottom:140,left:0,right:0,padding:"0 24px"}},
         h("div",{style:{maxWidth:860,margin:"0 auto"}},
           h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,.85)",textTransform:"uppercase",marginBottom:6,textShadow:"0 1px 6px rgba(0,0,0,.5)"}},selS),
-          h("h1",{style:{fontSize:"clamp(44px,7vw,64px)",fontWeight:900,color:"#F5F5F5",letterSpacing:-2,lineHeight:.95,margin:"0 0 10px",textShadow:"0 2px 20px rgba(0,0,0,.7), 0 1px 4px rgba(0,0,0,.55)"}},ex.n),
+          h("h1",{style:{fontSize:"clamp(44px,7vw,60px)",fontWeight:900,color:"#F5F5F5",letterSpacing:-2,lineHeight:.95,margin:"0 0 10px",textShadow:"0 2px 20px rgba(0,0,0,.7), 0 1px 4px rgba(0,0,0,.55)"}},ex.n),
           h("div",{style:{fontSize:14,color:"rgba(255,255,255,.85)",fontWeight:600,letterSpacing:.2,textShadow:"0 1px 6px rgba(0,0,0,.55)"}},ex.m+" · "+eb.l)))),
 
     h("div",{style:{maxWidth:860,margin:"0 auto",padding:"0 24px 16px",marginTop:-100,position:"relative",zIndex:2}},
@@ -1396,7 +1398,7 @@ function TreinoView(){
         paddingBottom:"calc(28px + env(safe-area-inset-bottom,0px))"}},
         // ── TOPO: título grande do exercício (sem botão Cancelar) ─
         h("div",{style:{paddingTop:"calc(env(safe-area-inset-top,0px) + 52px)",paddingBottom:16}},
-          h("h1",{style:{fontFamily:"-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',sans-serif",
+          h("h1",{className:"display-title",style:{
             fontSize:"clamp(44px,7vw,60px)",fontWeight:900,color:"#FFFFFF",
             letterSpacing:"-0.05em",lineHeight:.9,margin:0,
             textShadow:"0 8px 32px rgba(0,0,0,0.55)"}},ex.n),
@@ -1998,7 +2000,7 @@ function App(){
   const[tab,setTab]=useState("treino");
   const TABS=[{id:"treino",label:"Treino",icon:"🏋️"},{id:"dieta",label:"Dieta",icon:"🥗"},{id:"coach",label:"Coach",icon:"🎯"}];
   useEffect(()=>{document.body.style.background="#050505";},[]);
-  return h("div",{style:{minHeight:"100vh",background:"#050505",color:"#F5F5F5",fontFamily:"-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Inter','Helvetica Neue',Arial,sans-serif",paddingBottom:64}},
+  return h("div",{style:{minHeight:"100vh",background:"#050505",color:"#F5F5F5",fontFamily:"'Geist',system-ui,-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif",paddingBottom:64}},
     tab==="treino"&&h(TreinoView,null),
     tab==="dieta"&&h(DietaView,null),
     tab==="coach"&&h(CoachView,null),
