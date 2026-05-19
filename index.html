@@ -15,24 +15,28 @@
 <title>Personal Trainer — Roberto Garcia</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body,#root{height:100%;background:#050505;color:#F5F5F5;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+html,body,#root{height:100%;min-height:100dvh;background:#050505 !important;color:#F5F5F5;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body,p,span,div,a,label,button,input,textarea,select{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif}
 h1,h2,h3,h4,h5,h6,.bn{font-family:'Bebas Neue',-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;text-transform:uppercase;letter-spacing:.08em}
 h1{letter-spacing:.12em}
 ::-webkit-scrollbar{display:none}
 input::placeholder{color:#333}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-@keyframes screenDissolve{from{opacity:0;transform:translateY(8px);filter:blur(2px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+/* sem filter:blur — causa flicker branco no Safari iOS durante a transição */
+@keyframes screenDissolve{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .screen-enter{animation:screenDissolve 220ms ease-out both}
 .selectable{transition:background-color 220ms ease,color 220ms ease,box-shadow 220ms ease,transform 180ms ease,opacity 220ms ease,filter 220ms ease,border-color 220ms ease}
 .selectable:active{transform:scale(0.98)}
 @keyframes selectedDissolve{from{opacity:.72;filter:blur(2px);transform:scale(.985)}to{opacity:1;filter:blur(0);transform:scale(1)}}
 .selected-dissolve{animation:selectedDissolve 220ms ease-out both}
-@keyframes flowDissolveIn{from{opacity:0;filter:blur(3px);transform:scale(.985) translateY(8px)}to{opacity:1;filter:blur(0);transform:scale(1) translateY(0)}}
-@keyframes flowDissolveOut{from{opacity:1;filter:blur(0);transform:scale(1) translateY(0)}to{opacity:0;filter:blur(3px);transform:scale(.985) translateY(8px)}}
-.flow-screen{animation:flowDissolveIn 220ms ease-out both;will-change:opacity,filter,transform}
-.flow-screen-exit{animation:flowDissolveOut 200ms ease-in both;will-change:opacity,filter,transform}
-.flow-fade{transition:opacity 220ms ease,transform 220ms ease,filter 220ms ease}
+/* sem filter:blur — idem screenDissolve. scale reduzido pra .99 (mais sutil) */
+@keyframes flowDissolveIn{from{opacity:0;transform:scale(.99) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes flowDissolveOut{from{opacity:1;transform:scale(1) translateY(0)}to{opacity:0;transform:scale(.99) translateY(8px)}}
+.flow-screen{animation:flowDissolveIn 220ms ease-out both;will-change:opacity,transform}
+.flow-screen-exit{animation:flowDissolveOut 200ms ease-in both;will-change:opacity,transform}
+.flow-fade{transition:opacity 220ms ease,transform 220ms ease}
+/* Defesa contra flicker branco: força background dark + GPU layer cedo */
+.screen-enter,.flow-screen,.flow-screen-exit{background-color:#050505;backface-visibility:hidden;-webkit-backface-visibility:hidden;-webkit-transform:translateZ(0);transform:translateZ(0)}
 @media (prefers-reduced-motion:reduce){.screen-enter,.selectable,.selected-dissolve,.flow-screen,.flow-screen-exit,.flow-fade{transition:none !important;animation:none !important}}
 body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !important}
 </style>
@@ -43,7 +47,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v97";
+const APP_VERSION="v98";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
