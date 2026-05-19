@@ -11,11 +11,11 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <title>Personal Trainer — Roberto Garcia</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body,#root{height:100%;background:#050505;color:#F5F5F5;font-family:'Geist','SF Pro Display',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+html,body,#root{height:100%;background:#050505;color:#F5F5F5;font-family:'Inter','SF Pro Display',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 ::-webkit-scrollbar{display:none}
 input::placeholder{color:#333}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
@@ -1090,7 +1090,7 @@ function App(){
   const[tab,setTab]=useState("treino");
   const TABS=[{id:"treino",label:"Treino",icon:"🏋️"},{id:"dieta",label:"Dieta",icon:"🥗"},{id:"coach",label:"Coach",icon:"🎯"}];
   useEffect(()=>{document.body.style.background="#050505";},[]);
-  return h("div",{style:{minHeight:"100vh",background:"#050505",color:"#F5F5F5",fontFamily:"'Geist','SF Pro Display',system-ui,-apple-system,sans-serif",paddingBottom:64}},
+  return h("div",{style:{minHeight:"100vh",background:"#050505",color:"#F5F5F5",fontFamily:"'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",paddingBottom:64}},
     tab==="treino"&&h(TreinoView,null),
     tab==="dieta"&&h(DietaView,null),
     tab==="coach"&&h(CoachView,null),
