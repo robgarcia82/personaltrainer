@@ -55,7 +55,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v106";
+const APP_VERSION="v107";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1288,7 +1288,7 @@ function TreinoView(){
   // Como executar fechado por padrão — só abre via clique do usuário.
   // Evita empurrar o botão "Iniciar Série" pra fora do viewport no iPad.
   const showExSteps=exOpen===true;
-  return h("div",{className:"screen-enter",key:"ex-"+ex.id,style:{paddingBottom:"calc(140px + env(safe-area-inset-bottom,0px))",background:"#050505",minHeight:"100vh"}},
+  return h("div",{className:"screen-enter",key:"ex-"+ex.id,style:{paddingBottom:"calc(150px + env(safe-area-inset-bottom,0px))",background:"#050505",minHeight:"100vh"}},
     // ── HERO ───────────────────────────────────────────────────
     h("div",{style:{position:"relative",width:"100%",height:"clamp(300px, 38dvh, 460px)",overflow:"hidden",background:"linear-gradient(135deg,#1A1A1A,#050505)"}},
       EX_IMGS[ex.id]&&h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
@@ -1419,9 +1419,9 @@ function TreinoView(){
             h("p",{style:{fontSize:13,lineHeight:1.6,color:"#A3A3A3",margin:0}},s)))))
     ),
     // ── ACTION BAR FIXA NO BOTTOM (oculta sob overlays) ─────────────
-    !exRun&&cntd===null&&!showCarga&&!showPse&&!st&&h("div",{style:{position:"fixed",left:0,right:0,bottom:0,zIndex:220,
+    !exRun&&cntd===null&&!showCarga&&!showPse&&!st&&h("div",{style:{position:"fixed",left:0,right:0,bottom:0,zIndex:250,pointerEvents:"auto",
       background:"linear-gradient(180deg,rgba(5,5,5,0) 0%,#050505 35%,#050505 100%)",
-      padding:"20px 24px calc(20px + env(safe-area-inset-bottom,0px))"}},
+      padding:"24px 24px calc(24px + env(safe-area-inset-bottom,0px))"}},
       h("div",{style:{maxWidth:860,margin:"0 auto",width:"100%"}},
         allSeriesDone
           ?h("button",{onClick:()=>{if(nextEx){setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);setExOpen(true);setCoachFeedback(null);setSelEx(nextEx);}else{saveWorkoutSession();}},
