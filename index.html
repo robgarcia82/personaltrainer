@@ -55,7 +55,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v107";
+const APP_VERSION="v108";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -856,6 +856,21 @@ function SessionHomeView({onSelect}){
     }
     return TRAINING_CYCLE[0];
   }
+  // Primeiro uso: sem histórico → recomenda pelo dia da semana.
+  // Dia 1 = segunda-feira. Domingo (0) e sábado (6) viram descanso.
+  function getFirstUseRecommendationByWeekday(now){
+    const dow=now.getDay(); // 0=Dom, 1=Seg, ..., 6=Sáb
+    const MAP={
+      1:{type:"workout",session:"Superiores 1"},
+      2:{type:"workout",session:"Superiores 2"},
+      3:{type:"rest",nextSession:"Inferiores"},
+      4:{type:"workout",session:"Inferiores"},
+      5:{type:"workout",session:"Superiores 3"},
+      6:{type:"rest",nextSession:"Superiores 1"},
+      0:{type:"rest",nextSession:"Superiores 1"}
+    };
+    return MAP[dow]||{type:"workout",session:"Superiores 1"};
+  }
   function getHomeTrainingRecommendation(){
     const days=getCompletedWorkoutDays();
     const todayDone=days.filter(d=>d.date===todayK);
@@ -864,18 +879,26 @@ function SessionHomeView({onSelect}){
       const lastTodaySession=todayDone[todayDone.length-1].session;
       const next=getNextCycleItemFromLastWorkout(lastTodaySession);
       const nextWorkout=next.type==="workout"?next:getNextWorkoutAfter(lastTodaySession);
-      return{status:"done_today",label:"Concluído",heroSession:lastTodaySession,nextLabel:next.type==="rest"?"Descanso · próximo: "+nextWorkout.session:nextWorkout.session,playSession:nextWorkout.session};
+      const nextLabel=next.type==="rest"?"Próximo: Descanso · "+nextWorkout.session:"Próximo: "+nextWorkout.session;
+      return{status:"done_today",label:"Concluído",heroSession:lastTodaySession,nextLabel,playSession:nextWorkout.session};
     }
     const last=days.length?days[days.length-1].session:null;
+    // ── PRIMEIRO USO (sem histórico) ─ recomenda pelo dia da semana
+    if(!last){
+      const firstUse=getFirstUseRecommendationByWeekday(new Date());
+      if(firstUse.type==="rest"){
+        return{status:"rest",label:"Descanso",heroSession:firstUse.nextSession,nextLabel:"Próximo treino: "+firstUse.nextSession,playSession:firstUse.nextSession};
+      }
+      return{status:"workout",label:"Para hoje",heroSession:firstUse.session,playSession:firstUse.session};
+    }
+    // ── COM HISTÓRICO ─ ignora calendário, segue o ciclo adaptativo
     const next=getNextCycleItemFromLastWorkout(last);
     // DESCANSO — próximo item do ciclo é rest
     if(next.type==="rest"){
       const nextW=getNextWorkoutAfter(last);
-      return{status:"rest",label:"Hoje é descanso",heroSession:nextW.session,nextLabel:"Próximo treino: "+nextW.session,playSession:nextW.session};
+      return{status:"rest",label:"Descanso",heroSession:nextW.session,nextLabel:"Próximo treino: "+nextW.session,playSession:nextW.session};
     }
-    // PARA HOJE — sem histórico (primeira vez), fallback Sup1
-    if(!last)return{status:"workout",label:"Para hoje",heroSession:next.session,playSession:next.session};
-    // PENDENTE — existe histórico, próximo é treino mas não foi feito hoje
+    // PENDENTE — próximo é treino mas não foi feito hoje (e há histórico)
     return{status:"pending",label:"Pendente",heroSession:next.session,nextLabel:"Continue sua sequência de onde parou.",playSession:next.session};
   }
   const rec=getHomeTrainingRecommendation();
