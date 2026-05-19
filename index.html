@@ -33,7 +33,7 @@ const h=React.createElement,{useState,useEffect,useRef}=React;
 // Bônus       (Progressão) — Pull-ups
 const EX=[
 // ── SUPERIORES 1 — PEITO + TRÍCEPS ──────────────────────────────
-{id:1,n:"Supino com Halteres",m:"Peitoral maior",s:"Superiores 1",d:"Seg",f:"Peito",eq:"halter",imgPos:"center 62%",
+{id:1,n:"Supino com Halteres",m:"Peitoral maior",s:"Superiores 1",d:"Seg",f:"Peito",eq:"halter",imgPos:"center 65%",
 st:["Deite no banco com um halter em cada mão, pés firmes no chão.","Braços estendidos acima do peito, halteres alinhados com os ombros.","Desça controlando por 2-3s até os cotovelos na altura do peito.","Empurre para cima de forma explosiva.","Mantenha as escápulas retraídas durante todo o movimento."],
 t:"Imagine que está empurrando o corpo para dentro do banco. Isso ativa mais o peitoral.",
 e:"Não arquear excessivamente as costas. Manter cotovelos em ~75°.",
@@ -357,30 +357,40 @@ function SessionHomeView({onSelect}){
   const sesOutras=sesHoje?SESSIONS.filter(s=>s.s!==sesHoje.s):SESSIONS;
   // ── Métricas do mês ──────────────────────────────────────────
   const log=(()=>{try{const r=localStorage.getItem("workout_log");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}})();
+  const sessions=(()=>{try{const r=localStorage.getItem("workout_sessions");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}})();
   const now=new Date(),Y=now.getFullYear(),M=now.getMonth();
   const inMonth=log.filter(e=>{const d=new Date(e.ts);return d.getFullYear()===Y&&d.getMonth()===M;});
+  const sessInMonth=sessions.filter(s=>{const d=new Date(s.ts);return d.getFullYear()===Y&&d.getMonth()===M;});
   const treinosNoMes=new Set(inMonth.map(e=>new Date(e.ts).toDateString())).size;
-  const seriesEf=inMonth.reduce((a,e)=>{const p=Number(e.pse||0);return a+(p>=7?1:p>=5?0.5:0);},0);
-  const repsTotais=inMonth.reduce((a,e)=>a+(Number(e.reps)||0),0);
   const pseValidos=inMonth.map(e=>Number(e.pse)).filter(p=>p>0);
   const pseMed=pseValidos.length?(pseValidos.reduce((a,b)=>a+b,0)/pseValidos.length):0;
-  const fmtSer=v=>Number.isInteger(v)?String(v):v.toFixed(1);
+  const durValid=sessInMonth.map(s=>Number(s.durationMin)||0).filter(d=>d>0);
+  const tempoMed=durValid.length?Math.round(durValid.reduce((a,b)=>a+b,0)/durValid.length):0;
   const fmtPse=v=>v>0?v.toFixed(1):"–";
-  // ── Destaque de evolução ─────────────────────────────────────
+  const fmtTempo=v=>v>0?v+" min":"–";
+  // ── Destaque de evolução (kg absoluto) + Evolução % ──────────
   const byEx={};
   inMonth.forEach(e=>{if(Number(e.carga||0)<=0)return;if(!byEx[e.exerciseId])byEx[e.exerciseId]=[];byEx[e.exerciseId].push(e);});
-  let bestEvo=null;
+  let bestEvo=null,bestEvoPct=null;
   Object.values(byEx).forEach(arr=>{
     if(arr.length<2)return;
     arr.sort((a,b)=>a.ts-b.ts);
     const first=Number(arr[0].carga),last=Number(arr[arr.length-1].carga);
-    const delta=parseFloat((last-first).toFixed(1));
-    if(delta>0&&(!bestEvo||delta>bestEvo.delta)){bestEvo={name:arr[0].exerciseName||"Exercício",delta};}
+    const deltaKg=parseFloat((last-first).toFixed(1));
+    if(deltaKg>0&&(!bestEvo||deltaKg>bestEvo.delta)){bestEvo={name:arr[0].exerciseName||"Exercício",delta:deltaKg};}
+    if(first>=5&&deltaKg>0){
+      const deltaPct=(deltaKg/first)*100;
+      if(!bestEvoPct||deltaPct>bestEvoPct.pct||(Math.abs(deltaPct-bestEvoPct.pct)<0.01&&deltaKg>bestEvoPct.kg)){
+        bestEvoPct={pct:deltaPct,kg:deltaKg,name:arr[0].exerciseName||"Exercício"};
+      }
+    }
   });
+  const fmtEvoPct=v=>{if(!v)return"–";return v.pct>=10?"+"+Math.round(v.pct)+"%":"+"+v.pct.toFixed(1)+"%";};
   // ── Card de métrica (helper local) ───────────────────────────
-  const metricCard=(value,label)=>h("div",{style:{background:"#121212",border:"1px solid #252525",borderRadius:20,padding:"20px 18px",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}},
-    h("div",{style:{fontSize:38,fontWeight:900,color:"#F5F5F5",letterSpacing:-1.5,lineHeight:1}},value),
-    h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#A3A3A3",textTransform:"uppercase",marginTop:10}},label));
+  const metricCard=(value,label,subtext,accent)=>h("div",{style:{background:"#121212",border:"1px solid #252525",borderRadius:20,padding:"20px 18px",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}},
+    h("div",{style:{fontSize:38,fontWeight:900,color:accent||"#F5F5F5",letterSpacing:-1.5,lineHeight:1}},value),
+    h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#A3A3A3",textTransform:"uppercase",marginTop:10}},label),
+    subtext&&h("div",{style:{fontSize:11,color:"#666666",marginTop:4,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},subtext));
   return h("div",{style:{background:"#050505",minHeight:"100vh",paddingBottom:32}},
     h("div",{style:{maxWidth:740,margin:"0 auto",padding:"28px 20px 0"}},
       // Header
@@ -411,8 +421,8 @@ function SessionHomeView({onSelect}){
         h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"#666666",textTransform:"uppercase",marginBottom:14}},"Este mês"),
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12}},
           metricCard(String(treinosNoMes),"Treinos"),
-          metricCard(fmtSer(seriesEf),"Séries efetivas"),
-          metricCard(String(repsTotais),"Reps totais"),
+          metricCard(fmtTempo(tempoMed),"Tempo médio"),
+          metricCard(fmtEvoPct(bestEvoPct),"Evolução de carga",bestEvoPct?bestEvoPct.name:"Ainda sem evolução",bestEvoPct?"#C6FF00":"#F5F5F5"),
           metricCard(fmtPse(pseMed),"PSE médio"))),
       // ── Destaque de evolução ────────────────────────────────
       h("div",{style:{marginBottom:28}},
@@ -630,12 +640,16 @@ function TreinoView(){
   const showExSteps=exOpen!==null?exOpen:exLog.length===0;
   return h("div",{style:{paddingBottom:(canEndWorkout||(nextEx&&seriesCt>=(plannedSeries>0?plannedSeries:3)))?148:80,background:"#050505",minHeight:"100vh"}},
     // ── HERO ───────────────────────────────────────────────────
-    h("div",{style:{position:"relative",width:"100%",height:440,overflow:"hidden",background:"linear-gradient(135deg,#2a2a2a,#F5F5F5)"}},
+    h("div",{style:{position:"relative",width:"100%",height:"min(56vh, 540px)",overflow:"hidden",background:"linear-gradient(135deg,#1A1A1A,#050505)"}},
       EX_IMGS[ex.id]&&h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
         onError:e=>{e.target.style.display="none"},
         style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:ex.imgPos||"center 58%"}}),
+      // Top dim (legibilidade do botão voltar)
+      h("div",{style:{position:"absolute",top:0,left:0,right:0,height:140,
+        background:"linear-gradient(180deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,0) 100%)"}}),
+      // Bottom fade — derrete na cor do fundo
       h("div",{style:{position:"absolute",inset:0,
-        background:"linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.10) 45%,rgba(0,0,0,.45) 100%)"}}),
+        background:"linear-gradient(180deg,rgba(5,5,5,0.10) 0%,rgba(5,5,5,0.20) 45%,rgba(5,5,5,0.75) 78%,#050505 100%)"}}),
       // Top bar (glass)
       h("div",{style:{position:"absolute",top:0,left:0,right:0,
         padding:"calc(env(safe-area-inset-top,0px) + 14px) 16px 14px",
@@ -652,13 +666,13 @@ function TreinoView(){
           backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
           border:"1px solid rgba(255,255,255,.25)",color:"#fff",flexShrink:0}},eb.l)),
       // Bottom info
-      h("div",{style:{position:"absolute",bottom:72,left:0,right:0,padding:"0 20px"}},
+      h("div",{style:{position:"absolute",bottom:140,left:0,right:0,padding:"0 20px"}},
         h("div",{style:{maxWidth:740,margin:"0 auto"}},
           h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,.85)",textTransform:"uppercase",marginBottom:6,textShadow:"0 1px 6px rgba(0,0,0,.5)"}},selS),
           h("div",{style:{fontSize:30,fontWeight:800,color:"#fff",letterSpacing:-.5,lineHeight:1.15,marginBottom:6,textShadow:"0 2px 16px rgba(0,0,0,.65), 0 1px 4px rgba(0,0,0,.55)"}},ex.n),
           h("div",{style:{fontSize:13,color:"rgba(255,255,255,.85)",fontWeight:500,textShadow:"0 1px 6px rgba(0,0,0,.55)"}},ex.m+" · "+eb.l)))),
 
-    h("div",{style:{maxWidth:740,margin:"0 auto",padding:"0 20px 16px",marginTop:-56,position:"relative",zIndex:2}},
+    h("div",{style:{maxWidth:740,margin:"0 auto",padding:"0 20px 16px",marginTop:-100,position:"relative",zIndex:2}},
 
       // ── CARD PRÓXIMA SÉRIE ──────────────────────────────────────
       h("div",{style:{background:"#121212",borderRadius:28,padding:"24px",
