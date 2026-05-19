@@ -25,7 +25,7 @@ input::placeholder{color:#333}
 @keyframes screenDissolve{from{opacity:0;transform:translateY(8px);filter:blur(2px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
 .screen-enter{animation:screenDissolve 220ms ease-out both}
 @media (prefers-reduced-motion:reduce){.screen-enter{animation:none !important}}
-body.in-exercise .app-navbar{display:none}
+body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !important}
 </style>
 </head>
 <body>
@@ -34,7 +34,7 @@ body.in-exercise .app-navbar{display:none}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v89";
+const APP_VERSION="v90";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1005,6 +1005,7 @@ function TreinoView(){
   useEffect(()=>{if(cntd===null||cntd<=0)return;cdRef.current=setTimeout(()=>{if(cntd===1){setCntd(null);setExRun(true);setExTime(0);}else setCntd(v=>v-1);try{navigator.vibrate&&navigator.vibrate(60);}catch(e){}},1000);return()=>clearTimeout(cdRef.current);},[cntd]);
   useEffect(()=>{if(exRun)etRef.current=setInterval(()=>setExTime(v=>v+1),1000);else clearInterval(etRef.current);return()=>clearInterval(etRef.current);},[exRun]);
   useEffect(()=>{if(selEx)document.body.classList.add("in-exercise");else document.body.classList.remove("in-exercise");return()=>document.body.classList.remove("in-exercise");},[selEx]);
+  useEffect(()=>{if(exRun)document.body.classList.add("in-active-set");else document.body.classList.remove("in-active-set");return()=>document.body.classList.remove("in-active-set");},[exRun]);
   const stT=(s)=>{setTs(s);setTl(s)};
   const rt=()=>{setTr(false);setTl(ts)};
   if(selS===null)return h(SessionHomeView,{onSelect:setSelS});
@@ -1301,7 +1302,7 @@ function TreinoView(){
         // Fechar
         h("button",{onClick:()=>{setSt(false);setTr(false)},
           style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#A3A3A3",fontSize:18,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}},"✕"))),
-    exRun&&h("div",{style:{position:"fixed",inset:0,zIndex:650,display:"flex",flexDirection:"column",overflow:"hidden"}},
+    exRun&&h("div",{style:{position:"fixed",top:0,right:0,bottom:0,left:0,width:"100vw",height:"100dvh",zIndex:800,display:"flex",flexDirection:"column",overflow:"hidden"}},
       // Fundo — vídeo (com img embaixo como fallback) ou imagem ou cor sólida
       ex.video
         ?[EX_IMGS[ex.id]&&h("img",{key:"fb",src:EX_IMGS[ex.id],alt:ex.n,
