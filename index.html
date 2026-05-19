@@ -33,7 +33,7 @@ const h=React.createElement,{useState,useEffect,useRef}=React;
 // Bônus       (Progressão) — Pull-ups
 const EX=[
 // ── SUPERIORES 1 — PEITO + TRÍCEPS ──────────────────────────────
-{id:1,n:"Supino com Halteres",m:"Peitoral maior",s:"Superiores 1",d:"Seg",f:"Peito",eq:"halter",imgPos:"center 65%",
+{id:1,n:"Supino com Halteres",m:"Peitoral maior",s:"Superiores 1",d:"Seg",f:"Peito",eq:"halter",imgPos:"center 72%",
 st:["Deite no banco com um halter em cada mão, pés firmes no chão.","Braços estendidos acima do peito, halteres alinhados com os ombros.","Desça controlando por 2-3s até os cotovelos na altura do peito.","Empurre para cima de forma explosiva.","Mantenha as escápulas retraídas durante todo o movimento."],
 t:"Imagine que está empurrando o corpo para dentro do banco. Isso ativa mais o peitoral.",
 e:"Não arquear excessivamente as costas. Manter cotovelos em ~75°.",
@@ -628,7 +628,7 @@ function TreinoView(){
     h("div",{style:{position:"relative",width:"100%",height:"min(56vh, 540px)",overflow:"hidden",background:"linear-gradient(135deg,#1A1A1A,#050505)"}},
       EX_IMGS[ex.id]&&h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
         onError:e=>{e.target.style.display="none"},
-        style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:ex.imgPos||"center 58%"}}),
+        style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:ex.imgPos||"center 72%"}}),
       // Top dim (legibilidade do botão voltar)
       h("div",{style:{position:"absolute",top:0,left:0,right:0,height:140,
         background:"linear-gradient(180deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,0) 100%)"}}),
