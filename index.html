@@ -55,7 +55,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v110";
+const APP_VERSION="v111";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -965,8 +965,15 @@ function SessionHomeView({onSelect}){
               h("div",{style:{fontSize:20,fontWeight:800,color:"rgba(255,255,255,.72)",marginBottom:6,textTransform:"none"}},sesHoje.s),
               h("div",{className:"display-title",style:{color:"#FFFFFF",marginBottom:8,textShadow:"0 6px 24px rgba(0,0,0,.55)"}},sesHoje.sub||sesHoje.s),
               h("div",{style:{fontSize:18,fontWeight:600,color:"rgba(255,255,255,.58)",letterSpacing:-.1}},EX.filter(x=>x.s===sesHoje.s).length+" exercícios")),
-            h("div",{style:{width:64,height:64,borderRadius:"50%",background:"#C6FF00",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 24px rgba(198,255,0,.45)",flexShrink:0,alignSelf:"flex-end",marginBottom:6}},
-              h("span",{style:{fontSize:26,color:"#050505",marginLeft:4}},"▶"))))),
+            // Botão textual no lugar do circular ▶ — CTA mais claro.
+            // stopPropagation evita disparar duas vezes (o card também é clicável).
+            h("button",{onClick:e=>{e.stopPropagation();onSelect(rec.playSession);},
+              "aria-label":"Iniciar treino",
+              style:{background:"#C6FF00",color:"#050505",border:"none",borderRadius:999,
+                padding:"14px 22px",fontFamily:"inherit",fontSize:16,fontWeight:900,
+                cursor:"pointer",letterSpacing:.3,whiteSpace:"nowrap",
+                flexShrink:0,alignSelf:"flex-end",
+                boxShadow:"0 12px 32px rgba(198,255,0,0.30)"}},"Iniciar treino")))),
       // ── Seção "Este mês" (2x2 big numbers) ──────────────────
       h("div",{style:{marginBottom:20}},
         h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"#666666",textTransform:"uppercase",marginBottom:14}},"Este mês"),
