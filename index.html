@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v70";
+const APP_VERSION="v71";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1078,15 +1078,24 @@ function TreinoView(){
           h("div",{style:{fontSize:14,color:"#A3A3A3",marginTop:4}},"Carga: ",h("span",{style:{color:"#fff",fontWeight:700}},carga>0?carga+"kg":"—")," · Reps: ",h("span",{style:{color:"#fff",fontWeight:700}},reps>0?reps:"—")),
           sug.pMin>0&&h("div",{style:{marginTop:10,display:"inline-block",padding:"4px 14px",borderRadius:20,background:"#f59e0b22",border:"1px solid #f59e0b44",fontSize:12,color:"#f59e0b",fontWeight:700}},
             "Alvo de hoje: PSE "+sug.pMin+(sug.pMax!==sug.pMin?"–"+sug.pMax:""))),
+        // ── Card explicativo PSE ────────────────────────────────────
+        h("div",{style:{background:"rgba(255,255,255,0.04)",borderRadius:14,padding:"14px 16px",marginBottom:18}},
+          h("div",{style:{fontSize:13,fontWeight:700,color:"#F5F5F5",letterSpacing:-.1,marginBottom:4}},"PSE é a percepção de esforço da série."),
+          h("div",{style:{fontSize:12,color:"#A3A3A3",lineHeight:1.4,marginBottom:12}},"Quanto maior o número, mais perto da falha você chegou."),
+          h("div",{style:{display:"flex",flexDirection:"column",gap:5}},
+            [
+              {r:"1–4",l:"Muito leve",c:"#A3A3A3",bold:false},
+              {r:"5–6",l:"Leve",c:"#F59E0B",bold:false},
+              {r:"7–8",l:"Bom estímulo",c:"#C6FF00",bold:true},
+              {r:"9",l:"Muito pesado",c:"#EF4444",bold:false},
+              {r:"10",l:"Falha",c:"#EF4444",bold:true}
+            ].map((it,i)=>h("div",{key:i,style:{display:"flex",gap:10,fontSize:12,alignItems:"baseline"}},
+              h("span",{style:{color:it.c,fontWeight:it.bold?900:700,minWidth:34,letterSpacing:.2}},it.r),
+              h("span",{style:{color:it.bold?"#F5F5F5":"#A3A3A3",fontWeight:it.bold?700:500}},"· "+it.l))))),
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:14}},
           [1,2,3,4,5,6,7,8,9,10].map(n=>{
             const pc=pseColor(n);
             return h("button",{key:n,className:"bn",onClick:()=>saveSeries(n),style:{padding:"20px 0",borderRadius:14,border:"2px solid "+pc+"44",background:pc+"22",color:pc,fontSize:26,fontWeight:900,cursor:"pointer"}},n);})),
-        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:20,fontSize:10,color:"#A3A3A3",textAlign:"center"}},
-          h("div",null,"1–4",h("br"),h("span",{style:{color:"#666666"}},"Muito leve")),
-          h("div",null,"5–6",h("br"),h("span",{style:{color:"#F59E0B"}},"Leve")),
-          h("div",null,"7–8",h("br"),h("span",{style:{color:"#C6FF00"}},"Hipertrofia")),
-          h("div",null,"9–10",h("br"),h("span",{style:{color:"#EF4444"}},"Pesado/Falha"))),
         h("button",{onClick:()=>setShowPse(false),style:{width:"100%",padding:"14px",borderRadius:12,border:"1px solid #252525",background:"transparent",color:"#A3A3A3",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"Cancelar")))
   );
 }
