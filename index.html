@@ -654,8 +654,8 @@ function TreinoView(){
       h("div",{style:{position:"absolute",bottom:140,left:0,right:0,padding:"0 24px"}},
         h("div",{style:{maxWidth:860,margin:"0 auto"}},
           h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,.85)",textTransform:"uppercase",marginBottom:6,textShadow:"0 1px 6px rgba(0,0,0,.5)"}},selS),
-          h("div",{style:{fontSize:30,fontWeight:800,color:"#fff",letterSpacing:-.5,lineHeight:1.15,marginBottom:6,textShadow:"0 2px 16px rgba(0,0,0,.65), 0 1px 4px rgba(0,0,0,.55)"}},ex.n),
-          h("div",{style:{fontSize:13,color:"rgba(255,255,255,.85)",fontWeight:500,textShadow:"0 1px 6px rgba(0,0,0,.55)"}},ex.m+" · "+eb.l)))),
+          h("h1",{style:{fontSize:"clamp(44px,7vw,64px)",fontWeight:900,color:"#F5F5F5",letterSpacing:-2,lineHeight:.95,margin:"0 0 10px",textShadow:"0 2px 20px rgba(0,0,0,.7), 0 1px 4px rgba(0,0,0,.55)"}},ex.n),
+          h("div",{style:{fontSize:14,color:"rgba(255,255,255,.85)",fontWeight:600,letterSpacing:.2,textShadow:"0 1px 6px rgba(0,0,0,.55)"}},ex.m+" · "+eb.l)))),
 
     h("div",{style:{maxWidth:860,margin:"0 auto",padding:"0 24px 16px",marginTop:-100,position:"relative",zIndex:2}},
 
@@ -804,24 +804,24 @@ function TreinoView(){
               color:"#fff",fontSize:13,fontWeight:600,backdropFilter:"blur(8px)"}},
             "← Cancelar"),
           h("div",{style:{flex:1,minWidth:0}},
-            h("div",{style:{fontSize:16,fontWeight:700,color:"#fff",lineHeight:1.2,
-              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},ex.n),
-            h("div",{style:{fontSize:12,color:"rgba(255,255,255,.55)",marginTop:2}},
+            h("div",{style:{fontSize:"clamp(22px,3.5vw,32px)",fontWeight:900,color:"#FFFFFF",letterSpacing:-1,lineHeight:1.1,
+              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textShadow:"0 2px 8px rgba(0,0,0,.5)"}},ex.n),
+            h("div",{style:{fontSize:13,color:"rgba(255,255,255,.6)",marginTop:4,fontWeight:600,letterSpacing:.2}},
               ex.m+(eb.l?" · "+eb.l:"")))),
         // ── ESPAÇADOR ─────────────────────────────────────────────
         h("div",{style:{flex:1}}),
         // ── CENTRO ────────────────────────────────────────────────
         h("div",{style:{textAlign:"center"}},
           // Série N de M
-          h("div",{style:{fontSize:13,fontWeight:700,letterSpacing:2,
-            color:"rgba(255,255,255,.55)",textTransform:"uppercase",marginBottom:20}},
+          h("div",{style:{fontSize:15,fontWeight:900,letterSpacing:3,
+            color:"rgba(255,255,255,.75)",textTransform:"uppercase",marginBottom:22}},
             "SÉRIE "+(seriesCt+1)+(plannedSeries>0?" DE "+plannedSeries:"")),
           // Timer grande
-          h("div",{style:{fontSize:88,fontWeight:900,color:"#fff",
-            fontVariantNumeric:"tabular-nums",letterSpacing:-4,lineHeight:1,
-            textShadow:"0 4px 32px rgba(0,0,0,.4)"}},fmtT(exTime)),
-          h("div",{style:{fontSize:11,fontWeight:600,letterSpacing:2,
-            color:"rgba(255,255,255,.45)",textTransform:"uppercase",marginTop:10}},
+          h("div",{style:{fontSize:"clamp(88px,16vw,128px)",fontWeight:900,color:"#FFFFFF",
+            fontVariantNumeric:"tabular-nums",letterSpacing:-4,lineHeight:.9,
+            textShadow:"0 4px 32px rgba(0,0,0,.5), 0 1px 6px rgba(0,0,0,.4)"}},fmtT(exTime)),
+          h("div",{style:{fontSize:13,fontWeight:800,letterSpacing:3,
+            color:"rgba(255,255,255,.65)",textTransform:"uppercase",marginTop:14}},
             "tempo da série"),
           // Meta de reps/PSE
           sug.rMin>0&&h("div",{style:{marginTop:28,fontSize:19,fontWeight:600,
