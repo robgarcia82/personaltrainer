@@ -24,7 +24,11 @@ input::placeholder{color:#333}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes screenDissolve{from{opacity:0;transform:translateY(8px);filter:blur(2px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
 .screen-enter{animation:screenDissolve 220ms ease-out both}
-@media (prefers-reduced-motion:reduce){.screen-enter{animation:none !important}}
+.selectable{transition:background-color 220ms ease,color 220ms ease,box-shadow 220ms ease,transform 180ms ease,opacity 220ms ease,filter 220ms ease,border-color 220ms ease}
+.selectable:active{transform:scale(0.98)}
+@keyframes selectedDissolve{from{opacity:.72;filter:blur(2px);transform:scale(.985)}to{opacity:1;filter:blur(0);transform:scale(1)}}
+.selected-dissolve{animation:selectedDissolve 220ms ease-out both}
+@media (prefers-reduced-motion:reduce){.screen-enter,.selectable,.selected-dissolve{transition:none !important;animation:none !important}}
 body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !important}
 </style>
 </head>
@@ -34,7 +38,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v94";
+const APP_VERSION="v95";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -907,6 +911,7 @@ function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock,setCurrentBlock,
             const sub=parts[1]||"";
             const pres=fmtBlockPres(b);
             return h("div",{key:b,
+              className:"selectable"+(active?" selected-dissolve":""),
               onClick:()=>{if(setCurrentBlock)setCurrentBlock(b);if(setSb)setSb(null);},
               style:{padding:"14px 14px",borderRadius:16,
                 background:active?"rgba(198,255,0,0.10)":"#121212",
@@ -1241,7 +1246,7 @@ function TreinoView(){
       // ── DESCANSO ──────────────────────────────────────────────────
       h("div",{style:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:10}},
         h("span",{style:{fontSize:11,color:"#A3A3A3",fontWeight:600}},"DESCANSO:"),
-        [45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),
+        [45,60,90,120].map(s=>h("button",{key:s,onClick:()=>stT(s),className:"selectable"+(ts===s?" selected-dissolve":""),
           style:{padding:"0 16px",height:48,borderRadius:10,
             border:"1px solid "+(ts===s?"#C6FF00":"#252525"),
             background:ts===s?"rgba(198,255,0,0.12)":"#121212",color:ts===s?"#C6FF00":"#A3A3A3",
@@ -1390,7 +1395,7 @@ function TreinoView(){
           h("button",{onClick:()=>setCarga(v=>parseFloat((v+0.5).toFixed(1))),style:{width:72,height:72,borderRadius:16,border:"1px solid #252525",background:"#121212",color:"#fff",fontSize:36,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"+")),
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}},
           [5,10,15,20,25,30,35,40,45,50].map(w=>
-            h("button",{key:w,onClick:()=>setCarga(w),style:{padding:"14px 0",borderRadius:12,border:"2px solid "+(carga===w?"#C6FF00":"#252525"),background:carga===w?"rgba(198,255,0,0.12)":"#121212",color:carga===w?"#C6FF00":"#A3A3A3",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},w+"kg"))),
+            h("button",{key:w,onClick:()=>setCarga(w),className:"selectable"+(carga===w?" selected-dissolve":""),style:{padding:"14px 0",borderRadius:12,border:"2px solid "+(carga===w?"#C6FF00":"#252525"),background:carga===w?"rgba(198,255,0,0.12)":"#121212",color:carga===w?"#C6FF00":"#A3A3A3",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},w+"kg"))),
         h("div",{style:{marginBottom:20}},
           h("div",{style:{fontSize:12,color:"#A3A3A3",fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",textAlign:"center",marginBottom:14}},"Repetições feitas"),
           h("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",gap:24,marginBottom:14}},
@@ -1401,7 +1406,7 @@ function TreinoView(){
             h("button",{onClick:()=>setReps(v=>v+1),style:{width:56,height:56,borderRadius:16,border:"1px solid #252525",background:"#121212",color:"#fff",fontSize:28,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"+")),
           h("div",{style:{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8}},
             [6,8,10,12,15,20].map(r=>
-              h("button",{key:r,onClick:()=>setReps(r),style:{padding:"11px 0",borderRadius:12,border:"2px solid "+(reps===r?"#C6FF00":"#252525"),background:reps===r?"rgba(198,255,0,0.12)":"#121212",color:reps===r?"#C6FF00":"#A3A3A3",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},r)))),
+              h("button",{key:r,onClick:()=>setReps(r),className:"selectable"+(reps===r?" selected-dissolve":""),style:{padding:"11px 0",borderRadius:12,border:"2px solid "+(reps===r?"#C6FF00":"#252525"),background:reps===r?"rgba(198,255,0,0.12)":"#121212",color:reps===r?"#C6FF00":"#A3A3A3",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}},r)))),
         h("button",{onClick:()=>{setShowCarga(false);setShowPse(true);},style:{width:"100%",padding:"18px",borderRadius:14,border:"none",background:"#C6FF00",color:"#050505",fontSize:17,fontWeight:900,cursor:"pointer",fontFamily:"inherit",marginBottom:12,boxShadow:"0 8px 24px rgba(198,255,0,.25)"}},"Continuar  →"),
         h("button",{onClick:()=>{setShowCarga(false);},style:{width:"100%",padding:"13px",borderRadius:12,border:"1px solid #252525",background:"transparent",color:"#A3A3A3",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"Cancelar"))),
     showPse&&h("div",{style:{position:"fixed",inset:0,background:"rgba(5,5,5,0.97)",zIndex:600,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}},
@@ -1430,7 +1435,7 @@ function TreinoView(){
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:14}},
           [1,2,3,4,5,6,7,8,9,10].map(n=>{
             const pc=pseColor(n);
-            return h("button",{key:n,className:"bn",onClick:()=>saveSeries(n),style:{padding:"20px 0",borderRadius:14,border:"2px solid "+pc+"44",background:pc+"22",color:pc,fontSize:26,fontWeight:900,cursor:"pointer"}},n);})),
+            return h("button",{key:n,className:"bn selectable",onClick:()=>saveSeries(n),style:{padding:"20px 0",borderRadius:14,border:"2px solid "+pc+"44",background:pc+"22",color:pc,fontSize:26,fontWeight:900,cursor:"pointer"}},n);})),
         h("button",{onClick:()=>setShowPse(false),style:{width:"100%",padding:"14px",borderRadius:12,border:"1px solid #252525",background:"transparent",color:"#A3A3A3",fontSize:14,cursor:"pointer",fontFamily:"inherit"}},"Cancelar")))
   );
 }
@@ -1936,7 +1941,7 @@ function App(){
     tab==="dieta"&&h(DietaView,null),
     tab==="coach"&&h(CoachView,null),
     h("div",{className:"app-navbar",style:{position:"fixed",bottom:0,left:0,right:0,background:"#0D0D0D",borderTop:"1px solid #252525",display:"flex",zIndex:300,paddingBottom:"env(safe-area-inset-bottom)"}},
-      TABS.map(t=>h("button",{key:t.id,onClick:()=>setTab(t.id),style:{flex:1,padding:"10px 0 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,fontFamily:"inherit"}},
+      TABS.map(t=>h("button",{key:t.id,onClick:()=>setTab(t.id),className:"selectable"+(tab===t.id?" selected-dissolve":""),style:{flex:1,padding:"10px 0 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,fontFamily:"inherit"}},
         h("span",{style:{fontSize:20,filter:tab===t.id?"none":"grayscale(1) opacity(0.45)"}},t.icon),
         h("span",{style:{fontSize:10,fontWeight:700,color:tab===t.id?"#C6FF00":"#666666",letterSpacing:.5}},t.label))))
   );
