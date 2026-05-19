@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v66";
+const APP_VERSION="v67";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -358,13 +358,68 @@ const SESSIONS=[
   {s:"Bônus",dia:"Progressão",sub:"Pull-ups",img:BASE+"Pullups/0.jpg",cor:"#F43F5E"},
 ];
 
+// Sequência principal (Bônus fica fora — opcional)
+const TRAINING_CYCLE=[
+  {type:"workout",session:"Superiores 1"},
+  {type:"workout",session:"Superiores 2"},
+  {type:"rest"},
+  {type:"workout",session:"Inferiores"},
+  {type:"workout",session:"Superiores 3"},
+  {type:"rest"}
+];
+
 function SessionHomeView({onSelect}){
-  const diasSessao={1:"Superiores 1",2:"Superiores 2",4:"Superiores 3",6:"Inferiores"};
-  const hoje=diasSessao[new Date().getDay()]||null;
-  const sesHoje=hoje?SESSIONS.find(s=>s.s===hoje):null;
+  // ── Log + helpers de ciclo ──────────────────────────────────
+  const log=(()=>{try{const r=localStorage.getItem("workout_log");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}})();
+  function dateKey(ts){const d=new Date(ts);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+  const todayK=dateKey(Date.now());
+  function getCompletedWorkoutDays(){
+    const seen=new Set();const arr=[];
+    log.forEach(e=>{
+      if(!e||!e.session||e.session==="Bônus")return;
+      const key=dateKey(e.ts)+"|"+e.session;
+      if(seen.has(key))return;
+      seen.add(key);
+      arr.push({date:dateKey(e.ts),session:e.session,ts:e.ts});
+    });
+    return arr.sort((a,b)=>a.ts-b.ts);
+  }
+  function getLastCompletedMainWorkout(){const d=getCompletedWorkoutDays();return d.length?d[d.length-1]:null;}
+  function getNextCycleItemFromLastWorkout(lastSession){
+    if(!lastSession)return TRAINING_CYCLE[0];
+    const idx=TRAINING_CYCLE.findIndex(i=>i.type==="workout"&&i.session===lastSession);
+    if(idx<0)return TRAINING_CYCLE[0];
+    return TRAINING_CYCLE[(idx+1)%TRAINING_CYCLE.length];
+  }
+  function getNextWorkoutAfter(lastSession){
+    const startIdx=lastSession?TRAINING_CYCLE.findIndex(i=>i.type==="workout"&&i.session===lastSession):-1;
+    for(let i=1;i<=TRAINING_CYCLE.length;i++){
+      const item=TRAINING_CYCLE[((startIdx<0?-1:startIdx)+i+TRAINING_CYCLE.length)%TRAINING_CYCLE.length];
+      if(item.type==="workout")return item;
+    }
+    return TRAINING_CYCLE[0];
+  }
+  function getHomeTrainingRecommendation(){
+    const days=getCompletedWorkoutDays();
+    const todayDone=days.filter(d=>d.date===todayK);
+    if(todayDone.length>0){
+      const lastTodaySession=todayDone[todayDone.length-1].session;
+      const next=getNextCycleItemFromLastWorkout(lastTodaySession);
+      const nextWorkout=next.type==="workout"?next:getNextWorkoutAfter(lastTodaySession);
+      return{status:"done_today",heroSession:lastTodaySession,nextLabel:next.type==="rest"?"Descanso · próximo: "+nextWorkout.session:nextWorkout.session,playSession:nextWorkout.session};
+    }
+    const last=days.length?days[days.length-1].session:null;
+    const next=getNextCycleItemFromLastWorkout(last);
+    if(next.type==="rest"){
+      const nextW=getNextWorkoutAfter(last);
+      return{status:"rest",heroSession:nextW.session,nextLabel:"Próximo treino: "+nextW.session,playSession:nextW.session};
+    }
+    return{status:"workout",heroSession:next.session,playSession:next.session};
+  }
+  const rec=getHomeTrainingRecommendation();
+  const sesHoje=SESSIONS.find(s=>s.s===rec.heroSession)||null;
   const sesOutras=sesHoje?SESSIONS.filter(s=>s.s!==sesHoje.s):SESSIONS;
   // ── Métricas do mês ──────────────────────────────────────────
-  const log=(()=>{try{const r=localStorage.getItem("workout_log");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}})();
   const sessions=(()=>{try{const r=localStorage.getItem("workout_sessions");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}})();
   const now=new Date(),Y=now.getFullYear(),M=now.getMonth();
   const inMonth=log.filter(e=>{const d=new Date(e.ts);return d.getFullYear()===Y&&d.getMonth()===M;});
@@ -401,21 +456,23 @@ function SessionHomeView({onSelect}){
     subtext&&h("div",{style:{fontSize:11,color:"#666666",marginTop:4,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},subtext));
   return h("div",{style:{background:"#050505",minHeight:"100vh",paddingBottom:32}},
     h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
-      // Seção "Para hoje"
+      // Seção hero — workout / rest / done_today
       sesHoje&&h("div",{style:{marginBottom:28}},
-        h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"#666666",textTransform:"uppercase",marginBottom:14}},"Para hoje"),
-        h("div",{onClick:()=>onSelect(sesHoje.s),
+        h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:rec.status==="rest"?"#A3A3A3":"#666666",textTransform:"uppercase",marginBottom:14}},
+          rec.status==="rest"?"Hoje é descanso":rec.status==="done_today"?"Concluído":"Para hoje"),
+        h("div",{onClick:()=>onSelect(rec.playSession),
           style:{borderRadius:22,overflow:"hidden",cursor:"pointer",
             boxShadow:"0 8px 32px rgba(0,0,0,.16)",position:"relative",height:340}},
           h("img",{src:sesHoje.img,alt:sesHoje.s,
-            style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"top"},
+            style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"top",filter:rec.status==="rest"?"grayscale(0.4) brightness(0.85)":"none"},
             onError:e=>{e.target.style.display="none"}}),
           h("div",{style:{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(0,0,0,.75) 100%)"}}),
           h("div",{style:{position:"absolute",top:18,left:18}},
-            h("span",{style:{background:"#C6FF00",color:"#050505",fontSize:10,fontWeight:900,letterSpacing:1.2,padding:"5px 13px",borderRadius:20,textTransform:"uppercase"}},"HOJE")),
+            h("span",{style:{background:rec.status==="rest"?"rgba(255,255,255,0.18)":"#C6FF00",color:rec.status==="rest"?"#F5F5F5":"#050505",fontSize:10,fontWeight:900,letterSpacing:1.2,padding:"5px 13px",borderRadius:20,textTransform:"uppercase",backdropFilter:rec.status==="rest"?"blur(8px)":"none"}},
+              rec.status==="rest"?"Descanso":rec.status==="done_today"?"✓ Concluído":"HOJE")),
           h("div",{style:{position:"absolute",bottom:0,left:0,right:0,padding:"20px 22px 24px",display:"flex",alignItems:"flex-end",justifyContent:"space-between"}},
             h("div",null,
-              h("div",{style:{fontSize:13,color:"rgba(255,255,255,.60)",marginBottom:5}},sesHoje.sub),
+              h("div",{style:{fontSize:13,color:"rgba(255,255,255,.60)",marginBottom:5}},rec.nextLabel||sesHoje.sub),
               h("div",{style:{fontSize:26,fontWeight:800,color:"#fff",letterSpacing:-.5,lineHeight:1.1,marginBottom:5}},sesHoje.s),
               h("div",{style:{fontSize:12,color:"rgba(255,255,255,.50)"}},EX.filter(x=>x.s===sesHoje.s).length+" exercícios")),
             h("div",{style:{width:58,height:58,borderRadius:"50%",background:"#C6FF00",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 24px rgba(198,255,0,.45)",flexShrink:0,marginLeft:16}},
