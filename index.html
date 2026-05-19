@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v76";
+const APP_VERSION="v77";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -368,6 +368,73 @@ const TRAINING_CYCLE=[
   {type:"rest"}
 ];
 
+// ── Persistência: workout_log + backup IndexedDB ───────────────
+const STORAGE_KEY="workout_log";
+const DB_NAME="guia_treino_db";
+const DB_STORE="backups";
+const MAX_BACKUPS=20;
+function getWorkoutLog(){try{const r=localStorage.getItem(STORAGE_KEY);const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}}
+function setWorkoutLog(log){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(log));saveBackupIDB(log);}catch(e){console.error("setWorkoutLog",e);}}
+function openIDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error("no indexedDB"));return;}const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(DB_STORE))db.createObjectStore(DB_STORE,{keyPath:"id",autoIncrement:true});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+function saveBackupIDB(log){
+  openIDB().then(db=>{
+    const tx=db.transaction(DB_STORE,"readwrite");
+    const store=tx.objectStore(DB_STORE);
+    store.add({timestamp:Date.now(),version:(typeof APP_VERSION!=="undefined"?APP_VERSION:""),workout_log:log});
+    store.getAll().onsuccess=function(){
+      const all=this.result||[];
+      if(all.length>MAX_BACKUPS){
+        all.sort((a,b)=>a.timestamp-b.timestamp);
+        all.slice(0,all.length-MAX_BACKUPS).forEach(b=>store.delete(b.id));
+      }
+    };
+  }).catch(()=>{});
+}
+function getLastBackupIDB(){return new Promise(resolve=>{openIDB().then(db=>{const tx=db.transaction(DB_STORE,"readonly");const store=tx.objectStore(DB_STORE);store.getAll().onsuccess=function(){const all=this.result||[];if(!all.length){resolve(null);return;}all.sort((a,b)=>b.timestamp-a.timestamp);resolve(all[0]);};}).catch(()=>resolve(null));});}
+// Auto-restore se localStorage estiver vazio
+(async function autoRestore(){
+  try{
+    const cur=getWorkoutLog();
+    if(cur.length>0)return;
+    const backup=await getLastBackupIDB();
+    if(backup&&Array.isArray(backup.workout_log)&&backup.workout_log.length>0){
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(backup.workout_log));
+      console.log("Guia Treino: backup restaurado ("+backup.workout_log.length+" séries de "+new Date(backup.timestamp).toLocaleString("pt-BR")+")");
+    }
+  }catch(e){console.error("autoRestore",e);}
+})();
+function exportWorkoutData(){
+  const data={version:(typeof APP_VERSION!=="undefined"?APP_VERSION:""),exportedAt:new Date().toISOString(),workout_log:getWorkoutLog()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  const dt=new Date();
+  const ds=dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");
+  a.href=url;a.download="guia-treino-backup-"+ds+".json";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function importWorkoutData(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        if(!data||!Array.isArray(data.workout_log))return reject(new Error("Arquivo inválido (sem workout_log)"));
+        const current=getWorkoutLog();
+        const seen=new Set(current.map(e=>e&&e.id).filter(Boolean));
+        let added=0;
+        data.workout_log.forEach(e=>{if(e&&e.id&&!seen.has(e.id)){current.push(e);seen.add(e.id);added++;}});
+        current.sort((a,b)=>(a.ts||0)-(b.ts||0));
+        setWorkoutLog(current);
+        resolve({added,total:current.length});
+      }catch(err){reject(err);}
+    };
+    reader.onerror=()=>reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
 function SessionHomeView({onSelect}){
   // ── Log + helpers de ciclo ──────────────────────────────────
   const log=(()=>{try{const r=localStorage.getItem("workout_log");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}})();
@@ -700,8 +767,7 @@ function TreinoView(){
   const plannedSeries=blocoKey?parseInt((ex[blocoKey]||"").match(/(\d+)/)?.[1]||"0")||0:0;
   const allSeriesDone=plannedSeries>0&&seriesCt>=plannedSeries;
   const nextEx=sesEx[sesEx.indexOf(ex)+1]||null;
-  function getWorkoutLog(){try{const r=localStorage.getItem("workout_log");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}}
-  function setWorkoutLog(l){try{localStorage.setItem("workout_log",JSON.stringify(l));}catch(e){console.error("Erro ao salvar workout_log",e);}}
+  // getWorkoutLog / setWorkoutLog vêm do escopo global (com backup IDB)
   const exLog=getWorkoutLog().filter(e=>e.exerciseId===ex.id).slice(-4).reverse();
   const saveSeries=(pse)=>{const entry={id:Date.now()+"",ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,reps,pse,carga,block:blocoKey,setNumber:seriesCt+1,restSeconds:ts};const log=getWorkoutLog();setWorkoutLog([...log,entry]);const fb=getSugestao(ex,entry,prescription,blocoKey);setCoachFeedback({status:fb.status,motivo:fb.motivo});setShowPse(false);setExTime(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
   const todayStr=new Date().toLocaleDateString("pt-BR");
@@ -1344,6 +1410,21 @@ function CoachView(){
         h("span",null,"Guia do coach"),
         h("span",{style:{fontSize:10,transition:"transform .2s",transform:guiaOpen?"rotate(180deg)":"none"}},"▼")),
       guiaOpen&&h("div",{style:{marginTop:14,display:"flex",flexDirection:"column",gap:18}},
+        // ── Backup de dados ────────────────────────────────────
+        h("div",null,
+          h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Backup de dados"),
+          h("div",{style:{background:"#0D0D0D",borderRadius:14,padding:14,boxShadow:"0 6px 18px rgba(0,0,0,.2)"}},
+            h("div",{style:{fontSize:12,color:"#A3A3A3",lineHeight:1.5,marginBottom:14}},
+              "Suas séries são salvas em localStorage e replicadas em IndexedDB. Se o cache do navegador for limpo, o app tenta restaurar do IndexedDB automaticamente. Para garantia extra, exporte um arquivo JSON."),
+            h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+              h("button",{onClick:()=>{try{exportWorkoutData();}catch(e){alert("Falha ao exportar: "+e.message);}},
+                style:{padding:"12px 14px",borderRadius:12,border:"none",background:"#C6FF00",color:"#050505",fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,textTransform:"uppercase"}},"⬇ Exportar"),
+              h("label",{style:{padding:"12px 14px",borderRadius:12,border:"1px solid #252525",background:"#121212",color:"#A3A3A3",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,textTransform:"uppercase",textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center"}},
+                "⬆ Importar",
+                h("input",{type:"file",accept:"application/json,.json",style:{display:"none"},
+                  onChange:e=>{const f=e.target.files&&e.target.files[0];if(!f)return;
+                    importWorkoutData(f).then(r=>{alert("Importado! "+r.added+" séries adicionadas. Total: "+r.total+".");location.reload();}).catch(err=>{alert("Falha ao importar: "+err.message);});
+                    e.target.value="";}}))))),
         h("div",null,
           h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Agenda Semanal"),
           COACH.agenda.map((d,i)=>h("div",{key:i,style:{display:"flex",alignItems:"center",gap:12,marginBottom:6,background:"#0D0D0D",borderRadius:12,padding:"12px 14px",opacity:d.treino?1:0.6,boxShadow:"0 3px 10px rgba(0,0,0,.12)"}},
