@@ -34,7 +34,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v91";
+const APP_VERSION="v92";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -248,7 +248,8 @@ const EB={mc1000:{bg:"rgba(0,0,0,0.72)",c:"#60A5FA",l:"MC-1000"},halter:{bg:"rgb
 const BC=["#1e40af","#ef4444","#7c3aed","#16a34a"];
 const BL=["Bloco 1","Bloco 2","Bloco 3","Deload"];
 const BK=["b1","b2","b3","dl"];
-const fmtT=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+const fmtT=s=>Math.floor(s/60)+":"+String(Math.floor(s)%60).padStart(2,"0");
+const fmtTms=s=>{const tot=Math.max(0,Number(s)||0);const min=Math.floor(tot/60);const sec=Math.floor(tot%60);const cs=Math.floor((tot*100)%100);return min+":"+String(sec).padStart(2,"0")+"."+String(cs).padStart(2,"0");};
 
 const DIET={
   kcal:2200,prot:154,carb:258,fat:62,
@@ -1003,7 +1004,15 @@ function TreinoView(){
   const etRef=useRef(null);
   useEffect(()=>{if(tr&&tl>0)tf.current=setTimeout(()=>setTl(v=>v-1),1000);else if(tl===0&&tr){setTr(false);setSt(false);try{navigator.vibrate&&navigator.vibrate([200,100,200,100,200])}catch(e){}try{const ac=new(window.AudioContext||window.webkitAudioContext)();[0,.35,.7].forEach(t=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.setValueAtTime(.6,ac.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+t+.28);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.3);});}catch(e){}}return()=>clearTimeout(tf.current);},[tr,tl]);
   useEffect(()=>{if(cntd===null||cntd<=0)return;cdRef.current=setTimeout(()=>{if(cntd===1){setCntd(null);setExRun(true);setExTime(0);}else setCntd(v=>v-1);try{navigator.vibrate&&navigator.vibrate(60);}catch(e){}},1000);return()=>clearTimeout(cdRef.current);},[cntd]);
-  useEffect(()=>{if(exRun)etRef.current=setInterval(()=>setExTime(v=>v+1),1000);else clearInterval(etRef.current);return()=>clearInterval(etRef.current);},[exRun]);
+  useEffect(()=>{
+    if(exRun){
+      const startTs=Date.now()-(exTime*1000);
+      etRef.current=setInterval(()=>setExTime((Date.now()-startTs)/1000),50);
+    }else{
+      clearInterval(etRef.current);
+    }
+    return()=>clearInterval(etRef.current);
+  },[exRun]);
   useEffect(()=>{if(selEx)document.body.classList.add("in-exercise");else document.body.classList.remove("in-exercise");return()=>document.body.classList.remove("in-exercise");},[selEx]);
   useEffect(()=>{if(exRun)document.body.classList.add("in-active-set");else document.body.classList.remove("in-active-set");return()=>document.body.classList.remove("in-active-set");},[exRun]);
   const stT=(s)=>{setTs(s);setTl(s)};
@@ -1314,13 +1323,14 @@ function TreinoView(){
           ?h("img",{src:EX_IMGS[ex.id],alt:ex.n,
               style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top"}})
           :h("div",{style:{position:"absolute",inset:0,background:"#0D0D0D"}}),
-      // Gradiente de legibilidade
+      // Gradiente de legibilidade (mais escuro pra suportar timer ms)
       h("div",{style:{position:"absolute",inset:0,
-        background:"linear-gradient(to bottom,rgba(0,0,0,.55) 0%,rgba(0,0,0,.2) 40%,rgba(0,0,0,.88) 100%)"}}),
+        background:"linear-gradient(180deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.42) 38%,rgba(0,0,0,0.82) 100%)"}}),
       // Conteúdo
       h("div",{style:{position:"relative",zIndex:1,display:"flex",flexDirection:"column",
         height:"100%",maxWidth:740,margin:"0 auto",width:"100%",
-        padding:"0 24px",boxSizing:"border-box"}},
+        padding:"0 24px",boxSizing:"border-box",
+        paddingBottom:"calc(28px + env(safe-area-inset-bottom,0px))"}},
         // ── TOPO ──────────────────────────────────────────────────
         h("div",{style:{display:"flex",alignItems:"center",gap:12,
           paddingTop:"calc(env(safe-area-inset-top,0px) + 52px)",paddingBottom:16}},
@@ -1334,7 +1344,7 @@ function TreinoView(){
               overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textShadow:"0 2px 8px rgba(0,0,0,.5)"}},ex.n),
             h("div",{style:{fontSize:13,color:"rgba(255,255,255,.6)",marginTop:4,fontWeight:600,letterSpacing:.2}},
               ex.m+(eb.l?" · "+eb.l:"")))),
-        // ── ESPAÇADOR ─────────────────────────────────────────────
+        // ── ESPAÇADOR FLEXÍVEL ─────────────────────────────────────
         h("div",{style:{flex:1}}),
         // ── CENTRO ────────────────────────────────────────────────
         h("div",{style:{textAlign:"center"}},
@@ -1342,10 +1352,10 @@ function TreinoView(){
           h("div",{style:{fontSize:15,fontWeight:900,letterSpacing:3,
             color:"rgba(255,255,255,.75)",textTransform:"uppercase",marginBottom:22}},
             "SÉRIE "+(seriesCt+1)+(plannedSeries>0?" DE "+plannedSeries:"")),
-          // Timer grande
+          // Timer grande com centésimos
           h("div",{className:"bn",style:{fontSize:"clamp(88px,16vw,128px)",fontWeight:900,color:"#FFFFFF",
             fontVariantNumeric:"tabular-nums",letterSpacing:-4,lineHeight:.9,
-            textShadow:"0 4px 32px rgba(0,0,0,.5), 0 1px 6px rgba(0,0,0,.4)"}},fmtT(exTime)),
+            textShadow:"0 4px 32px rgba(0,0,0,.5), 0 1px 6px rgba(0,0,0,.4)"}},fmtTms(exTime)),
           h("div",{style:{fontSize:13,fontWeight:800,letterSpacing:3,
             color:"rgba(255,255,255,.65)",textTransform:"uppercase",marginTop:14}},
             "tempo da série"),
@@ -1354,20 +1364,18 @@ function TreinoView(){
             color:"rgba(255,255,255,.85)",letterSpacing:-.2}},
             sug.rMin+(sug.rMax!==sug.rMin?"–"+sug.rMax:"")+" reps · PSE "+
             sug.pMin+(sug.pMax!==sug.pMin?"–"+sug.pMax:""))),
-        // ── ESPAÇADOR INFERIOR (espaço para o botão circular) ─────
-        h("div",{style:{flex:1,minHeight:180}})),
-      // ── BOTÃO CIRCULAR FINALIZAR (absolute, fora do flow) ──────
-      h("button",{
-        onClick:()=>{setExRun(false);setLastDur(exTime);setCarga(exLog[0]?.carga??0);setReps(exLog[0]?.reps??0);setShowCarga(true);},
-        style:{position:"absolute",left:"50%",transform:"translateX(-50%)",
-          bottom:"calc(32px + env(safe-area-inset-bottom,0px))",
-          width:112,height:112,borderRadius:"50%",border:"none",
-          background:"#C6FF00",color:"#050505",
-          fontSize:15,fontWeight:900,lineHeight:1.15,
-          cursor:"pointer",fontFamily:"inherit",
-          display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",
-          boxShadow:"0 12px 32px rgba(198,255,0,.35)",zIndex:2}},
-        h("span",null,"Finalizar",h("br"),"Série"))),
+        // ── BOTÃO CIRCULAR FINALIZAR (em flow, abaixo do timer) ────
+        h("div",{style:{display:"flex",justifyContent:"center",marginTop:40}},
+          h("button",{
+            onClick:()=>{setExRun(false);setLastDur(exTime);setCarga(exLog[0]?.carga??0);setReps(exLog[0]?.reps??0);setShowCarga(true);},
+            style:{width:148,height:148,borderRadius:"50%",border:"none",
+              background:"#C6FF00",color:"#050505",
+              fontSize:17,fontWeight:900,lineHeight:1.15,letterSpacing:.2,
+              cursor:"pointer",fontFamily:"inherit",
+              display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",
+              boxShadow:"0 16px 40px rgba(198,255,0,.45), 0 4px 12px rgba(0,0,0,.4)"}},
+            h("span",null,"Finalizar",h("br"),"Série")))
+      )),
     cntd!==null&&h("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:500,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
       h("div",{style:{fontSize:11,color:"#A3A3A3",fontWeight:700,letterSpacing:3,textTransform:"uppercase",marginBottom:24}},"Prepare-se"),
       h("div",{className:"bn",style:{fontSize:160,fontWeight:900,color:"#C6FF00",lineHeight:1,fontVariantNumeric:"tabular-nums",textShadow:"0 0 80px rgba(198,255,0,.35)"}},cntd),

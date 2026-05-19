@@ -1,4 +1,4 @@
-const CACHE_NAME = 'guia-treino-v91';
+const CACHE_NAME = 'guia-treino-v92';
 const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './assets/videos/supino-halteres.mp4'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))))); self.clients.claim(); });
