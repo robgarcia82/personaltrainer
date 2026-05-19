@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v62";
+const APP_VERSION="v63";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -564,6 +564,7 @@ function TreinoView(){
   const[currentBlock,setCurrentBlock]=useState("b1");
   const[blocoOpen,setBlocoOpen]=useState(false);
   const BLOCO_NAMES={b1:"Bloco 1 · Volume",b2:"Bloco 2 · Intensidade",b3:"Bloco 3 · Carga",dl:"Deload · Recuperação"};
+  const BLOCO_BENEFITS={b1:"Constrói base, técnica e resistência muscular.",b2:"Aumenta o estímulo e aproxima da falha com controle.",b3:"Foca força, progressão de peso e séries mais pesadas.",dl:"Reduz fadiga e prepara o corpo para evoluir de novo."};
   const[exOpen,setExOpen]=useState(null);
   const[coachFeedback,setCoachFeedback]=useState(null);
   const tf=useRef(null);
@@ -742,29 +743,34 @@ function TreinoView(){
           :h("button",{onClick:()=>{setCoachFeedback(null);setCntd(3);setSt(false);setTr(false);},disabled:exRun||cntd!==null,
               style:{width:"100%",height:72,borderRadius:24,border:"none",color:exRun||cntd!==null?"#666666":"#050505",fontSize:22,fontWeight:900,cursor:exRun||cntd!==null?"not-allowed":"pointer",fontFamily:"inherit",letterSpacing:.3,background:exRun||cntd!==null?"#252525":"#C6FF00",opacity:exRun||cntd!==null?.7:1,boxShadow:exRun||cntd!==null?"none":"0 8px 24px rgba(198,255,0,.35)"}},"▶  Iniciar Série")),
 
-      // ── PERIODIZAÇÃO (accordion discreto) ─────────────────────────
+      // ── PERIODIZAÇÃO (cards horizontais com scroll) ──────────────
       h("div",{style:{marginBottom:14}},
-        h("button",{onClick:()=>setBlocoOpen(v=>!v),
-          style:{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",
-            padding:"10px 14px",borderRadius:12,border:"1px solid #252525",background:"#121212",
-            color:"#A3A3A3",fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",
-            cursor:"pointer",fontFamily:"inherit"}},
-          h("span",null,"Periodização · ",h("span",{style:{color:"#C6FF00",fontWeight:800}},(BLOCO_NAMES[blocoKey]||"").split(" · ")[0]||"")),
-          h("span",{style:{fontSize:10,transition:"transform .2s",transform:blocoOpen?"rotate(180deg)":"none"}},"▼")),
-        blocoOpen&&h("div",{style:{marginTop:8,display:"flex",flexDirection:"column",gap:6}},
+        h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:1.5,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Periodização"),
+        h("div",{style:{display:"flex",gap:10,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",paddingBottom:6,marginLeft:-4,marginRight:-4,paddingLeft:4,paddingRight:4}},
           BK.map(b=>{
             const active=blocoKey===b;
-            return h("button",{key:b,
+            const parts=(BLOCO_NAMES[b]||"").split(" · ");
+            const title=parts[0]||"";
+            const sub=parts[1]||"";
+            const p=parseBloco(ex[b]||"");
+            let pres=null;
+            if(p){
+              const rr=p.rMax!==p.rMin?p.rMin+"–"+p.rMax:String(p.rMin);
+              const pp=p.pMax!==p.pMin?p.pMin+"–"+p.pMax:String(p.pMin);
+              const ss=p.seriesMax!==p.seriesMin?p.seriesMin+"–"+p.seriesMax:String(p.seriesMin);
+              pres=ss+"×"+rr+" · PSE "+pp;
+            }
+            return h("div",{key:b,
               onClick:()=>{setSb(ex.id+b);setCurrentBlock(b);},
-              style:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,
-                padding:"12px 14px",borderRadius:12,
-                border:"1px solid "+(active?"#C6FF00":"#252525"),
+              style:{flexShrink:0,minWidth:210,maxWidth:230,padding:"16px 18px",borderRadius:18,
                 background:active?"rgba(198,255,0,0.10)":"#121212",
-                color:active?"#C6FF00":"#A3A3A3",
-                fontSize:13,fontWeight:active?800:600,cursor:"pointer",fontFamily:"inherit",
-                textAlign:"left",letterSpacing:.1}},
-              h("span",null,BLOCO_NAMES[b]),
-              active&&h("span",{style:{fontSize:10,fontWeight:900,letterSpacing:1}},"●"));
+                border:"1px solid "+(active?"#C6FF00":"transparent"),
+                cursor:"pointer",fontFamily:"inherit",
+                boxShadow:active?"0 8px 24px rgba(198,255,0,.15)":"0 4px 14px rgba(0,0,0,.22)"}},
+              h("div",{className:"bn",style:{fontSize:24,fontWeight:900,color:active?"#C6FF00":"#F5F5F5",lineHeight:1}},title),
+              h("div",{style:{fontSize:11,color:active?"#C6FF00":"#A3A3A3",fontWeight:600,marginTop:4,letterSpacing:.4,opacity:active?.85:1}},sub),
+              pres&&h("div",{style:{fontSize:11,color:active?"#C6FF00":"#A3A3A3",fontWeight:700,marginTop:10,letterSpacing:.2,opacity:active?.9:.85}},pres),
+              h("div",{style:{fontSize:12,color:active?"rgba(255,255,255,.7)":"#A3A3A3",fontWeight:500,lineHeight:1.35,marginTop:8}},BLOCO_BENEFITS[b]));
           }))),
 
       // ── HISTÓRICO ─────────────────────────────────────────────────
