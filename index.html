@@ -36,7 +36,7 @@ const h=React.createElement,{useState,useEffect,useRef}=React;
 // Bônus       (Progressão) — Pull-ups
 const EX=[
 // ── SUPERIORES 1 — PEITO + TRÍCEPS ──────────────────────────────
-{id:1,n:"Supino com Halteres",m:"Peitoral maior",s:"Superiores 1",d:"Seg",f:"Peito",eq:"halter",imgPos:"center top",
+{id:1,n:"Supino com Halteres",m:"Peitoral maior",s:"Superiores 1",d:"Seg",f:"Peito",eq:"halter",imgPos:"center top",video:"assets/videos/supino-halteres.mp4",
 st:["Deite no banco com um halter em cada mão, pés firmes no chão.","Braços estendidos acima do peito, halteres alinhados com os ombros.","Desça controlando por 2-3s até os cotovelos na altura do peito.","Empurre para cima de forma explosiva.","Mantenha as escápulas retraídas durante todo o movimento."],
 t:"Imagine que está empurrando o corpo para dentro do banco. Isso ativa mais o peitoral.",
 e:"Não arquear excessivamente as costas. Manter cotovelos em ~75°.",
@@ -805,11 +805,17 @@ function TreinoView(){
         h("button",{onClick:rt,style:{padding:"16px 24px",borderRadius:14,background:"#252525",border:"1px solid #252525",color:"#A3A3A3",fontSize:18,cursor:"pointer",fontFamily:"inherit"}},"↺"),
         h("button",{onClick:()=>{setSt(false);setTr(false)},style:{padding:"16px 24px",borderRadius:14,background:"#252525",border:"1px solid #252525",color:"#A3A3A3",fontSize:18,cursor:"pointer",fontFamily:"inherit"}},"✕"))),
     exRun&&h("div",{style:{position:"fixed",inset:0,zIndex:650,display:"flex",flexDirection:"column",overflow:"hidden"}},
-      // Fundo — imagem ou cor sólida
-      EX_IMGS[ex.id]
-        ?h("img",{src:EX_IMGS[ex.id],alt:ex.n,
-            style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top"}})
-        :h("div",{style:{position:"absolute",inset:0,background:"#0D0D0D"}}),
+      // Fundo — vídeo (com img embaixo como fallback) ou imagem ou cor sólida
+      ex.video
+        ?[EX_IMGS[ex.id]&&h("img",{key:"fb",src:EX_IMGS[ex.id],alt:ex.n,
+            style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top"}}),
+          h("video",{key:"vid",src:ex.video,autoPlay:true,loop:true,muted:true,playsInline:true,preload:"auto",
+            onError:e=>{e.target.style.display="none"},
+            style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top"}})]
+        :EX_IMGS[ex.id]
+          ?h("img",{src:EX_IMGS[ex.id],alt:ex.n,
+              style:{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top"}})
+          :h("div",{style:{position:"absolute",inset:0,background:"#0D0D0D"}}),
       // Gradiente de legibilidade
       h("div",{style:{position:"absolute",inset:0,
         background:"linear-gradient(to bottom,rgba(0,0,0,.55) 0%,rgba(0,0,0,.2) 40%,rgba(0,0,0,.88) 100%)"}}),
