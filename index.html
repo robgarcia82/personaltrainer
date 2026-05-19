@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v58";
+const APP_VERSION="v59";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -617,13 +617,13 @@ function TreinoView(){
   const cfChip=coachFeedback?(SUG_CHIPS[coachFeedback.status]||SUG_CHIPS.ideal):null;
   const cargaProg=getWorkoutLog().filter(e=>e.exerciseId===ex.id&&Number(e.carga)>0).sort((a,b)=>a.ts-b.ts).slice(-6);
   const showProg=cargaProg.length>=6;
-  let progDir="stable",progStatus="Estável",progColor="#A3A3A3",progPillBg="rgba(102,102,102,0.14)",progPillC="#A3A3A3",progMainNumber="",progFirst=0,progLast=0,progPath="",progPts=[];
+  let progDir="stable",progStatus="Estável",progColor="#666666",progPillBg="rgba(255,255,255,0.10)",progPillC="#A3A3A3",progMainNumber="",progFirst=0,progLast=0,progPath="",progPts=[];
   if(showProg){
     const cs=cargaProg.map(e=>Number(e.carga));
     progFirst=cs[0];progLast=cs[cs.length-1];
-    const delta=progLast-progFirst;
-    if(delta===0){progDir="stable";progStatus="Estável";progColor="#A3A3A3";progPillBg="rgba(102,102,102,0.14)";progPillC="#A3A3A3";progMainNumber=progLast+"kg";}
-    else if(delta>0){progDir="up";progStatus="Subindo";progColor="#C6FF00";progPillBg="rgba(198,255,0,0.14)";progPillC="#C6FF00";progMainNumber="+"+delta+"kg";}
+    const delta=parseFloat((progLast-progFirst).toFixed(1));
+    if(delta===0){progDir="stable";progStatus="Estável";progColor="#666666";progPillBg="rgba(255,255,255,0.10)";progPillC="#A3A3A3";progMainNumber=progLast+"kg";}
+    else if(delta>0){progDir="up";progStatus="Subindo";progColor="#C6FF00";progPillBg="rgba(198,255,0,0.16)";progPillC="#C6FF00";progMainNumber="+"+delta+"kg";}
     else{progDir="down";progStatus="Caiu";progColor="#EF4444";progPillBg="rgba(239,68,68,0.14)";progPillC="#EF4444";progMainNumber=delta+"kg";}
     if(progDir!=="stable"){
       const W=240,H=44,pad=4;
