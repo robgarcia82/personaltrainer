@@ -392,7 +392,7 @@ function SessionHomeView({onSelect}){
     h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#A3A3A3",textTransform:"uppercase",marginTop:10}},label),
     subtext&&h("div",{style:{fontSize:11,color:"#666666",marginTop:4,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},subtext));
   return h("div",{style:{background:"#050505",minHeight:"100vh",paddingBottom:32}},
-    h("div",{style:{maxWidth:740,margin:"0 auto",padding:"28px 20px 0"}},
+    h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
       // Header
       h("div",{style:{marginBottom:24}},
         h("h1",{style:{fontSize:36,fontWeight:800,letterSpacing:-1.2,color:"#F5F5F5",margin:0,lineHeight:1.1}},"Treino"),
@@ -477,7 +477,7 @@ function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock}){
     return sm[1]+"×"+r+(p?" · PSE "+p:"");
   }
   return h("div",{style:{background:"#050505",minHeight:"100vh",paddingBottom:24}},
-    h("div",{style:{maxWidth:920,margin:"0 auto",padding:"28px 20px 0"}},
+    h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
       // ── Botão voltar ────────────────────────────────────────────
       h("button",{onClick:onBack,
         style:{display:"inline-flex",alignItems:"center",gap:5,padding:"8px 16px",borderRadius:22,
@@ -651,13 +651,13 @@ function TreinoView(){
           backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
           border:"1px solid rgba(255,255,255,.25)",color:"#fff",flexShrink:0}},eb.l)),
       // Bottom info
-      h("div",{style:{position:"absolute",bottom:140,left:0,right:0,padding:"0 20px"}},
-        h("div",{style:{maxWidth:740,margin:"0 auto"}},
+      h("div",{style:{position:"absolute",bottom:140,left:0,right:0,padding:"0 24px"}},
+        h("div",{style:{maxWidth:860,margin:"0 auto"}},
           h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,.85)",textTransform:"uppercase",marginBottom:6,textShadow:"0 1px 6px rgba(0,0,0,.5)"}},selS),
           h("div",{style:{fontSize:30,fontWeight:800,color:"#fff",letterSpacing:-.5,lineHeight:1.15,marginBottom:6,textShadow:"0 2px 16px rgba(0,0,0,.65), 0 1px 4px rgba(0,0,0,.55)"}},ex.n),
           h("div",{style:{fontSize:13,color:"rgba(255,255,255,.85)",fontWeight:500,textShadow:"0 1px 6px rgba(0,0,0,.55)"}},ex.m+" · "+eb.l)))),
 
-    h("div",{style:{maxWidth:740,margin:"0 auto",padding:"0 20px 16px",marginTop:-100,position:"relative",zIndex:2}},
+    h("div",{style:{maxWidth:860,margin:"0 auto",padding:"0 24px 16px",marginTop:-100,position:"relative",zIndex:2}},
 
       // ── CARD PRÓXIMA SÉRIE ──────────────────────────────────────
       h("div",{style:{background:"#121212",borderRadius:28,padding:"24px",
@@ -902,7 +902,7 @@ function DietaView(){
   const[om,setOm]=useState(null);
   const dias=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
   const hoje=dias[new Date().getDay()];
-  return h("div",{style:{padding:"0 0 20px"}},
+  return h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"0 0 20px"}},
     h("div",{style:{margin:"16px 16px 0",background:"linear-gradient(135deg,#121212,#0D0D0D)",border:"1px solid #252525",borderRadius:16,padding:16}},
       h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}},
         h("div",null,
@@ -973,7 +973,7 @@ function CoachView(){
   const[oh,setOh]=useState(null);
   function getWorkoutSessions(){try{const r=localStorage.getItem("workout_sessions");const p=r?JSON.parse(r):[];return Array.isArray(p)?[...p].reverse():[];}catch(e){return[];}}
   const wSessions=getWorkoutSessions();
-  return h("div",{style:{padding:"0 0 20px"}},
+  return h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"0 0 20px"}},
 
     h("div",{style:{padding:"16px 16px 0"}},
       h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Histórico de Treinos"),
