@@ -405,11 +405,26 @@ function SessionHomeView({onSelect}){
   );
 }
 
-function ExerciseGridView({selS,fl,sc,onBack,onSelect,af,setAf}){
-  const FS=["Peito","Costas","Ombro","Pernas","Braços","Core"];
+function ExerciseGridView({selS,fl,sc,onBack,onSelect,af,setAf,currentBlock}){
+  const FS=["Todos","Peito","Costas","Ombro","Pernas","Braços","Core"];
   const sesEx=EX.filter(x=>x.s===selS);
-  return h("div",{style:{background:"#F7F7F3",minHeight:"100vh"}},
-    h("div",{style:{position:"sticky",top:0,zIndex:100,background:"#F7F7F3",padding:"12px 20px 10px",borderBottom:"1px solid #EAEAE6"}},
+  const sess=SESSIONS.find(s=>s.s===selS)||{};
+  const bk=currentBlock||"b1";
+  function fmtPres(ex){
+    const str=ex[bk];if(!str)return null;
+    const sm=str.match(/(\d+)(?:-\d+)?\s*[x×]/i);
+    const rm=str.match(/[x×]\s*(\d+)(?:-(\d+))?/i);
+    const pm=str.match(/PSE\s*(\d+)(?:-(\d+))?/i);
+    if(!sm||!rm)return null;
+    const r=rm[2]?rm[1]+"–"+rm[2]:rm[1];
+    const p=pm?(pm[2]?pm[1]+"–"+pm[2]:pm[1]):null;
+    return sm[1]+"×"+r+(p?" · PSE "+p:"");
+  }
+  return h("div",{style:{background:"#F7F7F3",minHeight:"100vh",paddingBottom:20}},
+    // ── HEADER STICKY ──────────────────────────────────────────────
+    h("div",{style:{position:"sticky",top:0,zIndex:100,
+      background:"rgba(247,247,243,.96)",backdropFilter:"blur(12px)",
+      borderBottom:"1px solid #EAEAE6",padding:"12px 20px 10px"}},
       h("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:10}},
         h("button",{onClick:onBack,
           style:{display:"flex",alignItems:"center",gap:4,padding:"8px 16px",borderRadius:22,
@@ -417,43 +432,65 @@ function ExerciseGridView({selS,fl,sc,onBack,onSelect,af,setAf}){
             fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0,
             boxShadow:"0 1px 3px rgba(0,0,0,.05)"}},"← Voltar"),
         h("div",{style:{flex:1,minWidth:0}},
-          h("div",{style:{fontSize:15,fontWeight:800,color:"#151515",letterSpacing:-.3,
-            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},selS),
-          h("div",{style:{fontSize:11,color:"#B0B0B0",marginTop:1}},
-            EX.find(x=>x.s===selS)?.d||""))),
-      h("div",{style:{display:"flex",gap:7,overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:2}},
-        FS.map(f=>h("button",{key:f,onClick:()=>setAf(af===f?"":f),
-          style:{padding:"6px 16px",borderRadius:22,
-            border:"1px solid "+(f===af?FC[f]:"#EAEAE6"),
-            background:f===af?FC[f]+"18":"#FFFFFF",
-            color:f===af?FC[f]:"#6B6B6B",
-            fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",
-            fontFamily:"inherit",flexShrink:0}},f)))),
-    h("div",{style:{maxWidth:740,margin:"0 auto",padding:"12px 20px 20px"}},
-      h("div",{style:{fontSize:12,color:"#B0B0B0",marginBottom:12}},
-        h("span",{style:{color:sc.t,fontWeight:700}},fl.length)," exercício",fl.length!==1?"s":""),
-      !fl.length&&h("div",{style:{textAlign:"center",padding:48,color:"#B0B0B0"}},"Nenhum exercício encontrado"),
-      h("div",{style:{display:"flex",flexDirection:"column",gap:10}},
+          h("div",{style:{fontSize:16,fontWeight:800,color:"#151515",letterSpacing:-.3,
+            lineHeight:1.2}},selS),
+          h("div",{style:{fontSize:11,color:"#8A8A8A",marginTop:2}},
+            (sess.sub||"")+" · "+sesEx.length+" exercícios"))),
+      h("div",{style:{display:"flex",gap:7,overflowX:"auto",WebkitOverflowScrolling:"touch",
+        paddingBottom:2,scrollbarWidth:"none"}},
+        FS.map(f=>{
+          const isActive=f==="Todos"?af==="":af===f;
+          return h("button",{key:f,onClick:()=>setAf(f==="Todos"?"":f),
+            style:{padding:"7px 18px",borderRadius:22,flexShrink:0,
+              border:"1px solid "+(isActive?"#151515":"#EAEAE6"),
+              background:isActive?"#151515":"#FFFFFF",
+              color:isActive?"#FFFFFF":"#8A8A8A",
+              fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",
+              fontFamily:"inherit",letterSpacing:.2,
+              boxShadow:isActive?"0 2px 8px rgba(0,0,0,.15)":"none"}},f);}))
+    ),
+    // ── GRID DE CARDS ──────────────────────────────────────────────
+    h("div",{style:{maxWidth:740,margin:"0 auto",padding:"16px 16px 24px"}},
+      !fl.length&&h("div",{style:{textAlign:"center",padding:48,color:"#B0B0B0"}},
+        "Nenhum exercício encontrado"),
+      h("div",{style:{display:"grid",
+        gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:14}},
         fl.map(ex=>{
           const eb=EB[ex.eq]||EB.corporal;
           const num=sesEx.indexOf(ex)+1;
+          const pres=fmtPres(ex);
           return h("div",{key:ex.id,onClick:()=>onSelect(ex),
-            style:{display:"flex",alignItems:"center",background:"#FFFFFF",
-              borderRadius:16,overflow:"hidden",cursor:"pointer",
-              boxShadow:"0 1px 4px rgba(0,0,0,.07)",border:"1px solid #EAEAE6"}},
-            h("div",{style:{width:72,height:72,flexShrink:0,position:"relative",overflow:"hidden",background:"#F0F0EC"}},
+            style:{background:"#FFFFFF",borderRadius:24,overflow:"hidden",
+              cursor:"pointer",border:"1px solid #EAEAE6",
+              boxShadow:"0 2px 12px rgba(0,0,0,.07)"}},
+            // Imagem
+            h("div",{style:{position:"relative",height:148,
+              background:"#F0F0EC",overflow:"hidden"}},
               EX_IMGS[ex.id]&&h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
                 style:{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top"},
                 onError:e=>{e.target.style.display="none"}}),
-              h("div",{style:{position:"absolute",bottom:4,right:4,width:18,height:18,
-                borderRadius:"50%",background:sc.t,display:"flex",alignItems:"center",
-                justifyContent:"center",fontSize:8,fontWeight:800,color:"#fff",
-                boxShadow:"0 1px 4px rgba(0,0,0,.25)"}},num)),
-            h("div",{style:{flex:1,padding:"13px 14px"}},
-              h("div",{style:{fontSize:15,fontWeight:700,color:"#151515",letterSpacing:-.2,marginBottom:3,lineHeight:1.3}},ex.n),
-              h("div",{style:{fontSize:12,color:"#8A8A8A",marginBottom:7}},ex.m),
-              h("span",{style:{display:"inline-block",fontSize:10,fontWeight:700,letterSpacing:.6,padding:"3px 8px",borderRadius:8,background:eb.bg,color:eb.c}},eb.l)),
-            h("div",{style:{padding:"0 18px",color:"#D0D0CC",fontSize:18,fontWeight:300,flexShrink:0}},"›"));
+              h("div",{style:{position:"absolute",inset:0,
+                background:"linear-gradient(to bottom,transparent 55%,rgba(0,0,0,.18) 100%)"}}),
+              // Badge número
+              h("div",{style:{position:"absolute",top:10,left:10,minWidth:24,height:24,
+                borderRadius:12,background:sc.t,display:"flex",alignItems:"center",
+                justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",
+                padding:"0 6px",boxShadow:"0 2px 8px rgba(0,0,0,.25)"}},num),
+              // Badge equipamento (sobre a imagem)
+              h("div",{style:{position:"absolute",top:10,right:10,
+                padding:"3px 9px",borderRadius:8,
+                background:"rgba(255,255,255,.88)",backdropFilter:"blur(4px)",
+                fontSize:9,fontWeight:800,letterSpacing:.7,color:eb.c}},eb.l)),
+            // Texto
+            h("div",{style:{padding:"14px 16px 16px"}},
+              h("div",{style:{fontSize:15,fontWeight:700,color:"#151515",
+                letterSpacing:-.2,marginBottom:3,lineHeight:1.25}},ex.n),
+              h("div",{style:{fontSize:12,color:"#8A8A8A",
+                marginBottom:pres?10:0}},ex.m),
+              pres&&h("div",{style:{display:"inline-flex",alignItems:"center",
+                gap:4,padding:"4px 10px",borderRadius:10,
+                background:sc.t+"12",border:"1px solid "+sc.t+"30",
+                fontSize:11,fontWeight:700,color:sc.t}},pres)));
         })))
   );
 }
@@ -491,7 +528,7 @@ function TreinoView(){
   if(selS===null)return h(SessionHomeView,{onSelect:setSelS});
   const sc=SC[selS]||{t:"#ef4444",bg:"#2a0808"};
   const fl=EX.filter(x=>{if(x.s!==selS)return false;if(af&&x.f!==af)return false;return true});
-  if(selEx===null)return h(ExerciseGridView,{selS,fl,sc,onBack:()=>{setSelS(null);setAf("")},onSelect:setSelEx,af,setAf});
+  if(selEx===null)return h(ExerciseGridView,{selS,fl,sc,onBack:()=>{setSelS(null);setAf("")},onSelect:setSelEx,af,setAf,currentBlock});
   const ex=selEx;const eb=EB[ex.eq]||EB.corporal;const sesEx=EX.filter(x=>x.s===selS);const num=sesEx.indexOf(ex)+1;
   const blocoKey=sb&&sb.startsWith(String(ex.id))?sb.replace(String(ex.id),""):currentBlock;
   const plannedSeries=blocoKey?parseInt((ex[blocoKey]||"").match(/(\d+)/)?.[1]||"0")||0:0;
