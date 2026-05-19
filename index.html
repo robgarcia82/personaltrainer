@@ -43,7 +43,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v96";
+const APP_VERSION="v97";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -384,11 +384,13 @@ const TRAINING_CYCLE=[
 
 // ── Persistência: workout_log + backup IndexedDB ───────────────
 const STORAGE_KEY="workout_log";
+const WORKOUT_LOG_DELETED_KEY="workout_log_deleted";
 const DB_NAME="guia_treino_db";
 const DB_STORE="backups";
 const MAX_BACKUPS=20;
+function isWorkoutLogDeleted(){try{return localStorage.getItem(WORKOUT_LOG_DELETED_KEY)==="true";}catch(e){return false;}}
 function getWorkoutLog(){try{const r=localStorage.getItem(STORAGE_KEY);const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}}
-function setWorkoutLog(log){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(log));saveBackupIDB(log);_scheduleSync();}catch(e){console.error("setWorkoutLog",e);}}
+function setWorkoutLog(log){try{if(Array.isArray(log)&&log.length>0){try{localStorage.removeItem(WORKOUT_LOG_DELETED_KEY);}catch(e){}}localStorage.setItem(STORAGE_KEY,JSON.stringify(log));saveBackupIDB(log);_scheduleSync();}catch(e){console.error("setWorkoutLog",e);}}
 function openIDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error("no indexedDB"));return;}const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(DB_STORE))db.createObjectStore(DB_STORE,{keyPath:"id",autoIncrement:true});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
 function saveBackupIDB(log){
   openIDB().then(db=>{
@@ -405,14 +407,34 @@ function saveBackupIDB(log){
   }).catch(()=>{});
 }
 function getLastBackupIDB(){return new Promise(resolve=>{openIDB().then(db=>{const tx=db.transaction(DB_STORE,"readonly");const store=tx.objectStore(DB_STORE);store.getAll().onsuccess=function(){const all=this.result||[];if(!all.length){resolve(null);return;}all.sort((a,b)=>b.timestamp-a.timestamp);resolve(all[0]);};}).catch(()=>resolve(null));});}
+function clearIDBBackups(){return new Promise(resolve=>{openIDB().then(db=>{const tx=db.transaction(DB_STORE,"readwrite");const store=tx.objectStore(DB_STORE);const req=store.clear();req.onsuccess=()=>resolve(true);req.onerror=()=>resolve(false);}).catch(()=>resolve(false));});}
 // (auto-restore movido para autoRestoreAndSync, no final do bloco Supabase)
-function clearWorkoutHistory(){
+async function clearWorkoutHistory(){
+  // 1. Marca flag ANTES de qualquer remoção — se algo falhar no meio,
+  //    a flag por si só já impede o restore automático no próximo boot.
+  try{localStorage.setItem(WORKOUT_LOG_DELETED_KEY,"true");}catch(e){}
+  // 2. Remove log local
   try{localStorage.removeItem(STORAGE_KEY);}catch(e){console.error("clearWorkoutHistory",e);}
+  // 3. Limpa backups do IndexedDB (defesa contra restore via getLastBackupIDB)
+  try{await clearIDBBackups();}catch(e){console.warn("clearIDBBackups",e);}
+  // 4. Apaga dados do usuário no Supabase (best-effort). Se a policy de
+  //    DELETE não existir, falha silenciosamente — a flag local ainda
+  //    bloqueia restore na próxima sessão.
+  let cloudResult=null;
+  if(isSupabaseConfigured()){
+    try{cloudResult=await deleteCloudUserLog();}catch(e){cloudResult={ok:false,reason:"exception",error:e.message};}
+  }
+  return{ok:true,cloudResult};
 }
 async function resetAppData(){
-  const APP_KEYS=["workout_log","workout_sessions","guia_user_id","guia_user_id_override"];
+  const APP_KEYS=["workout_log",WORKOUT_LOG_DELETED_KEY,"workout_sessions","guia_user_id","guia_user_id_override"];
   APP_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
   try{sessionStorage.removeItem("__guia_restored_session");}catch(e){}
+  try{sessionStorage.removeItem("__guia_restore_msg");}catch(e){}
+  // Supabase (best-effort — antes do IDB pra usar a config que ainda está em memória)
+  if(isSupabaseConfigured()){
+    try{await deleteCloudUserLog();}catch(e){}
+  }
   // IndexedDB
   try{
     if(window.indexedDB){
@@ -496,6 +518,7 @@ function importWorkoutData(file){
 // create policy "anon read" on public.workout_logs for select using (true);
 // create policy "anon insert" on public.workout_logs for insert with check (true);
 // create policy "anon update" on public.workout_logs for update using (true);
+// create policy "anon delete" on public.workout_logs for delete using (true);
 // ─────────────────────────────────────────────────────────
 const SUPABASE_URL="https://htfpzsxuoiwimnryrimc.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_ZZ-gvN6s-a03eR12vbUROA_FxF73jKZ";
@@ -576,6 +599,23 @@ async function fetchWorkoutLogFromCloud(){
     return{ok:true,entries:rows.map(rowToEntry)};
   }catch(e){return{ok:false,reason:"network",error:e.message,entries:[]};}
 }
+// Apaga TODAS as linhas do usuário corrente no Supabase. Requer policy
+// "anon delete" ativa no projeto:
+//   create policy "anon delete" on public.workout_logs for delete using (true);
+// Se a policy não existir, retorna http_401/403 — best-effort, não bloqueia
+// a remoção local. A flag workout_log_deleted ainda impede restore.
+async function deleteCloudUserLog(){
+  if(!isSupabaseConfigured())return{ok:false,reason:"not_configured"};
+  const userId=getUserId();
+  try{
+    const res=await fetch(SUPABASE_URL+"/rest/v1/workout_logs?user_id=eq."+encodeURIComponent(userId),{
+      method:"DELETE",
+      headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY,"Prefer":"return=minimal"}
+    });
+    if(!res.ok)return{ok:false,reason:"http_"+res.status,body:await res.text().catch(()=>"")};
+    return{ok:true};
+  }catch(e){return{ok:false,reason:"network",error:e.message};}
+}
 function mergeWorkoutLogs(local,remote){
   const seen=new Set();const merged=[];
   (local||[]).forEach(e=>{if(e&&e.id&&!seen.has(e.id)){seen.add(e.id);merged.push(e);}});
@@ -643,6 +683,13 @@ try{
   const FLAG="__guia_restored_session";
   const uid=getUserId();
   try{
+    // 0. Guard: se o usuário apagou o histórico manualmente, NÃO restaurar
+    //    nem de IDB local nem de Supabase. A flag só é limpa quando uma
+    //    nova série é salva (ver setWorkoutLog) ou via Resetar app.
+    if(isWorkoutLogDeleted()){
+      console.log("Guia Treino: workout_log marcado como apagado — restore automático pulado.");
+      return;
+    }
     let cur=getWorkoutLog();
     let changed=false;
     // 1. IDB local
@@ -1782,12 +1829,16 @@ function CoachView(){
               importWorkoutData(f).then(r=>{alert("Importado! "+r.added+" séries adicionadas. Total: "+r.total+".");location.reload();}).catch(err=>{alert("Falha ao importar: "+err.message);});
               e.target.value="";}})),
         // Apagar histórico (perigo discreto)
-        h("button",{onClick:()=>{
-            if(confirm("Tem certeza que deseja apagar todo o histórico de treinos deste dispositivo? Essa ação não pode ser desfeita.")){
-              clearWorkoutHistory();
-              setDataVersion(v=>v+1);
-              alert("Histórico apagado deste dispositivo. Os dados na nuvem permanecem como backup.");
+        h("button",{onClick:async()=>{
+            if(!confirm("Tem certeza que deseja apagar todo o histórico de treinos? Essa ação não pode ser desfeita."))return;
+            const r=await clearWorkoutHistory();
+            setDataVersion(v=>v+1);
+            let msg="Histórico apagado. Não voltará no próximo reload.";
+            if(r&&r.cloudResult){
+              if(r.cloudResult.ok)msg+="\n\n☁ Dados também removidos da nuvem.";
+              else msg+="\n\n⚠ Nuvem: falha ao apagar ("+(r.cloudResult.reason||"?")+"). Os dados locais foram apagados e a flag impede restore — mas se você resetar a flag (ex: salvando uma série nova), a nuvem pode ressuscitar treinos antigos. Adicione a policy 'anon delete' no Supabase pra resolver.";
             }
+            alert(msg);
           },
           style:{width:"100%",padding:"13px 14px",borderRadius:12,border:"1px solid #252525",background:"transparent",color:"#EF4444",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:10,letterSpacing:.2}},
           "Apagar histórico"),
