@@ -34,7 +34,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v90";
+const APP_VERSION="v91";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1291,17 +1291,17 @@ function TreinoView(){
       h("div",{style:{display:"flex",gap:12,marginTop:40,alignItems:"center"}},
         // Reset
         h("button",{onClick:rt,
-          style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#A3A3A3",fontSize:22,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}},"↺"),
-        // Play / Pause (principal — cinza com ícone lime quando rodando)
-        !tr&&tl>0&&h("button",{onClick:()=>setTr(true),
-          style:{minWidth:140,height:60,padding:"0 24px",borderRadius:999,background:"#1A1A1A",border:"none",color:"#F5F5F5",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 8px 24px rgba(0,0,0,.35)",letterSpacing:.3}},
-          h("span",{style:{fontSize:18}},"▶"),h("span",null,"Continuar")),
-        tr&&h("button",{onClick:()=>setTr(false),
-          style:{minWidth:140,height:60,padding:"0 24px",borderRadius:999,background:"#1A1A1A",border:"none",color:"#F5F5F5",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 8px 24px rgba(0,0,0,.35)",letterSpacing:.3}},
-          h("span",{style:{fontSize:18,color:"#C6FF00"}},"⏸"),h("span",null,"Pausar")),
+          style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#A3A3A3",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}},"↺"),
+        // Play / Pause (mesmo tamanho dos outros — ícone-only)
+        !tr&&tl>0&&h("button",{onClick:()=>setTr(true),"aria-label":"Continuar",
+          style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#F5F5F5",fontSize:20,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1,paddingLeft:4,boxShadow:"0 8px 24px rgba(0,0,0,.35)"}},
+          "▶︎"),
+        tr&&h("button",{onClick:()=>setTr(false),"aria-label":"Pausar",
+          style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#C6FF00",fontSize:18,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1,boxShadow:"0 8px 24px rgba(0,0,0,.35)",letterSpacing:-1}},
+          "❚❚"),
         // Fechar
-        h("button",{onClick:()=>{setSt(false);setTr(false)},
-          style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#A3A3A3",fontSize:18,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}},"✕"))),
+        h("button",{onClick:()=>{setSt(false);setTr(false)},"aria-label":"Fechar",
+          style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#A3A3A3",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}},"×"))),
     exRun&&h("div",{style:{position:"fixed",top:0,right:0,bottom:0,left:0,width:"100vw",height:"100dvh",zIndex:800,display:"flex",flexDirection:"column",overflow:"hidden"}},
       // Fundo — vídeo (com img embaixo como fallback) ou imagem ou cor sólida
       ex.video
