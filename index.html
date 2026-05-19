@@ -22,6 +22,9 @@ h1{letter-spacing:.12em}
 ::-webkit-scrollbar{display:none}
 input::placeholder{color:#333}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes screenDissolve{from{opacity:0;transform:translateY(8px);filter:blur(2px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+.screen-enter{animation:screenDissolve 220ms ease-out both}
+@media (prefers-reduced-motion:reduce){.screen-enter{animation:none !important}}
 </style>
 </head>
 <body>
@@ -30,7 +33,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v85";
+const APP_VERSION="v86";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -769,7 +772,7 @@ function SessionHomeView({onSelect}){
     h("div",{className:"bn",style:{fontSize:38,fontWeight:900,color:accent||"#F5F5F5",letterSpacing:-1.5,lineHeight:1}},value),
     h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#A3A3A3",textTransform:"uppercase",marginTop:10}},label),
     subtext&&h("div",{style:{fontSize:11,color:"#666666",marginTop:4,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},subtext));
-  return h("div",{style:{background:"#050505",minHeight:"100vh",paddingBottom:32}},
+  return h("div",{className:"screen-enter",style:{background:"#050505",minHeight:"100vh",paddingBottom:32}},
     h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
       // Seção hero — workout / rest / done_today
       sesHoje&&h("div",{style:{marginBottom:28}},
@@ -877,7 +880,7 @@ function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock,setCurrentBlock,
     const p=pm?(pm[2]?pm[1]+"–"+pm[2]:pm[1]):null;
     return ss+"×"+r+(p?" · PSE "+p:"");
   }
-  return h("div",{style:{background:"#050505",minHeight:"100vh",paddingBottom:24}},
+  return h("div",{className:"screen-enter",key:"grid-"+selS,style:{background:"#050505",minHeight:"100vh",paddingBottom:24}},
     h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
       // ── Botão voltar ────────────────────────────────────────────
       h("button",{onClick:onBack,
@@ -1128,7 +1131,7 @@ function TreinoView(){
     }
   }
   const showExSteps=exOpen!==null?exOpen:exLog.length===0;
-  return h("div",{style:{paddingBottom:(canEndWorkout||(nextEx&&seriesCt>=(plannedSeries>0?plannedSeries:3)))?148:80,background:"#050505",minHeight:"100vh"}},
+  return h("div",{className:"screen-enter",key:"ex-"+ex.id,style:{paddingBottom:(canEndWorkout||(nextEx&&seriesCt>=(plannedSeries>0?plannedSeries:3)))?148:80,background:"#050505",minHeight:"100vh"}},
     // ── HERO ───────────────────────────────────────────────────
     h("div",{style:{position:"relative",width:"100%",height:"min(56vh, 540px)",overflow:"hidden",background:"linear-gradient(135deg,#1A1A1A,#050505)"}},
       EX_IMGS[ex.id]&&h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
@@ -1422,7 +1425,7 @@ function DietaView(){
   const[om,setOm]=useState(null);
   const dias=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
   const hoje=dias[new Date().getDay()];
-  return h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"0 0 20px"}},
+  return h("div",{className:"screen-enter",style:{maxWidth:1040,margin:"0 auto",padding:"0 0 20px"}},
     h("div",{style:{margin:"16px 16px 0",background:"linear-gradient(135deg,#121212,#0D0D0D)",borderRadius:16,padding:16,boxShadow:"0 12px 32px rgba(0,0,0,.3)"}},
       h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}},
         h("div",null,
@@ -1633,7 +1636,7 @@ function CoachView(){
           h("div",{style:{display:"flex",flexDirection:"column",gap:8}},
             comments.map((c,i)=>h("div",{key:i,style:{fontSize:13,color:"#F5F5F5",lineHeight:1.5,fontWeight:500}},c))))));
   }
-  return h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"0 0 32px"}},
+  return h("div",{className:"screen-enter",style:{maxWidth:1040,margin:"0 auto",padding:"0 0 32px"}},
     h("div",{style:{padding:"28px 24px 0"}},
       h("h1",{style:{fontSize:60,fontWeight:900,color:"#F5F5F5",margin:0,lineHeight:1}},"Coach"),
       h("p",{style:{fontSize:15,color:"#A3A3A3",margin:"10px 0 0",fontWeight:500,letterSpacing:-.1}},"Análise dos seus treinos e próximos ajustes.")),
