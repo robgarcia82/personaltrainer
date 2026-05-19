@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v78";
+const APP_VERSION="v79";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -459,8 +459,8 @@ function importWorkoutData(file){
 // create policy "anon insert" on public.workout_logs for insert with check (true);
 // create policy "anon update" on public.workout_logs for update using (true);
 // ─────────────────────────────────────────────────────────
-const SUPABASE_URL="";       // ex: "https://xxxxx.supabase.co"
-const SUPABASE_ANON_KEY="";  // anon public key
+const SUPABASE_URL="https://htfpzsxuoiwimnryrimc.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_ZZ-gvN6s-a03eR12vbUROA_FxF73jKZ";
 const USER_ID_KEY="guia_user_id";
 function isSupabaseConfigured(){return !!(SUPABASE_URL&&SUPABASE_ANON_KEY);}
 function getUserId(){
