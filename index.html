@@ -30,7 +30,7 @@ input::placeholder{color:#333}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v68";
+const APP_VERSION="v69";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -402,19 +402,24 @@ function SessionHomeView({onSelect}){
   function getHomeTrainingRecommendation(){
     const days=getCompletedWorkoutDays();
     const todayDone=days.filter(d=>d.date===todayK);
+    // CONCLUÍDO — algum treino principal feito hoje
     if(todayDone.length>0){
       const lastTodaySession=todayDone[todayDone.length-1].session;
       const next=getNextCycleItemFromLastWorkout(lastTodaySession);
       const nextWorkout=next.type==="workout"?next:getNextWorkoutAfter(lastTodaySession);
-      return{status:"done_today",heroSession:lastTodaySession,nextLabel:next.type==="rest"?"Descanso · próximo: "+nextWorkout.session:nextWorkout.session,playSession:nextWorkout.session};
+      return{status:"done_today",label:"Concluído",heroSession:lastTodaySession,nextLabel:next.type==="rest"?"Descanso · próximo: "+nextWorkout.session:nextWorkout.session,playSession:nextWorkout.session};
     }
     const last=days.length?days[days.length-1].session:null;
     const next=getNextCycleItemFromLastWorkout(last);
+    // DESCANSO — próximo item do ciclo é rest
     if(next.type==="rest"){
       const nextW=getNextWorkoutAfter(last);
-      return{status:"rest",heroSession:nextW.session,nextLabel:"Próximo treino: "+nextW.session,playSession:nextW.session};
+      return{status:"rest",label:"Hoje é descanso",heroSession:nextW.session,nextLabel:"Próximo treino: "+nextW.session,playSession:nextW.session};
     }
-    return{status:"workout",heroSession:next.session,playSession:next.session};
+    // PARA HOJE — sem histórico (primeira vez), fallback Sup1
+    if(!last)return{status:"workout",label:"Para hoje",heroSession:next.session,playSession:next.session};
+    // PENDENTE — existe histórico, próximo é treino mas não foi feito hoje
+    return{status:"pending",label:"Pendente",heroSession:next.session,nextLabel:"Continue sua sequência de onde parou.",playSession:next.session};
   }
   const rec=getHomeTrainingRecommendation();
   const sesHoje=SESSIONS.find(s=>s.s===rec.heroSession)||null;
@@ -458,8 +463,8 @@ function SessionHomeView({onSelect}){
     h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
       // Seção hero — workout / rest / done_today
       sesHoje&&h("div",{style:{marginBottom:28}},
-        h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:rec.status==="rest"?"#A3A3A3":"#666666",textTransform:"uppercase",marginBottom:14}},
-          rec.status==="rest"?"Hoje é descanso":rec.status==="done_today"?"Concluído":"Para hoje"),
+        h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:rec.status==="rest"?"#A3A3A3":rec.status==="pending"?"#F59E0B":"#666666",textTransform:"uppercase",marginBottom:14}},
+          rec.label),
         h("div",{onClick:()=>onSelect(rec.playSession),
           style:{borderRadius:22,overflow:"hidden",cursor:"pointer",
             boxShadow:"0 8px 32px rgba(0,0,0,.16)",position:"relative",height:420}},
@@ -469,8 +474,12 @@ function SessionHomeView({onSelect}){
           // Gradiente reforçado na base para suportar título grande
           h("div",{style:{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.18) 0%,rgba(0,0,0,.05) 30%,rgba(0,0,0,.55) 65%,rgba(0,0,0,.88) 100%)"}}),
           h("div",{style:{position:"absolute",top:18,left:18}},
-            h("span",{style:{background:rec.status==="rest"?"rgba(255,255,255,0.18)":"#C6FF00",color:rec.status==="rest"?"#F5F5F5":"#050505",fontSize:10,fontWeight:900,letterSpacing:1.2,padding:"5px 13px",borderRadius:20,textTransform:"uppercase",backdropFilter:rec.status==="rest"?"blur(8px)":"none"}},
-              rec.status==="rest"?"Descanso":rec.status==="done_today"?"✓ Concluído":"HOJE")),
+            h("span",{style:{
+              background:rec.status==="rest"?"rgba(255,255,255,0.18)":rec.status==="pending"?"#F59E0B":"#C6FF00",
+              color:rec.status==="rest"?"#F5F5F5":"#050505",
+              fontSize:10,fontWeight:900,letterSpacing:1.2,padding:"5px 13px",borderRadius:20,textTransform:"uppercase",
+              backdropFilter:rec.status==="rest"?"blur(8px)":"none"}},
+              rec.status==="rest"?"Descanso":rec.status==="done_today"?"✓ Concluído":rec.status==="pending"?"⚡ Pendente":"HOJE")),
           h("div",{style:{position:"absolute",bottom:0,left:0,right:0,padding:"20px 24px 24px",display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16}},
             h("div",{style:{minWidth:0,flex:1}},
               h("div",{style:{fontSize:20,fontWeight:700,color:"rgba(255,255,255,.72)",marginBottom:6,letterSpacing:-.3}},rec.nextLabel||sesHoje.sub),
