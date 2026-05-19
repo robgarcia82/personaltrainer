@@ -55,7 +55,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v104";
+const APP_VERSION="v105";
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1064,7 +1064,7 @@ function TreinoView(){
   const[blocoOpen,setBlocoOpen]=useState(false);
   const BLOCO_NAMES={b1:"Bloco 1 · Volume",b2:"Bloco 2 · Intensidade",b3:"Bloco 3 · Carga",dl:"Deload · Recuperação"};
   const BLOCO_BENEFITS={b1:"Constrói base, técnica e resistência muscular.",b2:"Aumenta o estímulo e aproxima da falha com controle.",b3:"Foca força, progressão de peso e séries mais pesadas.",dl:"Reduz fadiga e prepara o corpo para evoluir de novo."};
-  const[exOpen,setExOpen]=useState(null);
+  const[exOpen,setExOpen]=useState(true);
   const[coachFeedback,setCoachFeedback]=useState(null);
   const[stClosing,setStClosing]=useState(false);
   const tf=useRef(null);
@@ -1111,7 +1111,7 @@ function TreinoView(){
       const record={id:Date.now()+"",ts:Date.now(),date:todayStr,session:selS,sessionColor:sc.t,exercises,totalSets:sessionLog.length,durationMin};
       try{const prev=JSON.parse(localStorage.getItem("workout_sessions")||"[]");localStorage.setItem("workout_sessions",JSON.stringify([...prev,record]));}catch(e){}
     }
-    setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);setExOpen(null);setSelS(null);setCoachFeedback(null);
+    setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);setExOpen(true);setSelS(null);setCoachFeedback(null);
   }
   function firstSentence(str){if(!str)return "";const s=String(str).split(".")[0].trim();return s?s+".":String(str);}
   function getLoadStep(ex){if(!ex)return 2.5;if(ex.f==="Braços"||ex.f==="Ombro")return 1;if(ex.eq==="halter")return 2;if(ex.eq==="mc1000")return 2.5;return 2.5;}
@@ -1214,7 +1214,7 @@ function TreinoView(){
   // Como executar fechado por padrão — só abre via clique do usuário.
   // Evita empurrar o botão "Iniciar Série" pra fora do viewport no iPad.
   const showExSteps=exOpen===true;
-  return h("div",{className:"screen-enter",key:"ex-"+ex.id,style:{paddingBottom:"calc(120px + env(safe-area-inset-bottom,0px))",background:"#050505",minHeight:"100vh"}},
+  return h("div",{className:"screen-enter",key:"ex-"+ex.id,style:{paddingBottom:"calc(140px + env(safe-area-inset-bottom,0px))",background:"#050505",minHeight:"100vh"}},
     // ── HERO ───────────────────────────────────────────────────
     h("div",{style:{position:"relative",width:"100%",height:"clamp(300px, 38dvh, 460px)",overflow:"hidden",background:"linear-gradient(135deg,#1A1A1A,#050505)"}},
       EX_IMGS[ex.id]&&h("img",{src:EX_IMGS[ex.id],alt:ex.n,loading:"lazy",
@@ -1230,7 +1230,7 @@ function TreinoView(){
       h("div",{style:{position:"absolute",top:0,left:0,right:0,
         padding:"calc(env(safe-area-inset-top,0px) + 14px) 16px 14px",
         display:"flex",alignItems:"center",gap:10}},
-        h("button",{onClick:()=>{setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);setExOpen(null);setCoachFeedback(null);},
+        h("button",{onClick:()=>{setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);setExOpen(true);setCoachFeedback(null);},
           style:{display:"flex",alignItems:"center",gap:5,padding:"8px 16px",borderRadius:22,
             border:"1px solid rgba(255,255,255,.25)",background:"rgba(255,255,255,.15)",
             backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
@@ -1339,7 +1339,7 @@ function TreinoView(){
             boxShadow:"0 1px 3px rgba(0,0,0,.05)"}},
           h("span",null,"Como executar"),
           h("span",{style:{transition:"transform .2s",transform:showExSteps?"rotate(180deg)":"none",fontSize:10}},"▼")),
-        showExSteps&&h("div",{style:{marginTop:8,background:"#121212",borderRadius:16,padding:"14px 16px",boxShadow:"0 6px 18px rgba(0,0,0,.22)",maxHeight:260,overflowY:"auto",WebkitOverflowScrolling:"touch"}},
+        showExSteps&&h("div",{style:{marginTop:8,background:"#121212",borderRadius:16,padding:"14px 16px",boxShadow:"0 6px 18px rgba(0,0,0,.22)",maxHeight:220,overflowY:"auto",WebkitOverflowScrolling:"touch"}},
           ex.st.map((s,i)=>h("div",{key:i,style:{display:"flex",gap:10,marginBottom:8,padding:"0 4px"}},
             h("div",{style:{width:22,height:22,borderRadius:"50%",background:"#252525",border:"1px solid #252525",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#C6FF00",flexShrink:0,marginTop:2}},i+1),
             h("p",{style:{fontSize:13,lineHeight:1.6,color:"#A3A3A3",margin:0}},s)))))
@@ -1347,10 +1347,10 @@ function TreinoView(){
     // ── ACTION BAR FIXA NO BOTTOM (oculta sob overlays) ─────────────
     !exRun&&cntd===null&&!showCarga&&!showPse&&!st&&h("div",{style:{position:"fixed",left:0,right:0,bottom:0,zIndex:220,
       background:"linear-gradient(180deg,rgba(5,5,5,0) 0%,#050505 35%,#050505 100%)",
-      padding:"24px 24px calc(24px + env(safe-area-inset-bottom,0px))"}},
+      padding:"20px 24px calc(20px + env(safe-area-inset-bottom,0px))"}},
       h("div",{style:{maxWidth:860,margin:"0 auto",width:"100%"}},
         allSeriesDone
-          ?h("button",{onClick:()=>{if(nextEx){setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);setExOpen(null);setCoachFeedback(null);setSelEx(nextEx);}else{saveWorkoutSession();}},
+          ?h("button",{onClick:()=>{if(nextEx){setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);setExOpen(true);setCoachFeedback(null);setSelEx(nextEx);}else{saveWorkoutSession();}},
               style:{width:"100%",height:72,borderRadius:24,border:"none",color:"#fff",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,background:nextEx?"#16a34a":"#7c3aed",boxShadow:"0 18px 50px "+(nextEx?"rgba(22,163,74,.30)":"rgba(124,58,237,.30)")}},
               nextEx?"Próximo Exercício  →":"✓  Encerrar Treino")
           :h("button",{onClick:()=>{setCoachFeedback(null);setCntd(3);setSt(false);setTr(false);},
