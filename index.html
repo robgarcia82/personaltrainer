@@ -54,8 +54,9 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-const h=React.createElement,{useState,useEffect,useRef}=React;
-const APP_VERSION="v112";
+const h=React.createElement,{useState,useEffect,useRef,useMemo}=React;
+const APP_VERSION="v113";
+let _entrySeq=0;// contador p/ IDs de série únicos mesmo em taps rápidos
 console.log("Guia Treino",APP_VERSION);
 
 // ── EXERCÍCIOS ────────────────────────────────────────────────────
@@ -1146,7 +1147,6 @@ function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock,setCurrentBlock,
 function pseColor(c){c=Number(c)||0;if(c<=4)return"#666666";if(c<=6)return"#F59E0B";if(c<=8)return"#C6FF00";return"#EF4444";}
 
 function TreinoView(){
-  const[af,setAf]=useState("");
   const[sb,setSb]=useState(null);
   const[selEx,setSelEx]=useState(null);
   const[st,setSt]=useState(false);
@@ -1164,8 +1164,8 @@ function TreinoView(){
   const[showCarga,setShowCarga]=useState(false);
   const[seriesCt,setSeriesCt]=useState(0);
   const[reps,setReps]=useState(0);
-  const[currentBlock,setCurrentBlock]=useState("b1");
-  const[blocoOpen,setBlocoOpen]=useState(false);
+  const[currentBlock,setCurrentBlock]=useState(()=>localStorage.getItem("currentBlock")||"b1");
+  const handleSetCurrentBlock=(b)=>{localStorage.setItem("currentBlock",b);setCurrentBlock(b);};
   const BLOCO_NAMES={b1:"Bloco 1 · Volume",b2:"Bloco 2 · Intensidade",b3:"Bloco 3 · Carga",dl:"Deload · Recuperação"};
   const BLOCO_BENEFITS={b1:"Constrói base, técnica e resistência muscular.",b2:"Aumenta o estímulo e aproxima da falha com controle.",b3:"Foca força, progressão de peso e séries mais pesadas.",dl:"Reduz fadiga e prepara o corpo para evoluir de novo."};
   const[exOpen,setExOpen]=useState(true);
@@ -1174,7 +1174,8 @@ function TreinoView(){
   const tf=useRef(null);
   const cdRef=useRef(null);
   const etRef=useRef(null);
-  useEffect(()=>{if(tr&&tl>0)tf.current=setTimeout(()=>setTl(v=>v-1),1000);else if(tl===0&&tr){setTr(false);try{navigator.vibrate&&navigator.vibrate([200,100,200,100,200])}catch(e){}try{const ac=new(window.AudioContext||window.webkitAudioContext)();[0,.35,.7].forEach(t=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.setValueAtTime(.6,ac.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+t+.28);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.3);});}catch(e){}setStClosing(true);setTimeout(()=>{setSt(false);setStClosing(false);},200);}return()=>clearTimeout(tf.current);},[tr,tl]);
+  const stCloseRef=useRef(null);// ref para o timeout de animação de closeRest
+  useEffect(()=>{if(tr&&tl>0)tf.current=setTimeout(()=>setTl(v=>v-1),1000);else if(tl===0&&tr){setTr(false);try{navigator.vibrate&&navigator.vibrate([200,100,200,100,200])}catch(e){}try{const ac=new(window.AudioContext||window.webkitAudioContext)();[0,.35,.7].forEach(t=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.setValueAtTime(.6,ac.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+t+.28);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.3);});setTimeout(()=>ac.close().catch(()=>{}),1400);}catch(e){}setStClosing(true);setTimeout(()=>{setSt(false);setStClosing(false);},200);}return()=>clearTimeout(tf.current);},[tr,tl]);
   useEffect(()=>{if(cntd===null||cntd<=0)return;cdRef.current=setTimeout(()=>{if(cntd===1){setCntd(null);setExRun(true);setExTime(0);}else setCntd(v=>v-1);try{navigator.vibrate&&navigator.vibrate(60);}catch(e){}},1000);return()=>clearTimeout(cdRef.current);},[cntd]);
   useEffect(()=>{
     if(exRun){
@@ -1187,13 +1188,13 @@ function TreinoView(){
   },[exRun]);
   useEffect(()=>{if(selEx)document.body.classList.add("in-exercise");else document.body.classList.remove("in-exercise");return()=>document.body.classList.remove("in-exercise");},[selEx]);
   useEffect(()=>{if(exRun)document.body.classList.add("in-active-set");else document.body.classList.remove("in-active-set");return()=>document.body.classList.remove("in-active-set");},[exRun]);
+  useEffect(()=>()=>clearTimeout(stCloseRef.current),[]);// cleanup do timeout de animação closeRest
   const stT=(s)=>{setTs(s);setTl(s)};
   const rt=()=>{setTr(false);setTl(ts)};
-  const closeRest=()=>{if(stClosing)return;setStClosing(true);setTr(false);setTimeout(()=>{setSt(false);setStClosing(false);},200);};
+  const closeRest=()=>{if(stClosing)return;setStClosing(true);setTr(false);stCloseRef.current=setTimeout(()=>{setSt(false);setStClosing(false);},200);};
   if(selS===null)return h(SessionHomeView,{onSelect:setSelS});
   const sc=SC[selS]||{t:"#ef4444",bg:"#2a0808"};
-  const fl=EX.filter(x=>{if(x.s!==selS)return false;if(af&&x.f!==af)return false;return true});
-  if(selEx===null)return h(ExerciseGridView,{selS,sc,onBack:()=>{setSelS(null)},onSelect:setSelEx,currentBlock,setCurrentBlock,setSb});
+  if(selEx===null)return h(ExerciseGridView,{selS,sc,onBack:()=>{setSelS(null)},onSelect:setSelEx,currentBlock,setCurrentBlock:handleSetCurrentBlock,setSb});
   const ex=selEx;const eb=EB[ex.eq]||EB.corporal;const sesEx=EX.filter(x=>x.s===selS);const num=sesEx.indexOf(ex)+1;
   const blocoKey=sb&&sb.startsWith(String(ex.id))?sb.replace(String(ex.id),""):currentBlock;
   const plannedSeries=blocoKey?parseInt((ex[blocoKey]||"").match(/(\d+)/)?.[1]||"0")||0:0;
@@ -1201,7 +1202,7 @@ function TreinoView(){
   const nextEx=sesEx[sesEx.indexOf(ex)+1]||null;
   // getWorkoutLog / setWorkoutLog vêm do escopo global (com backup IDB)
   const exLog=getWorkoutLog().filter(e=>e.exerciseId===ex.id).slice(-4).reverse();
-  const saveSeries=(pse)=>{const entry={id:Date.now()+"",ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,reps,pse,carga,block:blocoKey,setNumber:seriesCt+1,restSeconds:ts};const log=getWorkoutLog();setWorkoutLog([...log,entry]);const fb=getSugestao(ex,entry,prescription,blocoKey);setCoachFeedback({status:fb.status,motivo:fb.motivo});setShowPse(false);setSelectedPse(null);setExTime(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
+  const saveSeries=(pse)=>{const entry={id:Date.now()+"-"+(++_entrySeq),ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,reps,pse,carga,block:blocoKey,setNumber:seriesCt+1,restSeconds:ts};const log=getWorkoutLog();setWorkoutLog([...log,entry]);const fb=getSugestao(ex,entry,prescription,blocoKey);setCoachFeedback({status:fb.status,motivo:fb.motivo});setShowPse(false);setSelectedPse(null);setExTime(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
   const todayStr=new Date().toLocaleDateString("pt-BR");
   const sessionLog=getWorkoutLog().filter(e=>e.session===selS&&e.date===todayStr);
   const canEndWorkout=nextEx===null;
@@ -1708,7 +1709,7 @@ function CoachView(){
   const[diagOpen,setDiagOpen]=useState(false);
   const[diagResult,setDiagResult]=useState(null);
   const[currentUid,setCurrentUid]=useState(()=>{try{return getUserId();}catch(e){return"";}});
-  const[dataVersion,setDataVersion]=useState(0);
+  const[,forceUpdate]=useState(0);// força re-render após apagar histórico
   const[openIds,setOpenIds]=useState(()=>{
     try{const arr=getWorkoutLog();if(!Array.isArray(arr)||arr.length===0)return new Set();
       let maxTs=0,key=null;
@@ -1800,7 +1801,8 @@ function CoachView(){
     if(biggestDrop&&!bestProg)comments.push("Carga caiu em "+biggestDrop.name+" (de "+biggestDrop.prev+"kg para "+biggestDrop.curr+"kg). Pode ser fadiga, ajuste técnico ou recuperação.");
     return comments.slice(0,3);
   }
-  const groups=groupWorkouts();
+  // eslint-disable-line — deps [] correto: log só muda com reload de página
+  const groups=useMemo(()=>groupWorkouts(),[]);
   const last=groups[0]||null;
   const lastComments=generateCoachComment(last,groups);
   const history=groups.slice(1);
@@ -1966,7 +1968,7 @@ function CoachView(){
         h("button",{onClick:async()=>{
             if(!confirm("Tem certeza que deseja apagar todo o histórico de treinos? Essa ação não pode ser desfeita."))return;
             const r=await clearWorkoutHistory();
-            setDataVersion(v=>v+1);
+            forceUpdate(v=>v+1);
             let msg="Histórico apagado. Não voltará no próximo reload.";
             if(r&&r.cloudResult){
               if(r.cloudResult.ok)msg+="\n\n☁ Dados também removidos da nuvem.";
@@ -2021,10 +2023,10 @@ function CoachView(){
                       style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:"1px solid #252525",background:u.id===currentUid?"rgba(198,255,0,0.10)":"transparent",color:u.id===currentUid?"#C6FF00":"#F5F5F5",fontSize:11,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}},
                       h("span",{style:{fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:"1 1 0"}},u.id),
                       h("span",{style:{color:"#A3A3A3",fontWeight:700,flexShrink:0}},u.n+" séries"))))),
-            h("input",{type:"text",placeholder:"ou cole um user_id manualmente",
+            h("input",{type:"text","aria-label":"User ID para recuperação",placeholder:"ou cole um user_id manualmente",
               defaultValue:"",
               onKeyDown:e=>{if(e.key==="Enter"){const v=e.target.value.trim();if(v){setUserIdOverride(v);setCurrentUid(v);location.reload();}}},
-              style:{width:"100%",padding:"9px 12px",borderRadius:10,border:"1px solid #252525",background:"#121212",color:"#F5F5F5",fontSize:11,fontFamily:"monospace",boxSizing:"border-box",outline:"none"}}),
+              style:{width:"100%",padding:"9px 12px",borderRadius:10,border:"1px solid #252525",background:"#121212",color:"#F5F5F5",fontSize:11,fontFamily:"monospace",boxSizing:"border-box",outline:"2px solid transparent"}}),
             h("div",{style:{fontSize:10,color:"#666666",marginTop:6}},"Pressione Enter pra aplicar (recarrega o app)."),
             localStorage.getItem(USER_ID_OVERRIDE_KEY)&&h("button",{onClick:()=>{setUserIdOverride(null);setCurrentUid(STABLE_USER_ID);location.reload();},
               style:{marginTop:10,width:"100%",padding:"8px 12px",borderRadius:10,border:"1px solid #252525",background:"transparent",color:"#A3A3A3",fontSize:10,cursor:"pointer",fontFamily:"inherit",letterSpacing:.5,textTransform:"uppercase"}},
@@ -2032,108 +2034,15 @@ function CoachView(){
   );
 }
 
-function _OLD_CoachView_UNUSED(){
-  return h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"0 0 20px"}},
-
-    h("div",{style:{padding:"16px 16px 0"}},
-      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Histórico de Treinos"),
-      wSessions.length===0
-        ?h("div",{style:{background:"#0D0D0D",borderRadius:14,padding:"20px 16px",textAlign:"center",boxShadow:"0 6px 18px rgba(0,0,0,.2)"}},
-            h("div",{style:{fontSize:22,marginBottom:8}},"🏋️"),
-            h("div",{style:{fontSize:13,color:"#A3A3A3",marginBottom:4}},"Nenhum treino encerrado ainda"),
-            h("div",{style:{fontSize:11,color:"#252525",lineHeight:1.5}},"Ao terminar a última série do treino,\ntoque em Encerrar Treino para registrar aqui."))
-        :wSessions.map((ws,i)=>{
-            const isOpen=oh===i;
-            const cor=ws.sessionColor||"#ef4444";
-            const parts=ws.date.split("/");
-            return h("div",{key:ws.id,style:{marginBottom:8,background:"#0D0D0D",border:"1px solid "+(isOpen?cor+"44":"transparent"),borderRadius:14,overflow:"hidden",boxShadow:"0 4px 12px rgba(0,0,0,.15)"}},
-              h("div",{onClick:()=>setOh(isOpen?null:i),style:{display:"flex",alignItems:"center",gap:12,padding:"14px",cursor:"pointer"}},
-                h("div",{style:{width:44,height:44,borderRadius:10,background:cor+"22",border:"1px solid "+cor+"44",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}},
-                  h("span",{style:{fontSize:13,fontWeight:900,color:cor,lineHeight:1}},parts[0]+"/"+parts[1]),
-                  h("span",{style:{fontSize:9,color:cor+"88",marginTop:2}},parts[2]||"")),
-                h("div",{style:{flex:1}},
-                  h("div",{style:{fontSize:14,fontWeight:700,color:"#F5F5F5"}},ws.session),
-                  h("div",{style:{fontSize:11,color:"#A3A3A3",marginTop:2}},
-                    ws.exercises.length+" exerc. • "+ws.totalSets+" séries"+(ws.durationMin>0?" • ~"+ws.durationMin+"min":""))),
-                h("span",{style:{color:"#666666",fontSize:11,transition:"transform .3s",transform:isOpen?"rotate(180deg)":"none"}},"▼")),
-              isOpen&&h("div",{style:{padding:"0 14px 14px",animation:"fadeIn .2s ease",borderTop:"1px solid rgba(255,255,255,0.06)"}},
-                ws.exercises.map((ex,j)=>
-                  h("div",{key:ex.id,style:{paddingTop:12,borderBottom:j<ws.exercises.length-1?"1px solid #121212":"none",paddingBottom:j<ws.exercises.length-1?12:0}},
-                    h("div",{style:{fontSize:11,fontWeight:700,color:"#666666",marginBottom:8}},ex.name),
-                    h("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},
-                      ex.sets.map((s,k)=>{
-                        const pc=pseColor(s.pse);
-                        return h("div",{key:k,style:{padding:"5px 10px",borderRadius:8,background:pc+"22",border:"1px solid "+pc+"44",fontSize:11,fontWeight:700,color:pc,lineHeight:1.3}},
-                          h("span",null,s.carga>0?s.carga+"kg ":""),
-                          h("span",{style:{opacity:.7}},s.reps>0?s.reps+"rep ":""),
-                          h("span",null,"PSE"+s.pse));}))))));})),
-
-    h("div",{style:{padding:"16px 16px 0"}},
-      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Agenda Semanal"),
-      COACH.agenda.map((d,i)=>h("div",{key:i,style:{display:"flex",alignItems:"center",gap:12,marginBottom:6,background:"#0D0D0D",borderRadius:12,padding:"12px 14px",opacity:d.treino?1:0.6,boxShadow:"0 3px 10px rgba(0,0,0,.12)"}},
-        h("div",{style:{width:38,height:38,borderRadius:10,background:d.treino?d.cor+"22":"#111",border:"1px solid "+(d.treino?d.cor+"44":"#252525"),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},
-          h("span",{style:{fontSize:10,fontWeight:800,color:d.treino?d.cor:"#333"}},d.dia.substring(0,3).toUpperCase())),
-        h("div",{style:{flex:1}},
-          h("div",{style:{fontSize:13,fontWeight:700,color:d.treino?"#F5F5F5":"#444"}},d.sessao),
-          h("div",{style:{fontSize:11,color:"#A3A3A3",marginTop:2}},d.foco)),
-        d.treino&&h("div",{style:{width:6,height:6,borderRadius:"50%",background:d.cor,flexShrink:0}})))),
-    h("div",{style:{padding:"16px 16px 0"}},
-      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Periodização — 12 Semanas"),
-      COACH.blocos.map((b,i)=>{
-        const isOpen=ob===i;
-        return h("div",{key:i,style:{marginBottom:8,background:"#0D0D0D",border:"1px solid "+(isOpen?b.cor+"44":"transparent"),borderRadius:14,overflow:"hidden",boxShadow:"0 4px 12px rgba(0,0,0,.15)"}},
-          h("div",{onClick:()=>setOb(isOpen?null:i),style:{display:"flex",alignItems:"center",gap:12,padding:"14px",cursor:"pointer"}},
-            h("div",{style:{width:4,alignSelf:"stretch",borderRadius:2,background:b.cor,flexShrink:0}}),
-            h("div",{style:{flex:1}},
-              h("div",{style:{fontSize:14,fontWeight:700,color:"#F5F5F5"}},b.nome),
-              h("div",{style:{fontSize:11,color:"#A3A3A3",marginTop:2}},"Semanas ",b.semanas," • PSE ",b.pse)),
-            h("span",{style:{color:"#666666",fontSize:11,transition:"transform .3s",transform:isOpen?"rotate(180deg)":"none"}},"▼")),
-          isOpen&&h("div",{style:{padding:"0 14px 14px",animation:"fadeIn .2s ease"}},
-            h("div",{style:{background:"#121212",borderRadius:10,padding:12,marginBottom:8}},
-              h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:6}},
-                h("span",{style:{fontSize:10,color:"#A3A3A3"}},"SÉRIES"),
-                h("span",{style:{fontSize:13,fontWeight:700,color:b.cor}},b.series)),
-              h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:6}},
-                h("span",{style:{fontSize:10,color:"#A3A3A3"}},"REPS"),
-                h("span",{style:{fontSize:13,fontWeight:700,color:b.cor}},b.reps)),
-              h("div",{style:{display:"flex",justifyContent:"space-between"}},
-                h("span",{style:{fontSize:10,color:"#A3A3A3"}},"PSE"),
-                h("span",{style:{fontSize:13,fontWeight:700,color:b.cor}},b.pse))),
-            h("p",{style:{fontSize:12.5,color:"#A3A3A3",lineHeight:1.5,margin:0}},b.foco)))})),
-    h("div",{style:{padding:"16px 16px 0"}},
-      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Regras de Progressão"),
-      h("div",{style:{background:"#0D0D0D",borderRadius:14,padding:14,boxShadow:"0 6px 18px rgba(0,0,0,.2)"}},
-        COACH.progressao.map((r,i)=>h("div",{key:i,style:{display:"flex",gap:10,marginBottom:i<COACH.progressao.length-1?10:0}},
-          h("div",{style:{width:20,height:20,borderRadius:"50%",background:"#1e40af22",border:"1px solid #1e40af44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#60a5fa",flexShrink:0,marginTop:1}},i+1),
-          h("span",{style:{fontSize:13,lineHeight:1.5,color:"#A3A3A3"}},r))))),
-    h("div",{style:{padding:"16px 16px 0"}},
-      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Descanso entre Séries"),
-      h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
-        COACH.descanso.map((d,i)=>h("div",{key:i,style:{background:"#0D0D0D",borderRadius:12,padding:12,boxShadow:"0 4px 12px rgba(0,0,0,.15)"}},
-          h("div",{style:{fontSize:11,color:"#A3A3A3",marginBottom:4,lineHeight:1.3}},d.tipo),
-          h("div",{style:{fontSize:18,fontWeight:800,color:"#C6FF00"}},d.tempo))))),
-    h("div",{style:{padding:"16px 16px 0"}},
-      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#A3A3A3",textTransform:"uppercase",marginBottom:10}},"Progressão Bônus — Pull-Ups"),
-      COACH.bonus.map((b,i)=>h("div",{key:i,style:{marginBottom:8,background:"#0D0D0D",borderRadius:14,padding:14,boxShadow:"0 6px 18px rgba(0,0,0,.2)"}},
-        h("div",{style:{fontSize:14,fontWeight:700,color:"#f472b6",marginBottom:8}},b.nome),
-        b.passos.map((p,j)=>h("div",{key:j,style:{display:"flex",gap:8,marginBottom:6}},
-          h("div",{style:{width:18,height:18,borderRadius:"50%",background:"#2d0a1e",border:"1px solid #f472b633",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#f472b6",flexShrink:0,marginTop:1}},j+1),
-          h("span",{style:{fontSize:12.5,color:"#A3A3A3",lineHeight:1.4}},p))),
-        h("div",{style:{marginTop:8,background:"#1a1a0a",borderLeft:"3px solid #fbbf24",borderRadius:"0 6px 6px 0",padding:"6px 10px"}},
-          h("span",{style:{fontSize:12,color:"#A3A3A3"}},"💡 ",b.obs)))))
-  );
-}
-
 function App(){
   const[tab,setTab]=useState("treino");
   const TABS=[{id:"treino",label:"Treino",icon:"🏋️"},{id:"dieta",label:"Dieta",icon:"🥗"},{id:"coach",label:"Coach",icon:"🎯"}];
-  useEffect(()=>{document.body.style.background="#050505";},[]);
   return h("div",{style:{minHeight:"100vh",background:"#050505",color:"#F5F5F5",fontFamily:"'Geist',system-ui,-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif",paddingBottom:64}},
     tab==="treino"&&h(TreinoView,null),
     tab==="dieta"&&h(DietaView,null),
     tab==="coach"&&h(CoachView,null),
     h("div",{className:"app-navbar",style:{position:"fixed",bottom:0,left:0,right:0,background:"#0D0D0D",borderTop:"1px solid #252525",display:"flex",zIndex:300,paddingBottom:"env(safe-area-inset-bottom)"}},
-      TABS.map(t=>h("button",{key:t.id,onClick:()=>setTab(t.id),className:"selectable"+(tab===t.id?" selected-dissolve":""),style:{flex:1,padding:"10px 0 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,fontFamily:"inherit"}},
+      TABS.map(t=>h("button",{key:t.id,onClick:()=>setTab(t.id),"aria-current":tab===t.id?"page":undefined,className:"selectable"+(tab===t.id?" selected-dissolve":""),style:{flex:1,padding:"10px 0 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,fontFamily:"inherit"}},
         h("span",{style:{fontSize:20,filter:tab===t.id?"none":"grayscale(1) opacity(0.45)"}},t.icon),
         h("span",{style:{fontSize:10,fontWeight:700,color:tab===t.id?"#C6FF00":"#666666",letterSpacing:.5}},t.label))))
   );
