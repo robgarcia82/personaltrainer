@@ -55,7 +55,7 @@ body.in-exercise .app-navbar,body.in-active-set .app-navbar{display:none !import
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef,useMemo}=React;
-const APP_VERSION="v114";
+const APP_VERSION="v115";
 let _entrySeq=0;// contador p/ IDs de série únicos mesmo em taps rápidos
 console.log("Guia Treino",APP_VERSION);
 
@@ -465,8 +465,9 @@ async function clearWorkoutHistory(){
   //    se etapas subsequentes falharem, a flag sozinha já bloqueia o restore.
   markWorkoutLogDeleted();
   console.log("[GuiaTreino] flag workout_log_deleted_at setada =",localStorage.getItem(WORKOUT_LOG_DELETED_AT_KEY));
-  // 2. Remove log principal
-  try{localStorage.removeItem(STORAGE_KEY);}catch(e){console.error("clearWorkoutHistory STORAGE_KEY",e);}
+  // 2. Remove log principal — rastreia se falhou para informar o usuário
+  let localRemoveOk=true;
+  try{localStorage.removeItem(STORAGE_KEY);}catch(e){console.error("clearWorkoutHistory STORAGE_KEY",e);localRemoveOk=false;}
   // 3. Defesa: limpa qualquer chave de backup legada/desconhecida que possa
   //    existir em localStorage. Não apaga settings nem user_id_override —
   //    só backups e flags antigas.
@@ -479,7 +480,7 @@ async function clearWorkoutHistory(){
   if(isSupabaseConfigured()){
     try{cloudResult=await deleteCloudUserLog();console.log("[GuiaTreino] cloud delete:",cloudResult);}catch(e){cloudResult={ok:false,reason:"exception",error:e.message};}
   }
-  return{ok:true,cloudResult};
+  return{ok:localRemoveOk,cloudResult};
 }
 async function resetAppData(){
   console.log("[GuiaTreino] resetAppData: iniciando wipe completo");
@@ -1968,7 +1969,9 @@ function CoachView(){
             if(!confirm("Tem certeza que deseja apagar todo o histórico de treinos? Essa ação não pode ser desfeita."))return;
             const r=await clearWorkoutHistory();
             forceUpdate(v=>v+1);
-            let msg="Histórico apagado. Não voltará no próximo reload.";
+            let msg=r.ok
+              ?"Histórico apagado. Não voltará no próximo reload."
+              :"⚠ Falha ao remover dados locais (armazenamento cheio?). A flag de deleção foi ativada — o histórico não voltará automaticamente, mas os dados podem ainda estar em storage. Tente limpar o cache do navegador.";
             if(r&&r.cloudResult){
               if(r.cloudResult.ok)msg+="\n\n☁ Dados também removidos da nuvem.";
               else msg+="\n\n⚠ Nuvem: falha ao apagar ("+(r.cloudResult.reason||"?")+"). Os dados locais foram apagados e a flag impede restore — mas se você resetar a flag (ex: salvando uma série nova), a nuvem pode ressuscitar treinos antigos. Adicione a policy 'anon delete' no Supabase pra resolver.";
