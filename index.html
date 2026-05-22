@@ -57,7 +57,7 @@ input:focus-visible{outline:2px solid #C6FF00;outline-offset:2px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef,useMemo}=React;
-const APP_VERSION="v117";
+const APP_VERSION="v118";
 let _entrySeq=0;// contador p/ IDs de série únicos mesmo em taps rápidos
 console.log("Guia Treino",APP_VERSION);
 
@@ -130,16 +130,16 @@ t:"Único exercício de costas que elimina o bíceps completamente — trabalha 
 e:"Não dobrar os cotovelos durante o movimento — se estiver dobrando, o peso está alto demais. Não inclinar o tronco para dar impulso.",
 b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"},
 
-{id:11,n:"Rosca Halter Alternada",m:"Bíceps braquial",s:"Superiores 2",d:"Ter",f:"Braços",eq:"halter",
-st:["Em pé, halteres ao lado do corpo, palmas para frente.","Flexione um braço até o ombro — cotovelo fixo ao lado do corpo.","Aperte o bíceps por 1s no topo.","Desça controlando até extensão total.","10 reps = 10 de cada lado."],
-t:"Cotovelo colado ao corpo — não deixe ir para frente. O alternado permite supinação completa de cada braço.",
-e:"Não balançar o corpo para dar impulso. Não encurtar a amplitude.",
+{id:11,n:"Rosca Inclinada c/ Halter",m:"Bíceps braquial — cabeça longa",s:"Superiores 2",d:"Ter",f:"Braços",eq:"halter",
+st:["Ajuste o banco a ~60°. Sente-se e deixe os braços caírem livremente ao lado do corpo — ombro em extensão completa.","Supine as palmas (viradas para cima). Essa é a posição inicial — sinta o alongamento na cabeça longa.","Flexione ambos os braços simultaneamente até os halteres chegarem aos ombros.","Aperte o bíceps por 1s no topo.","Desça lentamente até a extensão total — o alongamento profundo no fundo é onde está o ganho."],
+t:"O segredo é o ombro atrás do tronco: isso alonga completamente a cabeça longa do bíceps, que é a porção mais responsiva ao treino em amplitude longa. Deixe o braço cair livre — não force o ombro para frente.",
+e:"Não elevar os cotovelos durante a subida. Não encurtar a descida — a extensão total é obrigatória.",
 b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x12-15 | PSE 5-6"},
 
-{id:12,n:"Cable Curl — Rosca na Polia",m:"Bíceps braquial",s:"Superiores 2",d:"Ter",f:"Braços",eq:"mc1000",
-st:["Polia no ponto mais baixo. Fique de frente para a máquina.","Pegada supinada (palmas para cima). Cotovelos colados ao corpo.","Flexione até os halteres chegarem aos ombros.","Aperte o bíceps por 1s no topo.","Desça controlando — sinta a tensão constante durante toda a descida."],
-t:"Tensão constante do cabo é superior ao halter para hipertrofia — no halter a tensão cai no topo e no fundo; no cabo ela é uniforme em toda a amplitude.",
-e:"Não balançar. Cotovelos fixos — são o pivô do movimento.",
+{id:12,n:"Rosca Scott c/ Halter",m:"Bíceps braquial — cabeça curta",s:"Superiores 2",d:"Ter",f:"Braços",eq:"halter",
+st:["Apoie o braço sobre a almofada inclinada do banco Scott — braço totalmente em contato do início ao fim.","Segure o halter com pegada supinada (palma para cima).","Flexione até o halter chegar próximo ao ombro.","Aperte o bíceps por 1s no topo.","Desça controlando até quase a extensão total — não trave o cotovelo no fundo."],
+t:"O apoio trava o ombro à frente, isolando o bíceps por completo. Isso enfatiza a cabeça curta e sobrecarrega o fundo do movimento no alongamento — complemento perfeito da Rosca Inclinada: uma cobre a cabeça longa, a outra a curta.",
+e:"Não usar impulso — o apoio existe para eliminar isso. Não forçar até o bloqueio na descida (hiperextensão do cotovelo).",
 b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x12-15 | PSE 5-6"},
 
 // ── SUPERIORES 3 — OMBROS ────────────────────────────────────────
