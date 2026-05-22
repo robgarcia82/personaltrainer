@@ -57,7 +57,7 @@ input:focus-visible{outline:2px solid #C6FF00;outline-offset:2px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef,useMemo}=React;
-const APP_VERSION="v119";
+const APP_VERSION="v120";
 let _entrySeq=0;// contador p/ IDs de série únicos mesmo em taps rápidos
 console.log("Guia Treino",APP_VERSION);
 
@@ -1178,7 +1178,7 @@ function TreinoView(){
   const stCloseRef=useRef(null);// ref para o timeout de animação de closeRest
   const alarmRef=useRef(null);// ref para o intervalo de alarme ao fim do descanso
   function playAlarm(){try{navigator.vibrate&&navigator.vibrate([200,100,200,100,200]);}catch(e){}try{const ac=new(window.AudioContext||window.webkitAudioContext)();[0,.35,.7].forEach(t=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.setValueAtTime(.6,ac.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+t+.28);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.3);});setTimeout(()=>ac.close().catch(()=>{}),1400);}catch(e){}}
-  useEffect(()=>{clearTimeout(tf.current);tf.current=null;if(tr&&tl>0){tf.current=setTimeout(()=>setTl(v=>v-1),1000);}else if(tl===0&&tr){setTr(false);playAlarm();clearInterval(alarmRef.current);alarmRef.current=setInterval(playAlarm,4000);}return()=>clearTimeout(tf.current);},[tr,tl]);
+  useEffect(()=>{clearTimeout(tf.current);tf.current=null;if(tr&&tl>0){tf.current=setTimeout(()=>setTl(v=>v-1),1000);}else if(tl===0&&tr){setTr(false);playAlarm();clearInterval(alarmRef.current);alarmRef.current=setInterval(playAlarm,4000);}return()=>clearTimeout(tf.current);},[tr,tl]);// playAlarm omitido: função pura de Web Audio, não fecha sobre estado React
   useEffect(()=>{if(cntd===null||cntd<=0)return;cdRef.current=setTimeout(()=>{if(cntd===1){setCntd(null);setExRun(true);setExTime(0);}else setCntd(v=>v-1);try{navigator.vibrate&&navigator.vibrate(60);}catch(e){}},1000);return()=>clearTimeout(cdRef.current);},[cntd]);
   useEffect(()=>{
     clearInterval(etRef.current);etRef.current=null;// limpa antes de criar novo — previne acúmulo em double-toggle
@@ -1202,7 +1202,7 @@ function TreinoView(){
   const plannedSeries=blocoKey?parseInt((ex[blocoKey]||"").match(/(\d+)/)?.[1]||"0")||0:0;
   const allSeriesDone=plannedSeries>0&&seriesCt>=plannedSeries;
   const nextEx=sesEx[sesEx.indexOf(ex)+1]||null;
-  const nextToExec=seriesCt<plannedSeries?ex:nextEx;// exercício que vem após o descanso
+  const nextToExec=(plannedSeries>0&&seriesCt<plannedSeries)?ex:nextEx;// exercício que vem após o descanso
   // getWorkoutLog / setWorkoutLog vêm do escopo global (com backup IDB)
   const exLog=getWorkoutLog().filter(e=>e.exerciseId===ex.id).slice(-4).reverse();
   const saveSeries=(pse)=>{const entry={id:Date.now()+"-"+(++_entrySeq),ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,reps,pse,carga,block:blocoKey,setNumber:seriesCt+1,restSeconds:ts};const log=getWorkoutLog();setWorkoutLog([...log,entry]);const fb=getSugestao(ex,entry,prescription,blocoKey);setCoachFeedback({status:fb.status,motivo:fb.motivo});setShowPse(false);setSelectedPse(null);setExTime(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
@@ -1219,6 +1219,7 @@ function TreinoView(){
       const record={id:Date.now()+"",ts:Date.now(),date:todayStr,session:selS,sessionColor:sc.t,exercises,totalSets:sessionLog.length,durationMin};
       try{const prev=JSON.parse(localStorage.getItem("workout_sessions")||"[]");localStorage.setItem("workout_sessions",JSON.stringify([...prev,record]));}catch(e){}
     }
+    clearInterval(alarmRef.current);alarmRef.current=null;
     setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);setExOpen(true);setSelS(null);setCoachFeedback(null);
   }
   function firstSentence(str){if(!str)return "";const s=String(str).split(".")[0].trim();return s?s+".":String(str);}
@@ -1342,7 +1343,7 @@ function TreinoView(){
       h("div",{style:{position:"absolute",top:0,left:0,right:0,
         padding:"calc(env(safe-area-inset-top,0px) + 14px) 16px 14px",
         display:"flex",alignItems:"center",gap:10}},
-        h("button",{onClick:()=>{setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);setExOpen(true);setCoachFeedback(null);},
+        h("button",{onClick:()=>{clearInterval(alarmRef.current);alarmRef.current=null;setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);setExOpen(true);setCoachFeedback(null);},
           style:{display:"flex",alignItems:"center",gap:5,padding:"8px 16px",borderRadius:22,
             border:"1px solid rgba(255,255,255,.25)",background:"rgba(255,255,255,.15)",
             backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
@@ -1469,7 +1470,7 @@ function TreinoView(){
         // 3. allSeriesDone + último → "Treino concluído" (saveWorkoutSession)
         h("button",{
           onClick:allSeriesDone
-            ?()=>{if(nextEx){setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);setExOpen(true);setCoachFeedback(null);setSelEx(nextEx);}else{saveWorkoutSession();}}
+            ?()=>{clearInterval(alarmRef.current);alarmRef.current=null;if(nextEx){setSeriesCt(0);setSt(false);setTr(false);setCntd(null);setExRun(false);setSb(null);setExOpen(true);setCoachFeedback(null);setSelEx(nextEx);}else{saveWorkoutSession();}}
             :()=>{setCoachFeedback(null);setCntd(3);setSt(false);setTr(false);},
           style:{width:"100%",height:72,borderRadius:24,border:"none",color:"#050505",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,background:"#C6FF00",boxShadow:"0 18px 50px rgba(198,255,0,.30)"}
         },allSeriesDone?(nextEx?"Próximo exercício":"Treino concluído"):"Iniciar Série"))),
@@ -1622,13 +1623,13 @@ function TreinoView(){
         h("div",{className:"bn",style:{fontSize:120,fontWeight:900,fontVariantNumeric:"tabular-nums",letterSpacing:-4,lineHeight:1,color:tl===0?"#C6FF00":tl<=10?"#F59E0B":"#F5F5F5",textShadow:tl===0?"0 0 60px rgba(198,255,0,.35)":tl<=10?"0 0 60px rgba(245,158,11,.30)":"0 0 40px rgba(255,255,255,.15)"}},Math.floor(tl/60)+":"+String(tl%60).padStart(2,"0")),
         tl===0&&h("div",{style:{fontSize:18,color:"#C6FF00",fontWeight:800,marginTop:20,letterSpacing:.5}},"Pronto! Próxima série!"),
         tl>0&&h("div",{style:{display:"flex",gap:12,marginTop:40,alignItems:"center"}},
-          h("button",{onClick:rt,style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#A3A3A3",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}},"↺"),
+          h("button",{onClick:rt,"aria-label":"Reiniciar descanso",style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#A3A3A3",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}},"↺"),
           !tr&&h("button",{onClick:()=>setTr(true),"aria-label":"Continuar",
             style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#F5F5F5",fontSize:20,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1,paddingLeft:4,boxShadow:"0 8px 24px rgba(0,0,0,.35)"}},"▶︎"),
           tr&&h("button",{onClick:()=>setTr(false),"aria-label":"Pausar",
             style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#C6FF00",fontSize:18,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1,boxShadow:"0 8px 24px rgba(0,0,0,.35)",letterSpacing:-1}},"❚❚"),
           h("button",{onClick:closeRest,"aria-label":"Fechar",style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#A3A3A3",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}},"×")),
-        tl===0&&h("button",{onClick:closeRest,style:{marginTop:28,padding:"16px 52px",borderRadius:24,border:"none",background:"#C6FF00",color:"#050505",fontSize:18,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,boxShadow:"0 8px 32px rgba(198,255,0,.45)"}},"Continuar  →"),
+        tl===0&&h("button",{onClick:closeRest,"aria-label":"Continuar para próxima série",style:{marginTop:28,padding:"16px 52px",borderRadius:24,border:"none",background:"#C6FF00",color:"#050505",fontSize:18,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:.3,boxShadow:"0 8px 32px rgba(198,255,0,.45)"}},"Continuar  →"),
         nextToExec&&h("div",{style:{marginTop:28,width:"100%",maxWidth:360}},
           h("div",{style:{fontSize:10,color:"#A3A3A3",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:10,textAlign:"center"}},
             seriesCt<plannedSeries?"A SEGUIR · SÉRIE "+(seriesCt+1)+" DE "+plannedSeries:"PRÓXIMO EXERCÍCIO"),
