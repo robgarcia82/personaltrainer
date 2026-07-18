@@ -526,11 +526,39 @@ function getWorkoutLog(){
   }
   try{const r=localStorage.getItem(STORAGE_KEY);const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}
 }
+// Deriva os resumos de sessão (workout_sessions) a partir do log de séries.
+// O log já é persistido em localStorage + IndexedDB e sincronizado com a nuvem
+// (Supabase). Como os resumos são 100% deriváveis do log, reconstruí-los aqui
+// mantém a métrica mensal e o histórico consistentes E faz os treinos concluídos
+// — inclusive os novos Full Body — sobreviverem e reaparecerem em qualquer
+// dispositivo, sem exigir tabela extra no Supabase (respeita anon key + RLS).
+function rebuildSessionsFromLog(log){
+  const byKey={};
+  (Array.isArray(log)?log:[]).forEach(e=>{
+    if(!e||!e.session||!e.date)return;
+    const key=e.date+"|"+e.session;
+    let g=byKey[key];
+    if(!g){g=byKey[key]={date:e.date,session:e.session,tsList:[],byEx:{}};}
+    g.tsList.push(Number(e.ts)||0);
+    let ex=g.byEx[e.exerciseId];
+    if(!ex){ex=g.byEx[e.exerciseId]={id:e.exerciseId,name:e.exerciseName,sets:[]};}
+    ex.sets.push({carga:e.carga,reps:e.reps||0,pse:e.pse,duration:e.duration,block:e.block||""});
+  });
+  return Object.keys(byKey).map(k=>{
+    const g=byKey[k];
+    const minTs=Math.min.apply(null,g.tsList),maxTs=Math.max.apply(null,g.tsList);
+    const durationMin=g.tsList.length>1?Math.round((maxTs-minTs)/60000):0;
+    const sc=(typeof SC!=="undefined"&&SC[g.session])?SC[g.session]:null;
+    return{id:String(minTs),ts:maxTs,date:g.date,session:g.session,sessionColor:sc?sc.t:"#C6FF00",exercises:Object.keys(g.byEx).map(id=>g.byEx[id]),totalSets:g.tsList.length,durationMin};
+  }).sort((a,b)=>a.ts-b.ts);
+}
+function _syncSessionsCache(log){try{localStorage.setItem("workout_sessions",JSON.stringify(rebuildSessionsFromLog(log)));}catch(e){console.error("_syncSessionsCache",e);}}
 function setWorkoutLog(log){
   try{
     // Salvar log não-vazio = intenção de continuar com novos dados → libera a flag
     if(Array.isArray(log)&&log.length>0){clearDeletionFlag();}
     localStorage.setItem(STORAGE_KEY,JSON.stringify(log||[]));
+    _syncSessionsCache(log||[]);// mantém workout_sessions derivado do log (local + espelha a nuvem)
     saveBackupIDB(log);
     _scheduleSync();
   }catch(e){console.error("setWorkoutLog",e);}
@@ -562,6 +590,8 @@ async function clearWorkoutHistory(){
   // 2. Remove log principal — rastreia se falhou para informar o usuário
   let localRemoveOk=true;
   try{localStorage.removeItem(STORAGE_KEY);}catch(e){console.error("clearWorkoutHistory STORAGE_KEY",e);localRemoveOk=false;}
+  // workout_sessions é derivado do log — limpa junto pra não deixar a métrica mensal órfã
+  try{localStorage.removeItem("workout_sessions");}catch(e){}
   // 3. Defesa: limpa qualquer chave de backup legada/desconhecida que possa
   //    existir em localStorage. Não apaga settings nem user_id_override —
   //    só backups e flags antigas.
@@ -812,7 +842,7 @@ async function syncBidirectional(){
   const local=getWorkoutLog();
   const merged=mergeWorkoutLogs(local,remote.entries);
   if(merged.length!==local.length){
-    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));saveBackupIDB(merged);}catch(e){}
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));_syncSessionsCache(merged);saveBackupIDB(merged);}catch(e){}
   }
   const push=await syncWorkoutLogToCloud();
   return{ok:true,fetched:remote.entries.length,merged:merged.length,pushed:push.pushed||0};
@@ -879,6 +909,7 @@ try{
       const backup=await getLastBackupIDB();
       if(backup&&Array.isArray(backup.workout_log)&&backup.workout_log.length>0){
         localStorage.setItem(STORAGE_KEY,JSON.stringify(backup.workout_log));
+        _syncSessionsCache(backup.workout_log);
         console.log("Guia Treino: IDB restaurou "+backup.workout_log.length+" séries");
         changed=true;cur=backup.workout_log;
       }
@@ -890,6 +921,7 @@ try{
         const merged=mergeWorkoutLogs(cur,remote.entries);
         if(merged.length>cur.length){
           localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));
+          _syncSessionsCache(merged);
           saveBackupIDB(merged);
           const newCount=merged.length-cur.length;
           console.log("Guia Treino: Supabase trouxe "+newCount+" séries (total "+merged.length+")");
@@ -1327,15 +1359,10 @@ function TreinoView(){
   const sessionLog=getWorkoutLog().filter(e=>e.session===selS&&e.date===todayStr);
   const canEndWorkout=nextEx===null;
   function saveWorkoutSession(){
-    if(sessionLog.length>0){
-      const byEx={};
-      sessionLog.forEach(e=>{if(!byEx[e.exerciseId])byEx[e.exerciseId]={id:e.exerciseId,name:e.exerciseName,sets:[]};byEx[e.exerciseId].sets.push({carga:e.carga,reps:e.reps||0,pse:e.pse,duration:e.duration,block:e.block||""}); });
-      const exercises=Object.values(byEx);
-      const tsList=sessionLog.map(e=>e.ts);
-      const durationMin=tsList.length>1?Math.round((Math.max(...tsList)-Math.min(...tsList))/60000):0;
-      const record={id:Date.now()+"",ts:Date.now(),date:todayStr,session:selS,sessionColor:sc.t,exercises,totalSets:sessionLog.length,durationMin};
-      try{const prev=JSON.parse(localStorage.getItem("workout_sessions")||"[]");localStorage.setItem("workout_sessions",JSON.stringify([...prev,record]));}catch(e){}
-    }
+    // Os resumos de sessão (workout_sessions) são derivados do log de séries,
+    // que já foi persistido (local + IDB + nuvem) a cada série via setWorkoutLog.
+    // Aqui apenas garantimos o cache atualizado ao finalizar — sem duplicar.
+    _syncSessionsCache(getWorkoutLog());
     clearInterval(alarmRef.current);alarmRef.current=null;
     setSelEx(null);setSb(null);setSt(false);setTr(false);setCntd(null);setExRun(false);setSeriesCt(0);setExOpen(true);setSelS(null);setCoachFeedback(null);
   }
