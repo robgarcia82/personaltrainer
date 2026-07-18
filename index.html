@@ -57,7 +57,7 @@ input:focus-visible{outline:2px solid #C6FF00;outline-offset:2px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef,useMemo}=React;
-const APP_VERSION="v120";
+const APP_VERSION="v121";
 let _entrySeq=0;// contador p/ IDs de série únicos mesmo em taps rápidos
 console.log("Guia Treino",APP_VERSION);
 
@@ -246,7 +246,7 @@ const EX_IMGS={
   12:BASE+"Cable_Preacher_Curl/0.jpg",
   13:BASE+"Dumbbell_Shoulder_Press/0.jpg",
   14:BASE+"Arnold_Dumbbell_Press/0.jpg",
-  15:BASE+"Cable_Side_Lateral_Raise/0.jpg",
+  15:BASE+"Cable_Seated_Lateral_Raise/0.jpg",
   16:BASE+"Face_Pull/0.jpg",
   17:BASE+"Low_Cable_Front_Raise/0.jpg",
   18:BASE+"Reverse_Cable_Crossover/0.jpg",
@@ -260,12 +260,84 @@ const EX_IMGS={
   26:BASE+"Chin-Up/0.jpg"
 };
 
+// ════════════════════════════════════════════════════════════════
+//  PROGRAMA FULL BODY — 3 treinos (A/B/C), 8 exercícios cada.
+//  Reaproveita os melhores movimentos já validados (via clone) e
+//  adiciona 4 movimentos novos (Goblet, Hip Thrust, Passada, Crunch).
+//  Cada exercício pertence a UMA sessão (campo s), então os full body
+//  usam objetos próprios (ids 27-50) — os treinos existentes não mudam.
+// ════════════════════════════════════════════════════════════════
+// Clona um exercício existente por id, sobrescrevendo id/sessão/dia.
+const _fbClone=(srcId,ov)=>Object.assign({},EX.find(x=>x.id===srcId),ov);
+const _FB="Full Body",_D="Full Body";
+// Movimentos NOVOS (não existiam no app)
+const _fbGoblet={id:27,n:"Agachamento Goblet",m:"Quadríceps, glúteos, core",s:"Full Body A",d:_D,f:"Pernas",eq:"halter",
+st:["Segure um halter na vertical contra o peito, as duas mãos apoiando a cabeça de cima do halter.","Pés na largura dos ombros, pontas levemente para fora. Cotovelos apontando para baixo, entre os joelhos.","Desça o quadril entre os calcanhares até as coxas passarem da paralela — tronco ereto e peito alto.","Os cotovelos deslizam por dentro dos joelhos, ajudando a manter o joelho alinhado com o pé.","Empurre o chão pelos calcanhares para subir, sem deixar o tronco cair para frente."],
+t:"O halter à frente funciona como contrapeso e obriga o tronco a ficar ereto — permite mais profundidade e mais estímulo no quadríceps com menos estresse lombar que o agachamento com barra. Amplitude completa é o que faz o exercício.",
+e:"Não deixar os calcanhares saírem do chão. Não arredondar a lombar no fundo. Não deixar os joelhos colapsarem para dentro.",
+b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x6-8 | PSE 8-9",dl:"2x10-12 | PSE 5-6"};
+const _fbHipThrust={id:36,n:"Hip Thrust c/ Sandbag",m:"Glúteos, isquiotibiais",s:"Full Body B",d:_D,f:"Pernas",eq:"sandbag",
+st:["Sente no chão com as costas apoiadas na borda do banco, na linha das escápulas.","Posicione o sandbag de 20kg sobre a dobra do quadril — use uma toalha para conforto.","Pés firmes no chão na largura dos ombros; joelhos a ~90° quando o quadril estiver no topo.","Empurre o chão pelos calcanhares e eleve o quadril até o tronco ficar paralelo ao chão.","Aperte os glúteos com força por 1-2s no topo — costelas para baixo, sem hiperestender a lombar. Desça controlando."],
+t:"O hip thrust tem a maior ativação de glúteos medida em eletromiografia — supera agachamento e stiff nesse ponto. A tensão é máxima no topo (posição encurtada), justamente onde o glúteo mais precisa de estímulo. Priorize a contração, não o balanço.",
+e:"Não hiperestender a lombar no topo (o movimento é do quadril, não da coluna). Não apoiar o pescoço — o apoio é nas escápulas. Não deixar os joelhos abrirem ou fecharem.",
+b1:"3x10-12 | PSE 6-7",b2:"3-4x8-10 | PSE 7-8",b3:"4x8-10 | PSE 8-9",dl:"2x10-12 | PSE 5-6"};
+const _fbLunge={id:44,n:"Passada c/ Halteres",m:"Quadríceps, glúteos, estabilizadores",s:"Full Body C",d:_D,f:"Pernas",eq:"halter",
+st:["Em pé, um halter em cada mão ao lado do corpo, tronco ereto e core firme.","Dê um passo amplo para TRÁS com uma perna, apoiando a ponta do pé no chão.","Desça o joelho de trás em direção ao chão até a coxa da frente ficar paralela — joelho da frente sobre o meio do pé.","Empurre com o calcanhar da perna da FRENTE para voltar à posição inicial.","Complete todas as repetições de uma perna (ou alterne) mantendo o tronco estável."],
+t:"O afundo para trás (reverse lunge) carrega menos o joelho da frente que a passada para frente e é mais estável — ideal para focar quadríceps e glúteo com segurança. O passo para trás transfere a carga para a perna da frente sem estresse de desaceleração.",
+e:"Não deixar o joelho da frente ultrapassar muito a ponta do pé nem colapsar para dentro. Não inclinar o tronco à frente. Não bater o joelho de trás no chão.",
+b1:"3x10/perna | PSE 6-7",b2:"3x8/perna | PSE 7-8",b3:"3-4x8/perna | PSE 8-9",dl:"2x10/perna | PSE 5-6"};
+const _fbCrunch={id:42,n:"Crunch na Polia",m:"Reto abdominal — sobrecarga progressiva",s:"Full Body B",d:_D,f:"Core",eq:"mc1000",
+st:["Prenda a corda na polia alta da MC-1000. Ajoelhe-se de frente para a máquina, a ~60cm dela.","Segure a corda ao lado da cabeça, mãos próximas às têmporas — cotovelos apontando para baixo.","Mantendo o quadril fixo, flexione a coluna 'enrolando' o tronco — leve os cotovelos em direção às coxas.","A contração vem do abdômen encurtando (aproximar costelas da bacia), não do quadril dobrando.","Aperte 1s na contração máxima e retorne controlando até sentir o abdômen alongar."],
+t:"O cable crunch é um dos poucos exercícios de abdômen que permite sobrecarga progressiva real — você adiciona peso como em qualquer músculo. O reto abdominal responde a carga e alongamento; treine-o com 8-15 reps, não só com peso corporal.",
+e:"Não usar o quadril para puxar o peso (não é uma reverência). Não manter a lombar rígida — o movimento é enrolar a coluna. Não deixar a carga puxar o tronco de volta bruscamente.",
+b1:"3x15-20 | PSE 6-7",b2:"3x12-15 | PSE 7-8",b3:"3x12-15 | PSE 8",dl:"2x15-20 | PSE 5-6"};
+// Montagem das 3 sessões (ordem = ordem de exibição dentro da sessão)
+const FULLBODY_EX=[
+  // Full Body A — ênfase empurrar / quadríceps
+  _fbGoblet,                                           // 27 Pernas (novo)
+  _fbClone(21,{id:28,s:"Full Body A",d:_D}),           // Stiff
+  _fbClone(1, {id:29,s:"Full Body A",d:_D}),           // Supino Halteres
+  _fbClone(7, {id:30,s:"Full Body A",d:_D}),           // Lat Pulldown
+  _fbClone(13,{id:31,s:"Full Body A",d:_D}),           // Desenvolvimento
+  _fbClone(15,{id:32,s:"Full Body A",d:_D}),           // Elevação Lateral
+  _fbClone(5, {id:33,s:"Full Body A",d:_D}),           // Tríceps Pushdown
+  _fbClone(24,{id:34,s:"Full Body A",d:_D}),           // Hanging Leg Raise
+  // Full Body B — ênfase puxar / posterior
+  _fbClone(19,{id:35,s:"Full Body B",d:_D}),           // Búlgaro
+  _fbHipThrust,                                         // 36 Glúteo (novo)
+  _fbClone(2, {id:37,s:"Full Body B",d:_D}),           // Supino Inclinado
+  _fbClone(8, {id:38,s:"Full Body B",d:_D}),           // Cable Row
+  _fbClone(16,{id:39,s:"Full Body B",d:_D}),           // Face Pull
+  _fbClone(11,{id:40,s:"Full Body B",d:_D}),           // Rosca Inclinada
+  _fbClone(23,{id:41,s:"Full Body B",d:_D}),           // Panturrilha
+  _fbCrunch,                                            // 42 Core (novo)
+  // Full Body C — mix / força-hipertrofia
+  _fbClone(20,{id:43,s:"Full Body C",d:_D}),           // Terra Sumo
+  _fbLunge,                                             // 44 Pernas (novo)
+  _fbClone(4, {id:45,s:"Full Body C",d:_D}),           // Dips
+  _fbClone(26,{id:46,s:"Full Body C",d:_D}),           // Chin-Up
+  _fbClone(14,{id:47,s:"Full Body C",d:_D}),           // Arnold Press
+  _fbClone(18,{id:48,s:"Full Body C",d:_D}),           // Crucifixo Invertido
+  _fbClone(12,{id:49,s:"Full Body C",d:_D}),           // Rosca Scott
+  _fbClone(10,{id:50,s:"Full Body C",d:_D})            // Straight Arm Pulldown
+];
+EX.push(...FULLBODY_EX);
+// Imagens dos full body (clones reaproveitam a imagem de origem; novos usam pastas verificadas)
+Object.assign(EX_IMGS,{
+  27:BASE+"Goblet_Squat/0.jpg",28:EX_IMGS[21],29:EX_IMGS[1],30:EX_IMGS[7],31:EX_IMGS[13],32:EX_IMGS[15],33:EX_IMGS[5],34:EX_IMGS[24],
+  35:EX_IMGS[19],36:BASE+"Barbell_Hip_Thrust/0.jpg",37:EX_IMGS[2],38:EX_IMGS[8],39:EX_IMGS[16],40:EX_IMGS[11],41:EX_IMGS[23],42:BASE+"Cable_Crunch/0.jpg",
+  43:EX_IMGS[20],44:BASE+"Dumbbell_Rear_Lunge/0.jpg",45:EX_IMGS[4],46:EX_IMGS[26],47:EX_IMGS[14],48:EX_IMGS[18],49:EX_IMGS[12],50:EX_IMGS[10]
+});
+
 const SC={
   "Superiores 1":{t:"#C6FF00",bg:"#1a2200"},
   "Superiores 2":{t:"#00E5FF",bg:"#001f24"},
   "Superiores 3":{t:"#A855F7",bg:"#1c0f2a"},
   "Inferiores":{t:"#F59E0B",bg:"#2a1a00"},
-  "Bônus":{t:"#F43F5E",bg:"#2a0a13"}
+  "Bônus":{t:"#F43F5E",bg:"#2a0a13"},
+  "Full Body A":{t:"#2DD4BF",bg:"#04211f"},
+  "Full Body B":{t:"#FB7185",bg:"#2a0f14"},
+  "Full Body C":{t:"#818CF8",bg:"#12142e"}
 };
 const FC={"Peito":"#C6FF00","Costas":"#00E5FF","Ombro":"#A855F7","Pernas":"#F59E0B","Braços":"#22C55E","Core":"#F43F5E"};
 const EB={mc1000:{bg:"rgba(0,0,0,0.72)",c:"#60A5FA",l:"MC-1000"},halter:{bg:"rgba(0,0,0,0.72)",c:"#C6FF00",l:"HALTER"},sandbag:{bg:"rgba(0,0,0,0.72)",c:"#84CC16",l:"SANDBAG"},corporal:{bg:"rgba(0,0,0,0.72)",c:"#C084FC",l:"CORPORAL"}};
@@ -387,9 +459,13 @@ const SESSIONS=[
   {s:"Superiores 3",dia:"Quinta",sub:"Ombros",img:BASE+"Dumbbell_Shoulder_Press/0.jpg",cor:"#A855F7"},
   {s:"Inferiores",dia:"Sábado",sub:"Pernas + Core",img:BASE+"Split_Squat_with_Dumbbells/0.jpg",cor:"#F59E0B"},
   {s:"Bônus",dia:"Progressão",sub:"Pull-ups",img:BASE+"Pullups/0.jpg",cor:"#F43F5E"},
+  // ── Programa FULL BODY (alternativo) ──────────────────────────
+  {s:"Full Body A",dia:"Full Body",sub:"Corpo inteiro · Ênfase empurrar",img:BASE+"Goblet_Squat/0.jpg",cor:"#2DD4BF"},
+  {s:"Full Body B",dia:"Full Body",sub:"Corpo inteiro · Ênfase puxar",img:BASE+"Barbell_Hip_Thrust/0.jpg",cor:"#FB7185"},
+  {s:"Full Body C",dia:"Full Body",sub:"Corpo inteiro · Mix / força",img:BASE+"Dips_-_Chest_Version/0.jpg",cor:"#818CF8"},
 ];
 
-// Sequência principal (Bônus fica fora — opcional)
+// Sequência principal do programa SPLIT (Bônus fica fora — opcional)
 const TRAINING_CYCLE=[
   {type:"workout",session:"Superiores 1"},
   {type:"workout",session:"Superiores 2"},
@@ -398,6 +474,20 @@ const TRAINING_CYCLE=[
   {type:"workout",session:"Superiores 3"},
   {type:"rest"}
 ];
+// Ciclo do programa FULL BODY — 3 treinos alternando com descanso (frequência ótima 3x/sem)
+const FULLBODY_CYCLE=[
+  {type:"workout",session:"Full Body A"},
+  {type:"rest"},
+  {type:"workout",session:"Full Body B"},
+  {type:"rest"},
+  {type:"workout",session:"Full Body C"},
+  {type:"rest"}
+];
+// Programas selecionáveis (Split ⇄ Full Body). Cada um tem seu próprio ciclo e sessões.
+const PROGRAMS={
+  split:{id:"split",label:"Split",cycle:TRAINING_CYCLE,sessions:["Superiores 1","Superiores 2","Superiores 3","Inferiores","Bônus"]},
+  fullbody:{id:"fullbody",label:"Full Body",cycle:FULLBODY_CYCLE,sessions:["Full Body A","Full Body B","Full Body C"]}
+};
 
 // ── Persistência: workout_log + backup IndexedDB ───────────────
 const STORAGE_KEY="workout_log";
@@ -496,7 +586,7 @@ async function resetAppData(){
   const APP_KEYS=[
     "workout_log","workout_log_deleted_at","workout_log_deleted",
     "workout_sessions","workout_backup","guia_treino_backup","workout_log_backup",
-    "currentBlock","training_cycle","guia_treino_settings",
+    "currentBlock","training_cycle","activeProgram","guia_treino_settings",
     "guia_user_id","guia_user_id_override"
   ];
   APP_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
@@ -831,15 +921,20 @@ try{
   }
 })();
 
-function SessionHomeView({onSelect}){
+function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
+  // ── Programa ativo (Split ⇄ Full Body) ──────────────────────
+  const prog=PROGRAMS[activeProgram]||PROGRAMS.split;
+  const CYCLE=prog.cycle;
+  const cycleSessions=new Set(CYCLE.filter(i=>i.type==="workout").map(i=>i.session));
   // ── Log + helpers de ciclo ──────────────────────────────────
   const [log]=useState(()=>getWorkoutLog());// lê uma vez ao montar, não a cada render
   function dateKey(ts){const d=new Date(ts);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
   const todayK=dateKey(Date.now());
   function getCompletedWorkoutDays(){
+    // Considera só as sessões do ciclo ativo (isola histórico entre programas e exclui Bônus)
     const seen=new Set();const arr=[];
     log.forEach(e=>{
-      if(!e||!e.session||e.session==="Bônus")return;
+      if(!e||!e.session||!cycleSessions.has(e.session))return;
       const key=dateKey(e.ts)+"|"+e.session;
       if(seen.has(key))return;
       seen.add(key);
@@ -849,18 +944,18 @@ function SessionHomeView({onSelect}){
   }
   function getLastCompletedMainWorkout(){const d=getCompletedWorkoutDays();return d.length?d[d.length-1]:null;}
   function getNextCycleItemFromLastWorkout(lastSession){
-    if(!lastSession)return TRAINING_CYCLE[0];
-    const idx=TRAINING_CYCLE.findIndex(i=>i.type==="workout"&&i.session===lastSession);
-    if(idx<0)return TRAINING_CYCLE[0];
-    return TRAINING_CYCLE[(idx+1)%TRAINING_CYCLE.length];
+    if(!lastSession)return CYCLE[0];
+    const idx=CYCLE.findIndex(i=>i.type==="workout"&&i.session===lastSession);
+    if(idx<0)return CYCLE[0];
+    return CYCLE[(idx+1)%CYCLE.length];
   }
   function getNextWorkoutAfter(lastSession){
-    const startIdx=lastSession?TRAINING_CYCLE.findIndex(i=>i.type==="workout"&&i.session===lastSession):-1;
-    for(let i=1;i<=TRAINING_CYCLE.length;i++){
-      const item=TRAINING_CYCLE[((startIdx<0?-1:startIdx)+i+TRAINING_CYCLE.length)%TRAINING_CYCLE.length];
+    const startIdx=lastSession?CYCLE.findIndex(i=>i.type==="workout"&&i.session===lastSession):-1;
+    for(let i=1;i<=CYCLE.length;i++){
+      const item=CYCLE[((startIdx<0?-1:startIdx)+i+CYCLE.length)%CYCLE.length];
       if(item.type==="workout")return item;
     }
-    return TRAINING_CYCLE[0];
+    return CYCLE[0];
   }
   // Primeiro uso: sem histórico → recomenda pelo dia da semana.
   // Dia 1 = segunda-feira. Domingo (0) e sábado (6) viram descanso.
@@ -877,6 +972,12 @@ function SessionHomeView({onSelect}){
     };
     return MAP[dow]||{type:"workout",session:"Superiores 1"};
   }
+  // Primeiro uso program-aware: Split usa o calendário; Full Body começa no 1º treino do ciclo.
+  function getFirstUse(){
+    if(activeProgram==="split")return getFirstUseRecommendationByWeekday(new Date());
+    const first=CYCLE.find(i=>i.type==="workout")||CYCLE[0];
+    return{type:"workout",session:first.session};
+  }
   function getHomeTrainingRecommendation(){
     const days=getCompletedWorkoutDays();
     const todayDone=days.filter(d=>d.date===todayK);
@@ -891,7 +992,7 @@ function SessionHomeView({onSelect}){
     const last=days.length?days[days.length-1].session:null;
     // ── PRIMEIRO USO (sem histórico) ─ recomenda pelo dia da semana
     if(!last){
-      const firstUse=getFirstUseRecommendationByWeekday(new Date());
+      const firstUse=getFirstUse();
       if(firstUse.type==="rest"){
         return{status:"rest",label:"Descanso",heroSession:firstUse.nextSession,nextLabel:"Próximo treino: "+firstUse.nextSession,playSession:firstUse.nextSession};
       }
@@ -908,8 +1009,10 @@ function SessionHomeView({onSelect}){
     return{status:"pending",label:"Pendente",heroSession:next.session,nextLabel:"Continue sua sequência de onde parou.",playSession:next.session};
   }
   const rec=getHomeTrainingRecommendation();
+  // Grid mostra apenas as sessões do programa ativo
+  const progSessions=SESSIONS.filter(s=>prog.sessions.includes(s.s));
   const sesHoje=SESSIONS.find(s=>s.s===rec.heroSession)||null;
-  const sesOutras=sesHoje?SESSIONS.filter(s=>s.s!==sesHoje.s):SESSIONS;
+  const sesOutras=sesHoje?progSessions.filter(s=>s.s!==sesHoje.s):progSessions;
   // ── Métricas do mês ──────────────────────────────────────────
   const sessions=(()=>{try{const r=localStorage.getItem("workout_sessions");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}})();
   const now=new Date(),Y=now.getFullYear(),M=now.getMonth();
@@ -947,6 +1050,18 @@ function SessionHomeView({onSelect}){
     subtext&&h("div",{style:{fontSize:11,color:"#666666",marginTop:4,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},subtext));
   return h("div",{className:"screen-enter",style:{background:"#050505",minHeight:"100vh",paddingBottom:32}},
     h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
+      // ── Seletor de programa (Split ⇄ Full Body) ──────────────
+      h("div",{style:{display:"flex",gap:6,background:"#121212",padding:5,borderRadius:14,marginBottom:24,boxShadow:"0 6px 20px rgba(0,0,0,.22)"}},
+        ["split","fullbody"].map(pid=>{
+          const on=(activeProgram||"split")===pid;
+          return h("button",{key:pid,onClick:()=>setActiveProgram&&setActiveProgram(pid),
+            "aria-pressed":on,
+            className:"selectable"+(on?" selected-dissolve":""),
+            style:{flex:1,border:"none",borderRadius:10,padding:"11px 8px",cursor:"pointer",fontFamily:"inherit",
+              fontSize:13,fontWeight:800,letterSpacing:.3,
+              background:on?"#C6FF00":"transparent",color:on?"#050505":"#A3A3A3"}},
+            PROGRAMS[pid].label);
+        })),
       // Seção hero — workout / rest / done_today
       sesHoje&&h("div",{style:{marginBottom:28}},
         h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:rec.status==="rest"?"#A3A3A3":rec.status==="pending"?"#F59E0B":"#666666",textTransform:"uppercase",marginBottom:14}},
@@ -1169,6 +1284,8 @@ function TreinoView(){
   const[reps,setReps]=useState(0);
   const[currentBlock,setCurrentBlock]=useState(()=>localStorage.getItem("currentBlock")||"b1");
   const handleSetCurrentBlock=(b)=>{localStorage.setItem("currentBlock",b);setCurrentBlock(b);};
+  const[activeProgram,setActiveProgram]=useState(()=>localStorage.getItem("activeProgram")||"split");
+  const handleSetProgram=(p)=>{localStorage.setItem("activeProgram",p);setActiveProgram(p);};
   const[exOpen,setExOpen]=useState(true);
   const[coachFeedback,setCoachFeedback]=useState(null);
   const[stClosing,setStClosing]=useState(false);
@@ -1194,7 +1311,7 @@ function TreinoView(){
   const stT=(s)=>{setTs(s);setTl(s)};
   const rt=()=>{clearInterval(alarmRef.current);alarmRef.current=null;setTr(false);setTl(ts)};
   const closeRest=()=>{if(stClosing)return;clearInterval(alarmRef.current);alarmRef.current=null;setStClosing(true);setTr(false);stCloseRef.current=setTimeout(()=>{setSt(false);setStClosing(false);},200);};
-  if(selS===null)return h(SessionHomeView,{onSelect:setSelS});
+  if(selS===null)return h(SessionHomeView,{onSelect:setSelS,activeProgram,setActiveProgram:handleSetProgram});
   const sc=SC[selS]||{t:"#ef4444",bg:"#2a0808"};
   if(selEx===null)return h(ExerciseGridView,{selS,sc,onBack:()=>{setSelS(null)},onSelect:setSelEx,currentBlock,setCurrentBlock:handleSetCurrentBlock,setSb});
   const ex=selEx;const eb=EB[ex.eq]||EB.corporal;const sesEx=EX.filter(x=>x.s===selS);const num=sesEx.indexOf(ex)+1;
