@@ -57,7 +57,7 @@ input:focus-visible{outline:2px solid #C6FF00;outline-offset:2px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef,useMemo}=React;
-const APP_VERSION="v121";
+const APP_VERSION="v122";
 let _entrySeq=0;// contador p/ IDs de série únicos mesmo em taps rápidos
 console.log("Guia Treino",APP_VERSION);
 
@@ -268,7 +268,9 @@ const EX_IMGS={
 //  usam objetos próprios (ids 27-50) — os treinos existentes não mudam.
 // ════════════════════════════════════════════════════════════════
 // Clona um exercício existente por id, sobrescrevendo id/sessão/dia.
-const _fbClone=(srcId,ov)=>Object.assign({},EX.find(x=>x.id===srcId),ov);
+// baseId aponta para o movimento de origem: o tracking (carga/PSE/reps/histórico)
+// pertence ao MOVIMENTO, então Split e Full Body compartilham o mesmo histórico.
+const _fbClone=(srcId,ov)=>Object.assign({},EX.find(x=>x.id===srcId),{baseId:srcId},ov);
 const _FB="Full Body",_D="Full Body";
 // Movimentos NOVOS (não existiam no app)
 const _fbGoblet={id:27,n:"Agachamento Goblet",m:"Quadríceps, glúteos, core",s:"Full Body A",d:_D,f:"Pernas",eq:"halter",
@@ -322,6 +324,27 @@ const FULLBODY_EX=[
   _fbClone(10,{id:50,s:"Full Body C",d:_D})            // Straight Arm Pulldown
 ];
 EX.push(...FULLBODY_EX);
+// ── Tracking pertence ao MOVIMENTO, não ao programa ──────────────
+// carga/PSE/reps/histórico são gravados e lidos sob o baseId (id do movimento
+// de origem). Exercícios do Split e seus clones Full Body compartilham o mesmo
+// histórico. Os 4 movimentos novos do Full Body (sem baseId) usam o próprio id.
+function trackId(ex){return ex&&ex.baseId!=null?ex.baseId:(ex?ex.id:null);}
+// Mapa cloneId -> baseId, usado para migrar séries antigas gravadas sob o clone.
+const FB_CLONE_TO_BASE={};
+FULLBODY_EX.forEach(x=>{if(x.baseId!=null)FB_CLONE_TO_BASE[x.id]=x.baseId;});
+// Reescreve entradas do log gravadas sob o id de um clone Full Body para o id do
+// movimento base. Idempotente: só toca entradas cujo exerciseId é de um clone.
+function normalizeCloneIds(log){
+  if(!Array.isArray(log))return{log:log,changed:false};
+  let changed=false;
+  const out=log.map(e=>{
+    if(e&&FB_CLONE_TO_BASE[e.exerciseId]!=null){
+      changed=true;return Object.assign({},e,{exerciseId:FB_CLONE_TO_BASE[e.exerciseId]});
+    }
+    return e;
+  });
+  return{log:out,changed:changed};
+}
 // Imagens dos full body (clones reaproveitam a imagem de origem; novos usam pastas verificadas)
 Object.assign(EX_IMGS,{
   27:BASE+"Goblet_Squat/0.jpg",28:EX_IMGS[21],29:EX_IMGS[1],30:EX_IMGS[7],31:EX_IMGS[13],32:EX_IMGS[15],33:EX_IMGS[5],34:EX_IMGS[24],
@@ -555,6 +578,7 @@ function rebuildSessionsFromLog(log){
 function _syncSessionsCache(log){try{localStorage.setItem("workout_sessions",JSON.stringify(rebuildSessionsFromLog(log)));}catch(e){console.error("_syncSessionsCache",e);}}
 function setWorkoutLog(log){
   try{
+    log=normalizeCloneIds(log).log;// tracking sempre sob o id do movimento base
     // Salvar log não-vazio = intenção de continuar com novos dados → libera a flag
     if(Array.isArray(log)&&log.length>0){clearDeletionFlag();}
     localStorage.setItem(STORAGE_KEY,JSON.stringify(log||[]));
@@ -827,7 +851,7 @@ function mergeWorkoutLogs(local,remote){
   (local||[]).forEach(e=>{if(e&&e.id&&!seen.has(e.id)){seen.add(e.id);merged.push(e);}});
   (remote||[]).forEach(e=>{if(e&&e.id&&!seen.has(e.id)){seen.add(e.id);merged.push(e);}});
   merged.sort((a,b)=>(a.ts||0)-(b.ts||0));
-  return merged;
+  return normalizeCloneIds(merged).log;// normaliza ids de clone vindos da nuvem/IDB
 }
 async function syncBidirectional(){
   if(!isSupabaseConfigured())return{ok:false,reason:"not_configured"};
@@ -902,16 +926,23 @@ try{
       console.log("[GuiaTreino] autoRestoreAndSync: flag workout_log_deleted_at setada — restore pulado (IDB + Cloud bloqueados)");
       return;
     }
+    // 0.5 Migração: séries antigas do Full Body podem ter sido gravadas sob o id
+    //     do clone (27-50). Normaliza para o id do movimento base uma única vez.
+    try{
+      const _norm=normalizeCloneIds(getWorkoutLog());
+      if(_norm.changed){setWorkoutLog(_norm.log);console.log("Guia Treino: migrou ids de clone Full Body → base");}
+    }catch(_e){console.error("normalizeCloneIds boot",_e);}
     let cur=getWorkoutLog();
     let changed=false;
     // 1. IDB local
     if(cur.length===0){
       const backup=await getLastBackupIDB();
       if(backup&&Array.isArray(backup.workout_log)&&backup.workout_log.length>0){
-        localStorage.setItem(STORAGE_KEY,JSON.stringify(backup.workout_log));
-        _syncSessionsCache(backup.workout_log);
-        console.log("Guia Treino: IDB restaurou "+backup.workout_log.length+" séries");
-        changed=true;cur=backup.workout_log;
+        const restored=normalizeCloneIds(backup.workout_log).log;
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(restored));
+        _syncSessionsCache(restored);
+        console.log("Guia Treino: IDB restaurou "+restored.length+" séries");
+        changed=true;cur=restored;
       }
     }
     // 2. Supabase
@@ -1353,8 +1384,8 @@ function TreinoView(){
   const nextEx=sesEx[sesEx.indexOf(ex)+1]||null;
   const nextToExec=(plannedSeries>0&&seriesCt<plannedSeries)?ex:nextEx;// exercício que vem após o descanso
   // getWorkoutLog / setWorkoutLog vêm do escopo global (com backup IDB)
-  const exLog=getWorkoutLog().filter(e=>e.exerciseId===ex.id).slice(-4).reverse();
-  const saveSeries=(pse)=>{const entry={id:Date.now()+"-"+(++_entrySeq),ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:ex.id,exerciseName:ex.n,duration:lastDur,reps,pse,carga,block:blocoKey,setNumber:seriesCt+1,restSeconds:ts};const log=getWorkoutLog();setWorkoutLog([...log,entry]);const fb=getSugestao(ex,entry,prescription,blocoKey);setCoachFeedback({status:fb.status,motivo:fb.motivo});setShowPse(false);setSelectedPse(null);setExTime(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
+  const exLog=getWorkoutLog().filter(e=>e.exerciseId===trackId(ex)).slice(-4).reverse();
+  const saveSeries=(pse)=>{const entry={id:Date.now()+"-"+(++_entrySeq),ts:Date.now(),date:new Date().toLocaleDateString("pt-BR"),session:selS,exerciseId:trackId(ex),exerciseName:ex.n,duration:lastDur,reps,pse,carga,block:blocoKey,setNumber:seriesCt+1,restSeconds:ts};const log=getWorkoutLog();setWorkoutLog([...log,entry]);const fb=getSugestao(ex,entry,prescription,blocoKey);setCoachFeedback({status:fb.status,motivo:fb.motivo});setShowPse(false);setSelectedPse(null);setExTime(0);setSeriesCt(v=>v+1);setSt(true);setTl(ts);setTr(true);};
   const todayStr=new Date().toLocaleDateString("pt-BR");
   const sessionLog=getWorkoutLog().filter(e=>e.session===selS&&e.date===todayStr);
   const canEndWorkout=nextEx===null;
@@ -1447,7 +1478,7 @@ function TreinoView(){
   const sug=getSugestao(ex,exLog[0]||null,prescription,blocoKey);
   const SUG_CHIPS={ideal:{l:"NO ALVO",bg:"rgba(198,255,0,0.10)",bd:"rgba(198,255,0,0.35)",c:"#C6FF00"},progressing:{l:"AJUSTE FINO",bg:"rgba(198,255,0,0.10)",bd:"rgba(198,255,0,0.35)",c:"#C6FF00"},easy:{l:"LEVE",bg:"rgba(245,158,11,0.10)",bd:"rgba(245,158,11,0.35)",c:"#F59E0B"},low_effort:{l:"LEVE",bg:"rgba(245,158,11,0.10)",bd:"rgba(245,158,11,0.35)",c:"#F59E0B"},first_time:{l:"PRIMEIRA",bg:"rgba(245,158,11,0.10)",bd:"rgba(245,158,11,0.35)",c:"#F59E0B"},missing_reps:{l:"SEM REPS",bg:"rgba(245,158,11,0.10)",bd:"rgba(245,158,11,0.35)",c:"#F59E0B"},too_heavy:{l:"PESADO",bg:"rgba(239,68,68,0.10)",bd:"rgba(239,68,68,0.35)",c:"#EF4444"},below_range:{l:"ABAIXO",bg:"rgba(102,102,102,0.10)",bd:"#252525",c:"#A3A3A3"}};
   const cfChip=coachFeedback?(SUG_CHIPS[coachFeedback.status]||SUG_CHIPS.ideal):null;
-  const cargaProg=getWorkoutLog().filter(e=>e.exerciseId===ex.id&&Number(e.carga)>0).sort((a,b)=>a.ts-b.ts).slice(-6);
+  const cargaProg=getWorkoutLog().filter(e=>e.exerciseId===trackId(ex)&&Number(e.carga)>0).sort((a,b)=>a.ts-b.ts).slice(-6);
   const showProg=cargaProg.length>=6;
   let progDir="stable",progStatus="Estável",progColor="#666666",progPillBg="rgba(255,255,255,0.10)",progPillC="#A3A3A3",progMainNumber="",progFirst=0,progLast=0,progPath="",progPts=[];
   if(showProg){
