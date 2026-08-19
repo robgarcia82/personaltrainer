@@ -57,7 +57,7 @@ input:focus-visible{outline:2px solid #C6FF00;outline-offset:2px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef,useMemo}=React;
-const APP_VERSION="v122";
+const APP_VERSION="v123";
 let _entrySeq=0;// contador p/ IDs de série únicos mesmo em taps rápidos
 console.log("Guia Treino",APP_VERSION);
 
@@ -243,17 +243,17 @@ const EX_IMGS={
   9:BASE+"One-Arm_Dumbbell_Row/0.jpg",
   10:BASE+"Straight-Arm_Pulldown/0.jpg",
   11:BASE+"Incline_Dumbbell_Curl/0.jpg",
-  12:BASE+"Cable_Preacher_Curl/0.jpg",
+  12:BASE+"One_Arm_Dumbbell_Preacher_Curl/0.jpg",
   13:BASE+"Dumbbell_Shoulder_Press/0.jpg",
   14:BASE+"Arnold_Dumbbell_Press/0.jpg",
   15:BASE+"Cable_Seated_Lateral_Raise/0.jpg",
   16:BASE+"Face_Pull/0.jpg",
-  17:BASE+"Low_Cable_Front_Raise/0.jpg",
-  18:BASE+"Reverse_Cable_Crossover/0.jpg",
+  17:BASE+"Front_Cable_Raise/0.jpg",
+  18:BASE+"Cable_Rear_Delt_Fly/0.jpg",
   19:BASE+"Split_Squat_with_Dumbbells/0.jpg",
   20:BASE+"Sumo_Deadlift/0.jpg",
-  21:BASE+"Romanian_Deadlift/0.jpg",
-  22:BASE+"Single_Leg_Glute_Bridge/0.jpg",
+  21:BASE+"Stiff-Legged_Dumbbell_Deadlift/0.jpg",
+  22:BASE+"Barbell_Glute_Bridge/0.jpg",
   23:BASE+"Standing_Dumbbell_Calf_Raise/0.jpg",
   24:BASE+"Hanging_Leg_Raise/0.jpg",
   25:BASE+"Pullups/0.jpg",
@@ -329,17 +329,19 @@ EX.push(...FULLBODY_EX);
 // de origem). Exercícios do Split e seus clones Full Body compartilham o mesmo
 // histórico. Os 4 movimentos novos do Full Body (sem baseId) usam o próprio id.
 function trackId(ex){return ex&&ex.baseId!=null?ex.baseId:(ex?ex.id:null);}
-// Mapa cloneId -> baseId, usado para migrar séries antigas gravadas sob o clone.
-const FB_CLONE_TO_BASE={};
-FULLBODY_EX.forEach(x=>{if(x.baseId!=null)FB_CLONE_TO_BASE[x.id]=x.baseId;});
-// Reescreve entradas do log gravadas sob o id de um clone Full Body para o id do
-// movimento base. Idempotente: só toca entradas cujo exerciseId é de um clone.
+// Mapa cloneId -> baseId de TODOS os programas derivados (Full Body, Grupos).
+// Usado para migrar séries antigas gravadas sob o id de um clone.
+const CLONE_TO_BASE={};
+function registerClones(list){list.forEach(x=>{if(x.baseId!=null)CLONE_TO_BASE[x.id]=x.baseId;});}
+registerClones(FULLBODY_EX);
+// Reescreve entradas do log gravadas sob o id de um clone para o id do movimento
+// base. Idempotente: só toca entradas cujo exerciseId é de um clone.
 function normalizeCloneIds(log){
   if(!Array.isArray(log))return{log:log,changed:false};
   let changed=false;
   const out=log.map(e=>{
-    if(e&&FB_CLONE_TO_BASE[e.exerciseId]!=null){
-      changed=true;return Object.assign({},e,{exerciseId:FB_CLONE_TO_BASE[e.exerciseId]});
+    if(e&&CLONE_TO_BASE[e.exerciseId]!=null){
+      changed=true;return Object.assign({},e,{exerciseId:CLONE_TO_BASE[e.exerciseId]});
     }
     return e;
   });
@@ -352,6 +354,90 @@ Object.assign(EX_IMGS,{
   43:EX_IMGS[20],44:BASE+"Dumbbell_Rear_Lunge/0.jpg",45:EX_IMGS[4],46:EX_IMGS[26],47:EX_IMGS[14],48:EX_IMGS[18],49:EX_IMGS[12],50:EX_IMGS[10]
 });
 
+// ════════════════════════════════════════════════════════════════
+//  PROGRAMA GRUPOS MUSCULARES — 5 treinos focados (ids 51-75).
+//  Cada sessão tem 5 exercícios (~30-40 min) cobrindo todas as
+//  porções do grupo: posição alongada, posição encurtada e ângulos
+//  complementares. Seleção pensada para hipertrofia em treinado
+//  intermediário de 44 anos — prioriza tensão constante (cabo),
+//  amplitude completa e movimentos de baixo custo articular.
+// ════════════════════════════════════════════════════════════════
+// Clona resolvendo o baseId de forma transitiva: o tracking sempre aponta para
+// o movimento RAIZ, então um exercício feito aqui puxa e alimenta o mesmo
+// histórico de carga/PSE/reps do Split e do Full Body.
+const _gmClone=(srcId,ov)=>{
+  const src=EX.find(x=>x.id===srcId)||{};
+  return Object.assign({},src,{baseId:(src.baseId!=null?src.baseId:src.id)},ov);
+};
+const _GD="Grupo";
+// ── Movimentos NOVOS (preenchem lacunas do catálogo) ────────────
+const _gmPullover={id:51,n:"Pullover com Halter",m:"Peitoral (fibras costais) + dorsais",s:"Foco Peito",d:_GD,f:"Peito",eq:"halter",
+st:["Deite no banco reto, pés firmes no chão. Segure um halter com as duas mãos, as palmas apoiando a face interna do disco de cima.","Comece com o halter acima do peito, cotovelos levemente flexionados e FIXOS nesse ângulo.","Leve o halter para trás da cabeça em arco, descendo até sentir o alongamento profundo no peitoral e nas costelas.","Pare no ponto de maior alongamento confortável — sem forçar o ombro além disso.","Retorne pelo mesmo arco puxando com o peitoral, até o halter voltar sobre o peito."],
+t:"O pullover carrega o peitoral na posição mais alongada — um vetor que nem o supino nem o voador cobrem. Treinar o músculo alongado é uma das linhas mais promissoras da pesquisa recente de hipertrofia. Amplitude confortável e controle valem mais que carga aqui.",
+e:"Não dobrar mais os cotovelos durante o movimento. Não arquear a lombar para ganhar amplitude. Não descer além do que o ombro tolera sem desconforto.",
+b1:"3x12-15 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"};
+const _gmOverheadTri={id:52,n:"Tríceps Overhead na Polia",m:"Tríceps — cabeça longa (alongada)",s:"Foco Braços",d:_GD,f:"Braços",eq:"mc1000",
+st:["Prenda a corda na polia alta da MC-1000. Fique de costas para a máquina e segure as duas pontas da corda.","Dê um passo à frente em afundo leve, tronco levemente inclinado. Suba os cotovelos ao lado da cabeça, apontando para frente.","Deixe as mãos descerem atrás da cabeça até sentir o alongamento profundo no tríceps — cotovelos fixos no lugar.","Estenda os braços à frente e para cima, afastando as pontas da corda no fim do movimento.","Retorne controlando em 2-3 segundos até o alongamento máximo."],
+t:"Com o braço acima da cabeça a cabeça longa do tríceps — a maior das três — fica alongada, e é nessa posição que ela recebe o melhor estímulo. O cabo mantém tensão inclusive no fundo, onde o halter alivia. Comece leve: a posição alongada é exigente.",
+e:"Não deixar os cotovelos abrirem para os lados nem caírem. Não empurrar com o tronco. Não encurtar o fundo — o alongamento é o ponto do exercício.",
+b1:"4x12-15 | PSE 6-7",b2:"4x10-12 | PSE 7-8",b3:"4x10-12 | PSE 8",dl:"2x12-15 | PSE 5-6"};
+const _gmHammer={id:53,n:"Rosca Martelo c/ Halteres",m:"Braquial e braquiorradial + bíceps",s:"Foco Braços",d:_GD,f:"Braços",eq:"halter",
+st:["Em pé, um halter em cada mão, braços estendidos ao lado do corpo — pegada NEUTRA (palmas viradas uma para a outra).","Cotovelos colados ao tronco e fixos. Core firme, ombros para trás.","Flexione até o halter chegar próximo ao ombro, mantendo a pegada neutra o tempo todo.","Aperte por 1s no topo.","Desça controlando em 2-3 segundos até a extensão total. Pode alternar os braços ou fazer simultâneo."],
+t:"A pegada neutra transfere carga para o braquial — músculo que fica EMBAIXO do bíceps e o empurra para cima, aumentando a espessura do braço. Também recruta o braquiorradial. É o complemento que faltava às roscas supinadas.",
+e:"Não girar o punho durante o movimento — a pegada é neutra do início ao fim. Não balançar o tronco. Não deixar os cotovelos irem à frente.",
+b1:"3x10-12 | PSE 6-7",b2:"3x10-12 | PSE 7-8",b3:"3x8-10 | PSE 8",dl:"2x12-15 | PSE 5-6"};
+const _gmLatRaiseDb={id:54,n:"Elevação Lateral c/ Halteres",m:"Deltoide lateral — pico de carga no topo",s:"Foco Ombros",d:_GD,f:"Ombro",eq:"halter",
+st:["Em pé, um halter em cada mão ao lado do corpo, cotovelos levemente flexionados e fixos.","Incline o tronco 5-10° à frente — isso alinha melhor a resistência com a fibra do deltoide lateral.","Eleve os braços pelos lados até a altura dos ombros, guiando pelo cotovelo (não pela mão).","Pause 1s no topo — mindinho levemente mais alto que o polegar.","Desça controlando em 2-3 segundos, resistindo à descida."],
+t:"O halter exige mais exatamente no topo, enquanto a polia carrega mais o início do arco. Treinar as duas versões cobre o arco inteiro do deltoide lateral — o músculo que dá largura ao ombro e que responde bem a volume alto com carga moderada.",
+e:"Não usar impulso das pernas ou do tronco. Não subir acima da linha dos ombros (aí o trapézio assume). Não deixar o peso cair na descida.",
+b1:"3x12-15 | PSE 6-7",b2:"3x12-15 | PSE 7-8",b3:"3x10-12 | PSE 8",dl:"2x15-20 | PSE 5-6"};
+// ── Montagem das 5 sessões (ordem = ordem de execução) ──────────
+const GRUPOS_EX=[
+  // FOCO PEITO — inclinado (clavicular) → reto (esternal) → dips (inferior) → isolamento → alongado
+  _gmClone(2, {id:55,s:"Foco Peito",d:_GD}),            // Supino Inclinado
+  _gmClone(1, {id:56,s:"Foco Peito",d:_GD}),            // Supino Halteres
+  _gmClone(4, {id:57,s:"Foco Peito",d:_GD}),            // Dips
+  _gmClone(3, {id:58,s:"Foco Peito",d:_GD}),            // Voador na Polia
+  _gmPullover,                                          // 51 alongamento (novo)
+  // FOCO COSTAS — vertical → horizontal (cabo) → horizontal (halter) → isolamento → alto
+  _gmClone(25,{id:59,s:"Foco Costas",d:_GD}),           // Barra Fixa
+  _gmClone(8, {id:60,s:"Foco Costas",d:_GD}),           // Cable Row
+  _gmClone(9, {id:61,s:"Foco Costas",d:_GD}),           // Remada Unilateral
+  _gmClone(10,{id:62,s:"Foco Costas",d:_GD}),           // Straight Arm Pulldown
+  _gmClone(16,{id:63,s:"Foco Costas",d:_GD}),           // Face Pull
+  // FOCO OMBROS — press → lateral (cabo) → posterior → lateral (halter) → posterior/manguito
+  _gmClone(13,{id:64,s:"Foco Ombros",d:_GD}),           // Desenvolvimento
+  _gmClone(15,{id:65,s:"Foco Ombros",d:_GD}),           // Elevação Lateral Polia
+  _gmClone(18,{id:66,s:"Foco Ombros",d:_GD}),           // Crucifixo Invertido
+  _gmLatRaiseDb,                                        // 54 lateral halter (novo)
+  _gmClone(16,{id:67,s:"Foco Ombros",d:_GD}),           // Face Pull
+  // FOCO BRAÇOS — alterna tríceps/bíceps; cobre as 3 cabeças do tríceps e as 2 do bíceps + braquial
+  _gmOverheadTri,                                       // 52 tríceps cabeça longa (novo)
+  _gmClone(11,{id:68,s:"Foco Braços",d:_GD}),           // Rosca Inclinada (bíceps cabeça longa)
+  _gmClone(5, {id:69,s:"Foco Braços",d:_GD,             // Tríceps Pushdown (lateral/medial)
+    b1:"4x12-15 | PSE 6-7",b2:"4x10-12 | PSE 7-8",b3:"4x8-10 | PSE 8",dl:"2x12-15 | PSE 5-6"}),
+  _gmClone(12,{id:70,s:"Foco Braços",d:_GD}),           // Rosca Scott (bíceps cabeça curta)
+  _gmHammer,                                            // 53 braquial (novo)
+  // FOCO PERNAS — unilateral quad → dobradiça (posterior) → quad bilateral → glúteo → panturrilha
+  _gmClone(19,{id:71,s:"Foco Pernas",d:_GD}),           // Búlgaro
+  _gmClone(21,{id:72,s:"Foco Pernas",d:_GD}),           // Stiff
+  _gmClone(27,{id:73,s:"Foco Pernas",d:_GD}),           // Goblet
+  _gmClone(36,{id:74,s:"Foco Pernas",d:_GD}),           // Hip Thrust
+  _gmClone(23,{id:75,s:"Foco Pernas",d:_GD})            // Panturrilha
+];
+EX.push(...GRUPOS_EX);
+registerClones(GRUPOS_EX);
+// Imagens: clones reaproveitam a imagem de origem; novos usam pastas verificadas
+Object.assign(EX_IMGS,{
+  51:BASE+"Bent-Arm_Dumbbell_Pullover/0.jpg",52:BASE+"Cable_Rope_Overhead_Triceps_Extension/0.jpg",
+  53:BASE+"Hammer_Curls/0.jpg",54:BASE+"Side_Lateral_Raise/0.jpg",
+  55:EX_IMGS[2],56:EX_IMGS[1],57:EX_IMGS[4],58:EX_IMGS[3],
+  59:EX_IMGS[25],60:EX_IMGS[8],61:EX_IMGS[9],62:EX_IMGS[10],63:EX_IMGS[16],
+  64:EX_IMGS[13],65:EX_IMGS[15],66:EX_IMGS[18],67:EX_IMGS[16],
+  68:EX_IMGS[11],69:EX_IMGS[5],70:EX_IMGS[12],
+  71:EX_IMGS[19],72:EX_IMGS[21],73:EX_IMGS[27],74:EX_IMGS[36],75:EX_IMGS[23]
+});
+
 const SC={
   "Superiores 1":{t:"#C6FF00",bg:"#1a2200"},
   "Superiores 2":{t:"#00E5FF",bg:"#001f24"},
@@ -360,7 +446,12 @@ const SC={
   "Bônus":{t:"#F43F5E",bg:"#2a0a13"},
   "Full Body A":{t:"#2DD4BF",bg:"#04211f"},
   "Full Body B":{t:"#FB7185",bg:"#2a0f14"},
-  "Full Body C":{t:"#818CF8",bg:"#12142e"}
+  "Full Body C":{t:"#818CF8",bg:"#12142e"},
+  "Foco Peito":{t:"#FB923C",bg:"#2a1405"},
+  "Foco Costas":{t:"#4ADE80",bg:"#06251a"},
+  "Foco Ombros":{t:"#E879F9",bg:"#2a0f2e"},
+  "Foco Braços":{t:"#FDE047",bg:"#2a2505"},
+  "Foco Pernas":{t:"#38BDF8",bg:"#062033"}
 };
 const FC={"Peito":"#C6FF00","Costas":"#00E5FF","Ombro":"#A855F7","Pernas":"#F59E0B","Braços":"#22C55E","Core":"#F43F5E"};
 const EB={mc1000:{bg:"rgba(0,0,0,0.72)",c:"#60A5FA",l:"MC-1000"},halter:{bg:"rgba(0,0,0,0.72)",c:"#C6FF00",l:"HALTER"},sandbag:{bg:"rgba(0,0,0,0.72)",c:"#84CC16",l:"SANDBAG"},corporal:{bg:"rgba(0,0,0,0.72)",c:"#C084FC",l:"CORPORAL"}};
@@ -486,6 +577,14 @@ const SESSIONS=[
   {s:"Full Body A",dia:"Full Body",sub:"Corpo inteiro · Ênfase empurrar",img:BASE+"Goblet_Squat/0.jpg",cor:"#2DD4BF"},
   {s:"Full Body B",dia:"Full Body",sub:"Corpo inteiro · Ênfase puxar",img:BASE+"Barbell_Hip_Thrust/0.jpg",cor:"#FB7185"},
   {s:"Full Body C",dia:"Full Body",sub:"Corpo inteiro · Mix / força",img:BASE+"Dips_-_Chest_Version/0.jpg",cor:"#818CF8"},
+  // ── Programa GRUPOS MUSCULARES (foco em um grupo por sessão) ──
+  // sub curto de propósito: o título do hero usa fonte display e palavras longas
+  // passam por baixo do CTA (mesmo padrão de "Superiores 3" → "Ombros").
+  {s:"Foco Peito",dia:"Grupo",sub:"Peito",dur:"~35 min",img:BASE+"Incline_Dumbbell_Press/0.jpg",cor:"#FB923C"},
+  {s:"Foco Costas",dia:"Grupo",sub:"Costas",dur:"~35 min",img:BASE+"Pullups/0.jpg",cor:"#4ADE80"},
+  {s:"Foco Ombros",dia:"Grupo",sub:"Ombros",dur:"~35 min",img:BASE+"Side_Lateral_Raise/0.jpg",cor:"#E879F9"},
+  {s:"Foco Braços",dia:"Grupo",sub:"Braços",dur:"~35 min",img:BASE+"Hammer_Curls/0.jpg",cor:"#FDE047"},
+  {s:"Foco Pernas",dia:"Grupo",sub:"Pernas",dur:"~40 min",img:BASE+"Split_Squat_with_Dumbbells/0.jpg",cor:"#38BDF8"},
 ];
 
 // Sequência principal do programa SPLIT (Bônus fica fora — opcional)
@@ -506,10 +605,25 @@ const FULLBODY_CYCLE=[
   {type:"workout",session:"Full Body C"},
   {type:"rest"}
 ];
-// Programas selecionáveis (Split ⇄ Full Body). Cada um tem seu próprio ciclo e sessões.
+// Ciclo do programa GRUPOS — 5 treinos focados + 2 descansos (≈ 1 semana).
+// Ordem pensada para separar músculos que se sobrepõem: Peito (tríceps) fica
+// longe de Braços, e Costas (bíceps) também. Ombros vem antes de Braços porque
+// as elevações quase não usam tríceps.
+const GRUPOS_CYCLE=[
+  {type:"workout",session:"Foco Peito"},
+  {type:"workout",session:"Foco Costas"},
+  {type:"rest"},
+  {type:"workout",session:"Foco Pernas"},
+  {type:"workout",session:"Foco Ombros"},
+  {type:"workout",session:"Foco Braços"},
+  {type:"rest"}
+];
+// Programas selecionáveis (Split ⇄ Full Body ⇄ Grupos). Cada um tem seu próprio
+// ciclo e sessões — mas todos compartilham o histórico por movimento (baseId).
 const PROGRAMS={
   split:{id:"split",label:"Split",cycle:TRAINING_CYCLE,sessions:["Superiores 1","Superiores 2","Superiores 3","Inferiores","Bônus"]},
-  fullbody:{id:"fullbody",label:"Full Body",cycle:FULLBODY_CYCLE,sessions:["Full Body A","Full Body B","Full Body C"]}
+  fullbody:{id:"fullbody",label:"Full Body",cycle:FULLBODY_CYCLE,sessions:["Full Body A","Full Body B","Full Body C"]},
+  grupos:{id:"grupos",label:"Grupos",cycle:GRUPOS_CYCLE,sessions:["Foco Peito","Foco Costas","Foco Ombros","Foco Braços","Foco Pernas"]}
 };
 
 // ── Persistência: workout_log + backup IndexedDB ───────────────
@@ -1115,13 +1229,13 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
     h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
       // ── Seletor de programa (Split ⇄ Full Body) ──────────────
       h("div",{style:{display:"flex",gap:6,background:"#121212",padding:5,borderRadius:14,marginBottom:24,boxShadow:"0 6px 20px rgba(0,0,0,.22)"}},
-        ["split","fullbody"].map(pid=>{
+        Object.keys(PROGRAMS).map(pid=>{
           const on=(activeProgram||"split")===pid;
           return h("button",{key:pid,onClick:()=>setActiveProgram&&setActiveProgram(pid),
             "aria-pressed":on,
             className:"selectable"+(on?" selected-dissolve":""),
-            style:{flex:1,border:"none",borderRadius:10,padding:"11px 8px",cursor:"pointer",fontFamily:"inherit",
-              fontSize:13,fontWeight:800,letterSpacing:.3,
+            style:{flex:1,minWidth:0,border:"none",borderRadius:10,padding:"11px 6px",cursor:"pointer",fontFamily:"inherit",
+              fontSize:12.5,fontWeight:800,letterSpacing:.2,whiteSpace:"nowrap",
               background:on?"#C6FF00":"transparent",color:on?"#050505":"#A3A3A3"}},
             PROGRAMS[pid].label);
         })),
@@ -1148,7 +1262,8 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
             h("div",{style:{minWidth:0,flex:1}},
               h("div",{style:{fontSize:20,fontWeight:800,color:"rgba(255,255,255,.72)",marginBottom:6,textTransform:"none"}},sesHoje.s),
               h("div",{className:"display-title",style:{color:"#FFFFFF",marginBottom:8,textShadow:"0 6px 24px rgba(0,0,0,.55)"}},sesHoje.sub||sesHoje.s),
-              h("div",{style:{fontSize:18,fontWeight:600,color:"rgba(255,255,255,.58)",letterSpacing:-.1}},EX.filter(x=>x.s===sesHoje.s).length+" exercícios")),
+              h("div",{style:{fontSize:18,fontWeight:600,color:"rgba(255,255,255,.58)",letterSpacing:-.1}},
+                EX.filter(x=>x.s===sesHoje.s).length+" exercícios")),
             // Botão textual no lugar do circular ▶ — CTA mais claro.
             // stopPropagation evita disparar duas vezes (o card também é clicável).
             h("button",{onClick:e=>{e.stopPropagation();onSelect(rec.playSession);},
@@ -1197,7 +1312,7 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
               h("div",{style:{flex:1,padding:"14px 16px"}},
                 h("div",{style:{fontSize:15,fontWeight:700,color:"#F5F5F5",letterSpacing:-.2,marginBottom:2}},sess.s),
                 h("div",{style:{fontSize:12,color:"#A3A3A3",marginBottom:3}},sess.sub),
-                h("div",{style:{fontSize:11,color:"#666666"}},exCount+" exercícios")),
+                h("div",{style:{fontSize:11,color:"#666666"}},exCount+" exercícios"+(sess.dur?" · "+sess.dur:""))),
               h("div",{style:{padding:"0 18px",color:"#666666",fontSize:17,fontWeight:300,flexShrink:0}},"›"));
           })))
     )
