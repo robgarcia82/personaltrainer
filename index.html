@@ -997,6 +997,7 @@ async function syncWorkoutLogToCloud(full){
     });
     if(!res.ok)return{ok:false,reason:"http_"+res.status,body:await res.text().catch(()=>"")};
     addSyncedIds(rows.map(r=>r.id));// só marca depois do 200: falha reenvia
+    marcaNuvemOk();
     return{ok:true,pushed:rows.length};
   }catch(e){return{ok:false,reason:"network",error:e.message};}
 }
@@ -1017,7 +1018,7 @@ async function fetchWorkoutLogFromCloud(){
       if(!res.ok)return{ok:false,reason:"http_"+res.status,entries:[]};
       const rows=await res.json();
       rows.forEach(r=>entries.push(rowToEntry(r)));
-      if(rows.length<CLOUD_PAGE)return{ok:true,entries:entries};
+      if(rows.length<CLOUD_PAGE){marcaNuvemOk();return{ok:true,entries:entries};}
     }
     // Chegou no teto de páginas: melhor avisar do que fingir que veio tudo.
     console.warn("[GuiaTreino] fetch parou em "+entries.length+" séries (teto de páginas)");
@@ -1101,10 +1102,31 @@ function showCloudBanner(text,type){
 // Falha de rede é rotina num app de academia e o push se recupera sozinho no
 // próximo salvamento — não merece alarme vermelho em cima da tela. Já erro de
 // HTTP (policy, chave, tabela) é configuração quebrada e precisa aparecer.
+// Último contato bem-sucedido com a nuvem. Sem isto, silenciar as falhas de
+// rede esconderia um backup quebrado: o app fica meses sem replicar e nada
+// na tela diz isso.
+const LAST_CLOUD_OK_KEY="workout_last_cloud_ok";
+function marcaNuvemOk(){try{localStorage.setItem(LAST_CLOUD_OK_KEY,String(Date.now()));}catch(e){}}
+function getUltimoContatoNuvem(){
+  try{return Number(localStorage.getItem(LAST_CLOUD_OK_KEY)||0);}catch(e){return 0;}
+}
+const BACKUP_ATRASADO_MS=3*86400000;
+// Falha de rede é rotina e o push se recupera sozinho — não vira alarme.
+// MAS se já faz dias que nada chega na nuvem e existe treino local pra
+// perder, aí precisa aparecer. Erro de HTTP (policy, chave, tabela) é
+// configuração quebrada e aparece sempre.
 function avisaFalhaNuvem(r,acao){
   const motivo=String((r&&r.reason)||"");
   if(motivo==="network"||motivo==="not_configured"){
-    console.warn("[GuiaTreino] nuvem indisponível ao "+acao+" — segue offline, tenta de novo depois");
+    const ultimo=getUltimoContatoNuvem();
+    const temTreinoLocal=getWorkoutLog().length>0;
+    const atrasado=temTreinoLocal&&(ultimo===0||Date.now()-ultimo>BACKUP_ATRASADO_MS);
+    if(!atrasado){
+      console.warn("[GuiaTreino] nuvem indisponível ao "+acao+" — segue offline, tenta de novo depois");
+      return;
+    }
+    const quando=ultimo?"há "+Math.floor((Date.now()-ultimo)/86400000)+" dias":"nunca";
+    showCloudBanner("☁ Backup na nuvem parado ("+quando+"). Seus treinos estão salvos só neste aparelho.","warn");
     return;
   }
   showCloudBanner("☁ Não deu pra "+acao+" na nuvem ("+motivo+"). Seus treinos seguem salvos no aparelho.","warn");
