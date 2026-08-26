@@ -41,9 +41,9 @@ h1{letter-spacing:-.04em}
 .treino-card{gap:12px;padding:12px}
 /* A foto acompanha a altura do card: com a Instrument, subtítulos longos
    (Full Body) ocupam 4 linhas e um quadrado de 72px ficava perdido ao lado. */
-.treino-card__foto{width:72px;min-height:72px;align-self:stretch}
+.treino-card__foto{width:72px;min-height:72px;align-self:stretch;position:relative}
 .treino-card__play{width:48px;height:48px}
-.treino-card__titulo{font-size:24px}
+.treino-card__titulo{font-size:26px}
 .treino-card__meta{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:360px){
   .treino-card{gap:10px;padding:10px}
@@ -51,8 +51,8 @@ h1{letter-spacing:-.04em}
   .treino-card__play{width:44px;height:44px}
   /* Aqui nem encolhendo tudo cabe "Superiores 2 · 6 exercícios" numa linha:
      deixa quebrar em duas em vez de cortar a contagem de exercícios. */
-  /* "EMPURRAR" a 24px não cabe na coluna de 118px que sobra em 320px */
-  .treino-card__titulo{font-size:20px}
+  /* Em 320px a coluna cai pra ~118px e nem a caixa mista segura 30px */
+  .treino-card__titulo{font-size:24px}
   .treino-card__meta{font-size:11px;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25}
 }
 ::-webkit-scrollbar{display:none}
@@ -1510,7 +1510,7 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
                 border:"1px solid "+(isHoje?bordaHoje:"transparent")})},
               h("div",{className:"treino-card__foto",style:{borderRadius:14,overflow:"hidden",flexShrink:0,background:"#0D0D0D"}},
                 h("img",{src:sess.img,alt:"",
-                  style:{display:"block",width:"100%",height:"100%",objectFit:"cover",objectPosition:"top",
+                  style:{position:"absolute",inset:0,display:"block",width:"100%",height:"100%",objectFit:"cover",objectPosition:"top",
                     filter:(isHoje&&rec.status==="rest")?"grayscale(0.5) brightness(.8)":"none"},
                   onError:e=>{e.target.style.display="none"}})),
               h("div",{style:{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:4}},
@@ -1518,7 +1518,11 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
                   color:isHoje?accentHoje:"#666666"}},(isHoje?rotuloHoje:rotuloCard(sess)).toUpperCase()),
                 // paddingBottom: com line-height .92 e overflow hidden, a cedilha de
                 // "Braços" e acentos altos ficavam raspando na borda da caixa
-                h("div",{className:"bn treino-card__titulo",style:{lineHeight:1.05,letterSpacing:"-.04em",color:"#FFFFFF",
+                // Caixa mista, SemiBold, sem tracking negativo: é ~20px mais estreito
+                // que o CAPS 700, o que devolve o título pra 30px e o Full Body
+                // pra 3 linhas. O resto do display do app segue em caixa alta.
+                h("div",{className:"bn treino-card__titulo",style:{lineHeight:1.05,letterSpacing:0,color:"#FFFFFF",
+                  textTransform:"none",fontWeight:600,
                   paddingBottom:3,overflow:"hidden",display:"-webkit-box",WebkitBoxOrient:"vertical",WebkitLineClamp:4}},sess.sub||sess.s),
                 h("div",{className:"treino-card__meta",style:{color:"#A3A3A3"}},
                   (redundante?"":sess.s+" · ")+exCount+" exercícios"+(sess.dur?" · "+sess.dur:""))),
