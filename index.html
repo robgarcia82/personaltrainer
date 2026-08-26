@@ -21,6 +21,19 @@ h1,h2,h3,h4,h5,h6,.bn{font-family:'Bebas Neue','Geist',system-ui,-apple-system,B
 /* Título grande/display — Bebas Neue 60px (clamp opcional via inline) */
 .display-title{font-family:'Bebas Neue','Geist',system-ui,sans-serif;font-size:60px;font-weight:400;line-height:.9;letter-spacing:.02em;text-transform:uppercase}
 h1{letter-spacing:.12em}
+/* Rodapé do card hero (Home): bloco de texto + CTA "Iniciar treino".
+   Em tela larga o CTA fica à direita do texto. Em tela estreita sobrava
+   ~110px pro texto — menos que UMA palavra do .display-title (60px) — e a
+   última linha passava por baixo do botão. Abaixo de 600px o CTA empilha
+   e o texto recupera a largura inteira do card: o "sangramento" do título
+   continua (é intencional) sem nunca colidir com o CTA. */
+.hero-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.hero-foot__text{flex:1;min-width:0}
+.hero-foot__cta{flex-shrink:0;align-self:flex-end}
+@media (max-width:600px){
+  .hero-foot{flex-direction:column;align-items:stretch;gap:14px}
+  .hero-foot__cta{width:100%;align-self:auto}
+}
 ::-webkit-scrollbar{display:none}
 input::placeholder{color:#333}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
@@ -57,7 +70,7 @@ input:focus-visible{outline:2px solid #C6FF00;outline-offset:2px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef,useMemo}=React;
-const APP_VERSION="v123";
+const APP_VERSION="v124";
 let _entrySeq=0;// contador p/ IDs de série únicos mesmo em taps rápidos
 console.log("Guia Treino",APP_VERSION);
 
@@ -1258,8 +1271,8 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
               fontSize:10,fontWeight:900,letterSpacing:1.2,padding:"5px 13px",borderRadius:20,textTransform:"uppercase",
               backdropFilter:rec.status==="rest"?"blur(8px)":"none"}},
               rec.status==="rest"?"Descanso":rec.status==="done_today"?"✓ Concluído":rec.status==="pending"?"⚡ Pendente":"HOJE")),
-          h("div",{style:{position:"absolute",bottom:0,left:0,right:0,padding:"20px 24px 24px",display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16}},
-            h("div",{style:{minWidth:0,flex:1}},
+          h("div",{className:"hero-foot",style:{position:"absolute",bottom:0,left:0,right:0,padding:"20px 24px 24px"}},
+            h("div",{className:"hero-foot__text"},
               h("div",{style:{fontSize:20,fontWeight:800,color:"rgba(255,255,255,.72)",marginBottom:6,textTransform:"none"}},sesHoje.s),
               h("div",{className:"display-title",style:{color:"#FFFFFF",marginBottom:8,textShadow:"0 6px 24px rgba(0,0,0,.55)"}},sesHoje.sub||sesHoje.s),
               h("div",{style:{fontSize:18,fontWeight:600,color:"rgba(255,255,255,.58)",letterSpacing:-.1}},
@@ -1267,11 +1280,10 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
             // Botão textual no lugar do circular ▶ — CTA mais claro.
             // stopPropagation evita disparar duas vezes (o card também é clicável).
             h("button",{onClick:e=>{e.stopPropagation();onSelect(rec.playSession);},
-              "aria-label":"Iniciar treino",
+              "aria-label":"Iniciar treino",className:"hero-foot__cta",
               style:{background:"#C6FF00",color:"#050505",border:"none",borderRadius:999,
                 padding:"14px 22px",fontFamily:"inherit",fontSize:16,fontWeight:900,
                 cursor:"pointer",letterSpacing:.3,whiteSpace:"nowrap",
-                flexShrink:0,alignSelf:"flex-end",
                 boxShadow:"0 12px 32px rgba(198,255,0,0.30)"}},"Iniciar treino")))),
       // ── Seção "Este mês" (2x2 big numbers) ──────────────────
       h("div",{style:{marginBottom:20}},
