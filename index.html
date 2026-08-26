@@ -23,6 +23,11 @@ h1,h2,h3,h4,h5,h6,.bn{font-family:'Bebas Neue','Geist',system-ui,-apple-system,B
 h1{letter-spacing:.12em}
 /* Home (v125): faixa da semana + cards de dado. O card de hoje é uma linha
    compacta — o hero de 420px saiu, e com ele o .hero-foot do v124. */
+/* Topo das telas: com viewport-fit=cover + status bar translúcida o conteúdo
+   começa EMBAIXO do notch / Dynamic Island. 48px é o piso pra quem não tem
+   notch (aba de navegador); onde há notch vale o inset do aparelho + respiro,
+   o que cobre também a ilha maior dos Pro. */
+.screen-top{padding-top:max(48px,calc(env(safe-area-inset-top,0px) + 8px))}
 .week-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
 .metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;width:132px}
@@ -1445,7 +1450,7 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
   // paddingBottom folgado: o chip de versão é fixo em bottom:72 e encostava
   // no último card agora que a Home cabe numa tela só
   return h("div",{className:"screen-enter",style:{background:"#050505",minHeight:"100vh",paddingBottom:48}},
-    h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
+    h("div",{className:"screen-top",style:{maxWidth:1040,margin:"0 auto",paddingLeft:24,paddingRight:24}},
       // ── Seletor de programa (Split ⇄ Full Body) ──────────────
       h("div",{style:{display:"flex",gap:6,background:"#121212",padding:5,borderRadius:14,marginBottom:24,boxShadow:"0 6px 20px rgba(0,0,0,.22)"}},
         Object.keys(PROGRAMS).map(pid=>{
@@ -1618,7 +1623,7 @@ function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock,setCurrentBlock,
     return ss+"×"+r+(p?" · PSE "+p:"");
   }
   return h("div",{className:"screen-enter",key:"grid-"+selS,style:{background:"#050505",minHeight:"100vh",paddingBottom:24}},
-    h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
+    h("div",{className:"screen-top",style:{maxWidth:1040,margin:"0 auto",paddingLeft:24,paddingRight:24}},
       // ── Botão voltar ────────────────────────────────────────────
       h("button",{onClick:onBack,
         style:{display:"inline-flex",alignItems:"center",gap:5,padding:"8px 16px",borderRadius:22,
@@ -2206,8 +2211,8 @@ function DietaView(){
   const[om,setOm]=useState(null);
   const dias=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
   const hoje=dias[new Date().getDay()];
-  return h("div",{className:"screen-enter",style:{maxWidth:1040,margin:"0 auto",padding:"0 0 20px"}},
-    h("div",{style:{margin:"16px 16px 0",background:"linear-gradient(135deg,#121212,#0D0D0D)",borderRadius:16,padding:16,boxShadow:"0 12px 32px rgba(0,0,0,.3)"}},
+  return h("div",{className:"screen-enter screen-top",style:{maxWidth:1040,margin:"0 auto",paddingBottom:20}},
+    h("div",{style:{margin:"0 16px",background:"linear-gradient(135deg,#121212,#0D0D0D)",borderRadius:16,padding:16,boxShadow:"0 12px 32px rgba(0,0,0,.3)"}},
       h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}},
         h("div",null,
           h("div",{style:{fontSize:10,fontWeight:800,letterSpacing:2,color:"#C6FF00",textTransform:"uppercase",marginBottom:4}},"Meta Diária"),
@@ -2420,7 +2425,7 @@ function CoachView(){
             comments.map((c,i)=>h("div",{key:i,style:{fontSize:13,color:"#F5F5F5",lineHeight:1.5,fontWeight:500}},c))))));
   }
   return h("div",{className:"screen-enter",style:{maxWidth:1040,margin:"0 auto",padding:"0 0 32px"}},
-    h("div",{style:{padding:"28px 24px 0"}},
+    h("div",{className:"screen-top",style:{paddingLeft:24,paddingRight:24}},
       h("h1",{style:{fontSize:60,fontWeight:900,color:"#F5F5F5",margin:0,lineHeight:1}},"Coach"),
       h("p",{style:{fontSize:15,color:"#A3A3A3",margin:"10px 0 0",fontWeight:500,letterSpacing:-.1}},"Análise dos seus treinos e próximos ajustes.")),
     !last&&h("div",{style:{padding:"24px 24px 0"}},
