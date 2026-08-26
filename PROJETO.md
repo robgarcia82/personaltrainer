@@ -19,15 +19,25 @@ O app tem 3 abas fixas no rodapé:
 
 ## Aba Treino — Fluxo de Navegação
 
-### Tela 1: Sessões (SessionHomeView)
-Grid 2 colunas de cards com imagem de fundo. As sessões são:
-- Superiores 1 — Peito + Tríceps (Segunda)
-- Superiores 2 — Costas + Bíceps (Terça)
-- Superiores 3 — Ombros (Quinta)
-- Inferiores — Pernas + Core (Sábado)
-- Bônus — Pull-ups (Progressão) — card full-width
+### Tela 1: Home (SessionHomeView)
+Painel de uma tela, de cima pra baixo:
 
-Detecta o dia da semana e marca "HOJE" na sessão correspondente.
+1. **Seletor de programa** — Split, Full Body e Grupos (a lista sai de `PROGRAMS`).
+2. **Faixa da semana** — segunda a domingo, com estado por dia: treino concluído,
+   hoje, ainda não chegou, sem treino. Sai do log real, filtrada pelo programa ativo.
+3. **Carrossel de treinos** — todos os treinos do programa, deslizando na horizontal.
+   O recomendado abre a fila com o rótulo de status (Para hoje / Pendente / Descanso /
+   Próximo treino) e os demais são rotulados pela posição no ciclo.
+4. **Cards de progresso** — últimos 28 dias (contagem + grade dia a dia), volume
+   semanal (Σ carga × reps, janelas móveis de 7 dias), PSE médio do mês e maior evolução.
+
+Os treinos de cada programa vivem em `SESSIONS`; para o Split são Superiores 1
+(Peito + Tríceps), Superiores 2 (Costas + Bíceps), Superiores 3 (Ombros),
+Inferiores (Pernas + Core) e Bônus (Pull-ups, fora do ciclo).
+
+**A recomendação é por ciclo, não por calendário:** depois do primeiro treino o app
+deriva o próximo item de `TRAINING_CYCLE` a partir do último concluído. O dia da
+semana só decide a recomendação no primeiro uso, quando ainda não há histórico.
 
 ### Tela 2: Grid de Exercícios (ExerciseGridView)
 Grid 2 colunas com cards de exercício (imagem + nome + músculo). Header sticky com filtros de grupo muscular (Peito, Costas, Ombro, Pernas, Braços, Core). Sem campo de busca.

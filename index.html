@@ -11,23 +11,50 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geist:wght@100..900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Geist:wght@100..900&display=swap">
 <title>Personal Trainer — Roberto Garcia</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body,#root{height:100%;min-height:100dvh;background:#050505 !important;color:#F5F5F5;font-family:'Geist',system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body,p,span,div,a,label,button,input,textarea,select{font-family:'Geist',system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Arial,sans-serif}
-h1,h2,h3,h4,h5,h6,.bn{font-family:'Bebas Neue','Geist',system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;text-transform:uppercase;letter-spacing:.08em}
-/* Título grande/display — Bebas Neue 60px (clamp opcional via inline) */
-.display-title{font-family:'Bebas Neue','Geist',system-ui,sans-serif;font-size:60px;font-weight:400;line-height:.9;letter-spacing:.02em;text-transform:uppercase}
-h1{letter-spacing:.12em}
+h1,h2,h3,h4,h5,h6,.bn{font-family:'Instrument Sans','Geist',system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;text-transform:uppercase;letter-spacing:-.035em;font-weight:700}
+/* Título grande/display — Instrument Sans 60px (clamp opcional via inline).
+   A Instrument é bem mais larga que a Bebas que estava aqui antes: o tracking
+   vai a -.03em e o peso a 700 (o máximo da família) pra segurar a densidade. */
+.display-title{font-family:'Instrument Sans','Geist',system-ui,sans-serif;font-size:60px;font-weight:700;line-height:.92;letter-spacing:-.05em;text-transform:uppercase}
+h1{letter-spacing:-.04em}
 /* Home (v125): faixa da semana + cards de dado. O card de hoje é uma linha
    compacta — o hero de 420px saiu, e com ele o .hero-foot do v124. */
+/* Topo das telas: com viewport-fit=cover + status bar translúcida o conteúdo
+   começa EMBAIXO do notch / Dynamic Island. 48px é o piso pra quem não tem
+   notch (aba de navegador); onde há notch vale o inset do aparelho + respiro,
+   o que cobre também a ilha maior dos Pro. */
+.screen-top{padding-top:max(48px,calc(env(safe-area-inset-top,0px) + 8px))}
 .week-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
 .metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;width:132px}
 /* Abaixo de 380px a grade do mês cede a largura pro número da esquerda */
 @media (max-width:380px){.month-grid{width:118px;gap:5px}}
+/* Card do carrossel: em telas de 320px a coluna de texto ficava com 90px e
+   truncava "Superiores 1 · 6 exercícios". Foto, botão e respiro encolhem
+   pra devolver ~30px pro texto. */
+.treino-card{gap:12px;padding:12px}
+/* A foto acompanha a altura do card: com a Instrument, subtítulos longos
+   (Full Body) ocupam 4 linhas e um quadrado de 72px ficava perdido ao lado. */
+.treino-card__foto{width:72px;min-height:72px;align-self:stretch;position:relative}
+.treino-card__play{width:48px;height:48px}
+.treino-card__titulo{font-size:26px}
+.treino-card__meta{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:360px){
+  .treino-card{gap:10px;padding:10px}
+  .treino-card__foto{width:56px;min-height:56px}
+  .treino-card__play{width:44px;height:44px}
+  /* Aqui nem encolhendo tudo cabe "Superiores 2 · 6 exercícios" numa linha:
+     deixa quebrar em duas em vez de cortar a contagem de exercícios. */
+  /* Em 320px a coluna cai pra ~118px e nem a caixa mista segura 30px */
+  .treino-card__titulo{font-size:24px}
+  .treino-card__meta{font-size:11px;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25}
+}
 ::-webkit-scrollbar{display:none}
 input::placeholder{color:#333}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
@@ -64,7 +91,7 @@ input:focus-visible{outline:2px solid #C6FF00;outline-offset:2px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 const h=React.createElement,{useState,useEffect,useRef,useMemo}=React;
-const APP_VERSION="v125";
+const APP_VERSION="v126";
 let _entrySeq=0;// contador p/ IDs de série únicos mesmo em taps rápidos
 console.log("Guia Treino",APP_VERSION);
 
@@ -661,14 +688,31 @@ function clearDeletionFlag(){
   try{localStorage.removeItem(WORKOUT_LOG_DELETED_AT_KEY);}catch(e){}
   try{localStorage.removeItem("workout_log_deleted");}catch(e){}
 }
+// Marca d'água de deleção: em vez de bloquear TUDO até o próximo treino e
+// depois liberar TUDO (que é como o histórico apagado ressuscitava quando o
+// delete na nuvem falhava), guarda o instante da deleção e descarta pra
+// sempre qualquer série anterior a ele — venha do localStorage, do IDB ou
+// da nuvem. Séries novas (ts > marca) fluem normalmente.
+function getDeletionWatermark(){
+  try{
+    const at=Number(localStorage.getItem(WORKOUT_LOG_DELETED_AT_KEY)||0);
+    if(at>0)return at;
+    // Flag legada (v97–v105) não tinha timestamp: migra pra agora.
+    if(localStorage.getItem("workout_log_deleted")==="true"){
+      const agora=Date.now();
+      try{localStorage.setItem(WORKOUT_LOG_DELETED_AT_KEY,String(agora));}catch(e){}
+      return agora;
+    }
+    return 0;
+  }catch(e){return 0;}
+}
+function dropApagados(log){
+  const wm=getDeletionWatermark();
+  if(!wm)return Array.isArray(log)?log:[];
+  return (Array.isArray(log)?log:[]).filter(e=>e&&Number(e.ts)>wm);
+}
 function getWorkoutLog(){
-  // Defesa #1: se a flag está setada, retorna [] mesmo que algum write
-  // tenha bypassed setWorkoutLog e injetado dados em localStorage["workout_log"].
-  if(isWorkoutLogDeleted()){
-    console.log("[GuiaTreino] getWorkoutLog: flag setada, retornando [] (bloqueando restore tardio)");
-    return[];
-  }
-  try{const r=localStorage.getItem(STORAGE_KEY);const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}
+  try{const r=localStorage.getItem(STORAGE_KEY);const p=r?JSON.parse(r):[];return dropApagados(p);}catch(e){return[];}
 }
 // Deriva os resumos de sessão (workout_sessions) a partir do log de séries.
 // O log já é persistido em localStorage + IndexedDB e sincronizado com a nuvem
@@ -700,8 +744,6 @@ function _syncSessionsCache(log){try{localStorage.setItem("workout_sessions",JSO
 function setWorkoutLog(log){
   try{
     log=normalizeCloneIds(log).log;// tracking sempre sob o id do movimento base
-    // Salvar log não-vazio = intenção de continuar com novos dados → libera a flag
-    if(Array.isArray(log)&&log.length>0){clearDeletionFlag();}
     localStorage.setItem(STORAGE_KEY,JSON.stringify(log||[]));
     _syncSessionsCache(log||[]);// mantém workout_sessions derivado do log (local + espelha a nuvem)
     saveBackupIDB(log);
@@ -741,6 +783,7 @@ async function clearWorkoutHistory(){
   //    existir em localStorage. Não apaga settings nem user_id_override —
   //    só backups e flags antigas.
   LEGACY_BACKUP_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+  clearSyncedIds();
   // 4. Limpa backups do IndexedDB (defesa contra restore via getLastBackupIDB)
   try{await clearIDBBackups();console.log("[GuiaTreino] IndexedDB backups limpos");}catch(e){console.warn("clearIDBBackups",e);}
   // 5. Apaga dados do usuário no Supabase (best-effort). Se a policy "anon
@@ -762,15 +805,14 @@ async function resetAppData(){
     "workout_log","workout_log_deleted_at","workout_log_deleted",
     "workout_sessions","workout_backup","guia_treino_backup","workout_log_backup",
     "currentBlock","training_cycle","activeProgram","guia_treino_settings",
-    "guia_user_id","guia_user_id_override"
+    "guia_user_id","guia_user_id_override","workout_synced_ids"
   ];
   APP_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
   try{sessionStorage.removeItem("__guia_restored_session");}catch(e){}
   try{sessionStorage.removeItem("__guia_restore_msg");}catch(e){}
-  // 3. Re-marca flag de deleção APÓS limpar tudo. Isso garante que, se o cloud
-  //    delete falhou (policy anon delete ausente), o próximo boot ainda
-  //    bloqueia o restore. Sem isso, o reset deixava brecha pro cloud
-  //    ressuscitar tudo via autoRestoreAndSync.
+  // 3. Re-marca a deleção APÓS limpar tudo: vira a marca d'água que descarta
+  //    pra sempre qualquer série anterior a este instante, mesmo que o delete
+  //    na nuvem tenha falhado (policy anon delete ausente).
   markWorkoutLogDeleted();
   console.log("[GuiaTreino] reset: flag re-setada pra bloquear cloud restore");
   // 4. IndexedDB — apaga DB inteiro
@@ -869,6 +911,16 @@ const SUPABASE_ANON_KEY="sb_publishable_ZZ-gvN6s-a03eR12vbUROA_FxF73jKZ";
 const STABLE_USER_ID="roberto-garcia";
 const USER_ID_OVERRIDE_KEY="guia_user_id_override";
 function isSupabaseConfigured(){return !!(SUPABASE_URL&&SUPABASE_ANON_KEY);}
+// Toda chamada à nuvem passa por aqui: sem timeout, uma rede que aceita a
+// conexão e não responde (wifi de academia) deixa a promise pendurada.
+const CLOUD_TIMEOUT_MS=12000;
+function cloudFetch(url,opts){
+  const ctrl=typeof AbortController!=="undefined"?new AbortController():null;
+  const t=ctrl?setTimeout(()=>ctrl.abort(),CLOUD_TIMEOUT_MS):null;
+  const o=Object.assign({},opts||{});
+  if(ctrl)o.signal=ctrl.signal;
+  return fetch(url,o).finally(()=>{if(t)clearTimeout(t);});
+}
 function getUserId(){
   try{const o=localStorage.getItem(USER_ID_OVERRIDE_KEY);if(o)return o;}catch(e){}
   return STABLE_USER_ID;
@@ -880,6 +932,7 @@ function setUserIdOverride(id){
       // Mudar user_id manualmente = intenção explícita de restaurar dados
       // desse ID — libera a flag de deleção pra permitir o restore.
       clearDeletionFlag();
+      clearSyncedIds();// os ids sincronizados eram do user_id anterior
       console.log("[GuiaTreino] setUserIdOverride: flag liberada (user trocou user_id)");
     }else{
       localStorage.removeItem(USER_ID_OVERRIDE_KEY);
@@ -890,7 +943,7 @@ function setUserIdOverride(id){
 async function listCloudUserIds(){
   if(!isSupabaseConfigured())return{ok:false,reason:"not_configured"};
   try{
-    const res=await fetch(SUPABASE_URL+"/rest/v1/workout_logs?select=user_id&limit=1000",{
+    const res=await cloudFetch(SUPABASE_URL+"/rest/v1/workout_logs?select=user_id&limit=1000",{
       headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY}
     });
     if(!res.ok)return{ok:false,reason:"http_"+res.status,body:await res.text().catch(()=>"")};
@@ -921,33 +974,67 @@ function rowToEntry(r){
     setNumber:r.set_number,restSeconds:r.rest_seconds
   };
 }
-async function syncWorkoutLogToCloud(){
+// Ids já confirmados na nuvem. Sem isto o push mandava o log INTEIRO a cada
+// série salva: com um ano de treino são ~950KB por série, na rede da academia.
+const SYNCED_IDS_KEY="workout_synced_ids";
+function getSyncedIds(){
+  try{const r=localStorage.getItem(SYNCED_IDS_KEY);const a=r?JSON.parse(r):[];return new Set(Array.isArray(a)?a:[]);}
+  catch(e){return new Set();}
+}
+function addSyncedIds(ids){
+  try{
+    const set=getSyncedIds();
+    ids.forEach(id=>set.add(id));
+    localStorage.setItem(SYNCED_IDS_KEY,JSON.stringify(Array.from(set)));
+  }catch(e){}
+}
+function clearSyncedIds(){try{localStorage.removeItem(SYNCED_IDS_KEY);}catch(e){}}
+// full=true refaz o push completo (boot e "Sincronizar agora"), que é a rede
+// de segurança caso a lista local de ids sincronizados se perca.
+async function syncWorkoutLogToCloud(full){
   if(!isSupabaseConfigured())return{ok:false,reason:"not_configured"};
   const userId=getUserId();
   const log=getWorkoutLog();
   if(log.length===0)return{ok:true,pushed:0};
-  const rows=log.filter(e=>e&&e.id).map(e=>entryToRow(e,userId));
+  const jaSincronizados=full?new Set():getSyncedIds();
+  const pendentes=log.filter(e=>e&&e.id&&!jaSincronizados.has(String(e.id)));
+  if(pendentes.length===0)return{ok:true,pushed:0,skipped:log.length};
+  const rows=pendentes.map(e=>entryToRow(e,userId));
   try{
-    const res=await fetch(SUPABASE_URL+"/rest/v1/workout_logs",{
+    const res=await cloudFetch(SUPABASE_URL+"/rest/v1/workout_logs",{
       method:"POST",
       headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY,
         "Content-Type":"application/json","Prefer":"resolution=merge-duplicates,return=minimal"},
       body:JSON.stringify(rows)
     });
     if(!res.ok)return{ok:false,reason:"http_"+res.status,body:await res.text().catch(()=>"")};
+    addSyncedIds(rows.map(r=>r.id));// só marca depois do 200: falha reenvia
+    marcaNuvemOk();
     return{ok:true,pushed:rows.length};
   }catch(e){return{ok:false,reason:"network",error:e.message};}
 }
+// Paginado: antes era um único limit=10000 com order=ts.asc, então passando
+// de 10k séries (~2,7 anos no ritmo de 4x/semana) o corte descartava
+// justamente as MAIS RECENTES, sem avisar.
+const CLOUD_PAGE=2000,CLOUD_MAX_PAGES=25;
 async function fetchWorkoutLogFromCloud(){
   if(!isSupabaseConfigured())return{ok:false,reason:"not_configured",entries:[]};
   const userId=getUserId();
+  const base=SUPABASE_URL+"/rest/v1/workout_logs?user_id=eq."+encodeURIComponent(userId)+"&order=ts.asc";
+  const entries=[];
   try{
-    const res=await fetch(SUPABASE_URL+"/rest/v1/workout_logs?user_id=eq."+encodeURIComponent(userId)+"&order=ts.asc&limit=10000",{
-      headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY}
-    });
-    if(!res.ok)return{ok:false,reason:"http_"+res.status,entries:[]};
-    const rows=await res.json();
-    return{ok:true,entries:rows.map(rowToEntry)};
+    for(let page=0;page<CLOUD_MAX_PAGES;page++){
+      const res=await cloudFetch(base+"&limit="+CLOUD_PAGE+"&offset="+(page*CLOUD_PAGE),{
+        headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY}
+      });
+      if(!res.ok)return{ok:false,reason:"http_"+res.status,entries:[]};
+      const rows=await res.json();
+      rows.forEach(r=>entries.push(rowToEntry(r)));
+      if(rows.length<CLOUD_PAGE){marcaNuvemOk();return{ok:true,entries:entries};}
+    }
+    // Chegou no teto de páginas: melhor avisar do que fingir que veio tudo.
+    console.warn("[GuiaTreino] fetch parou em "+entries.length+" séries (teto de páginas)");
+    return{ok:true,entries:entries,truncated:true};
   }catch(e){return{ok:false,reason:"network",error:e.message,entries:[]};}
 }
 // Apaga TODAS as linhas do usuário corrente no Supabase. Requer policy
@@ -959,7 +1046,7 @@ async function deleteCloudUserLog(){
   if(!isSupabaseConfigured())return{ok:false,reason:"not_configured"};
   const userId=getUserId();
   try{
-    const res=await fetch(SUPABASE_URL+"/rest/v1/workout_logs?user_id=eq."+encodeURIComponent(userId),{
+    const res=await cloudFetch(SUPABASE_URL+"/rest/v1/workout_logs?user_id=eq."+encodeURIComponent(userId),{
       method:"DELETE",
       headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY,"Prefer":"return=minimal"}
     });
@@ -969,6 +1056,7 @@ async function deleteCloudUserLog(){
 }
 function mergeWorkoutLogs(local,remote){
   const seen=new Set();const merged=[];
+  local=dropApagados(local);remote=dropApagados(remote);// nada anterior à deleção volta
   (local||[]).forEach(e=>{if(e&&e.id&&!seen.has(e.id)){seen.add(e.id);merged.push(e);}});
   (remote||[]).forEach(e=>{if(e&&e.id&&!seen.has(e.id)){seen.add(e.id);merged.push(e);}});
   merged.sort((a,b)=>(a.ts||0)-(b.ts||0));
@@ -978,10 +1066,6 @@ async function syncBidirectional(){
   if(!isSupabaseConfigured())return{ok:false,reason:"not_configured"};
   // Defesa #2: se flag setada, NÃO restaura da nuvem nem escreve em local.
   // Botão "Sincronizar agora" no Coach é o único trigger desta função.
-  if(isWorkoutLogDeleted()){
-    console.log("[GuiaTreino] syncBidirectional bloqueado pela flag workout_log_deleted_at");
-    return{ok:false,reason:"workout_log_deleted_blocked"};
-  }
   const remote=await fetchWorkoutLogFromCloud();
   if(!remote.ok)return remote;
   const local=getWorkoutLog();
@@ -989,7 +1073,7 @@ async function syncBidirectional(){
   if(merged.length!==local.length){
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));_syncSessionsCache(merged);saveBackupIDB(merged);}catch(e){}
   }
-  const push=await syncWorkoutLogToCloud();
+  const push=await syncWorkoutLogToCloud(true);// completo: é o botão de reconciliar
   return{ok:true,fetched:remote.entries.length,merged:merged.length,pushed:push.pushed||0};
 }
 // Debounce do push após salvar série; primeira chamada após boot
@@ -1027,6 +1111,38 @@ function showCloudBanner(text,type){
   b.style.background=bg;b.style.color=fg;b.style.borderBottom="1px solid "+bd;
   if(type==="ok"){setTimeout(()=>{if(b.parentNode){b.style.opacity="0";setTimeout(()=>b.remove(),300);}},4000);}
 }
+// Falha de rede é rotina num app de academia e o push se recupera sozinho no
+// próximo salvamento — não merece alarme vermelho em cima da tela. Já erro de
+// HTTP (policy, chave, tabela) é configuração quebrada e precisa aparecer.
+// Último contato bem-sucedido com a nuvem. Sem isto, silenciar as falhas de
+// rede esconderia um backup quebrado: o app fica meses sem replicar e nada
+// na tela diz isso.
+const LAST_CLOUD_OK_KEY="workout_last_cloud_ok";
+function marcaNuvemOk(){try{localStorage.setItem(LAST_CLOUD_OK_KEY,String(Date.now()));}catch(e){}}
+function getUltimoContatoNuvem(){
+  try{return Number(localStorage.getItem(LAST_CLOUD_OK_KEY)||0);}catch(e){return 0;}
+}
+const BACKUP_ATRASADO_MS=3*86400000;
+// Falha de rede é rotina e o push se recupera sozinho — não vira alarme.
+// MAS se já faz dias que nada chega na nuvem e existe treino local pra
+// perder, aí precisa aparecer. Erro de HTTP (policy, chave, tabela) é
+// configuração quebrada e aparece sempre.
+function avisaFalhaNuvem(r,acao){
+  const motivo=String((r&&r.reason)||"");
+  if(motivo==="network"||motivo==="not_configured"){
+    const ultimo=getUltimoContatoNuvem();
+    const temTreinoLocal=getWorkoutLog().length>0;
+    const atrasado=temTreinoLocal&&(ultimo===0||Date.now()-ultimo>BACKUP_ATRASADO_MS);
+    if(!atrasado){
+      console.warn("[GuiaTreino] nuvem indisponível ao "+acao+" — segue offline, tenta de novo depois");
+      return;
+    }
+    const quando=ultimo?"há "+Math.floor((Date.now()-ultimo)/86400000)+" dias":"nunca";
+    showCloudBanner("☁ Backup na nuvem parado ("+quando+"). Seus treinos estão salvos só neste aparelho.","warn");
+    return;
+  }
+  showCloudBanner("☁ Não deu pra "+acao+" na nuvem ("+motivo+"). Seus treinos seguem salvos no aparelho.","warn");
+}
 // Mostra banner pós-reload se houve restore
 try{
   const restoreMsg=sessionStorage.getItem("__guia_restore_msg");
@@ -1043,10 +1159,6 @@ try{
     // 0. Guard: se o usuário apagou o histórico manualmente, NÃO restaurar
     //    nem de IDB local nem de Supabase. A flag só é limpa quando uma
     //    nova série é salva (ver setWorkoutLog) ou via Resetar app.
-    if(isWorkoutLogDeleted()){
-      console.log("[GuiaTreino] autoRestoreAndSync: flag workout_log_deleted_at setada — restore pulado (IDB + Cloud bloqueados)");
-      return;
-    }
     // 0.5 Migração: séries antigas do Full Body podem ter sido gravadas sob o id
     //     do clone (27-50). Normaliza para o id do movimento base uma única vez.
     try{
@@ -1080,17 +1192,17 @@ try{
           try{sessionStorage.setItem("__guia_restore_msg","☁ Nuvem: "+newCount+" séries restauradas ("+uid+")");}catch(e){}
           changed=true;cur=merged;
         }else if(cur.length===0&&remote.entries.length===0){
-          // cur vazio e nuvem vazia — ALERTA visível
-          showCloudBanner("☁ Nuvem vazia para user_id \""+uid+"\". Tap p/ fechar.","err");
+          // Primeiro uso: nuvem vazia é o estado normal, não um erro.
+          console.log("[GuiaTreino] nuvem vazia para user_id \""+uid+"\" (primeiro uso?)");
         }
-        syncWorkoutLogToCloud().then(r=>{
+        syncWorkoutLogToCloud(true).then(r=>{// boot: refaz o push completo
           window._lastSyncResult=r;
           if(r.ok)console.log("Push OK ("+r.pushed+")");
-          else{console.warn("Push:",r);showCloudBanner("☁ Push falhou: "+(r.reason||"?"),"err");}
+          else{console.warn("Push:",r);avisaFalhaNuvem(r,"enviar");}
         });
       }else{
         console.warn("Fetch Supabase:",remote);
-        showCloudBanner("☁ Fetch falhou: "+(remote.reason||"?")+(remote.body?" · "+String(remote.body).slice(0,80):""),"err");
+        avisaFalhaNuvem(remote,"buscar");
       }
     }
     // 3. Reload se restaurou
@@ -1195,111 +1307,157 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
   const rec=getHomeTrainingRecommendation();
   // Grid mostra apenas as sessões do programa ativo
   const progSessions=SESSIONS.filter(s=>prog.sessions.includes(s.s));
-  const sesHoje=SESSIONS.find(s=>s.s===rec.heroSession)||null;
-  // Carrossel: o treino recomendado abre a fila, o resto do programa fica a um swipe.
-  const carrossel=sesHoje?[sesHoje].concat(progSessions.filter(s=>s.s!==sesHoje.s)):progSessions;
-  // ── Métricas do mês ──────────────────────────────────────────
-  const sessions=(()=>{try{const r=localStorage.getItem("workout_sessions");const p=r?JSON.parse(r):[];return Array.isArray(p)?p:[];}catch(e){return[];}})();
-  const now=new Date(),Y=now.getFullYear(),M=now.getMonth();
-  const inMonth=log.filter(e=>{const d=new Date(e.ts);return d.getFullYear()===Y&&d.getMonth()===M;});
-  const sessInMonth=sessions.filter(s=>{const d=new Date(s.ts);return d.getFullYear()===Y&&d.getMonth()===M;});
-  const treinosNoMes=new Set(inMonth.map(e=>new Date(e.ts).toDateString())).size;
-  const pseValidos=inMonth.map(e=>Number(e.pse)).filter(p=>p>0);
-  const pseMed=pseValidos.length?(pseValidos.reduce((a,b)=>a+b,0)/pseValidos.length):0;
-  const durValid=sessInMonth.map(s=>Number(s.durationMin)||0).filter(d=>d>0);
-  const tempoMed=durValid.length?Math.round(durValid.reduce((a,b)=>a+b,0)/durValid.length):0;
-  const fmtPse=v=>v>0?v.toFixed(1):"–";
-  const fmtTempo=v=>v>0?v+" min":"–";
-  // ── Destaque de evolução (kg absoluto) + Evolução % ──────────
-  const byEx={};
-  inMonth.forEach(e=>{if(Number(e.carga||0)<=0)return;if(!byEx[e.exerciseId])byEx[e.exerciseId]=[];byEx[e.exerciseId].push(e);});
-  let bestEvo=null,bestEvoPct=null;
-  Object.values(byEx).forEach(arr=>{
-    if(arr.length<2)return;
-    arr.sort((a,b)=>a.ts-b.ts);
-    const first=Number(arr[0].carga),last=Number(arr[arr.length-1].carga);
-    const deltaKg=parseFloat((last-first).toFixed(1));
-    if(deltaKg>0&&(!bestEvo||deltaKg>bestEvo.delta)){bestEvo={name:arr[0].exerciseName||"Exercício",delta:deltaKg};}
-    if(first>=5&&deltaKg>0){
-      const deltaPct=(deltaKg/first)*100;
-      if(!bestEvoPct||deltaPct>bestEvoPct.pct||(Math.abs(deltaPct-bestEvoPct.pct)<0.01&&deltaKg>bestEvoPct.kg)){
-        bestEvoPct={pct:deltaPct,kg:deltaKg,name:arr[0].exerciseName||"Exercício"};
+  // O card recomendado abre o treino que o botão realmente inicia. Em
+  // done_today heroSession é o treino JÁ FEITO e playSession é o próximo —
+  // mostrar o primeiro e iniciar o segundo era mentira do card (v125).
+  const sesCard=SESSIONS.find(s=>s.s===rec.playSession)||SESSIONS.find(s=>s.s===rec.heroSession)||null;
+  // Depois do recomendado, a fila segue a ordem do ciclo (extras no fim) —
+  // é a mesma ordem que os rótulos "Nº no ciclo" anunciam.
+  const carrossel=(()=>{
+    const ordem=CYCLE.filter(i=>i.type==="workout").map(i=>i.session);
+    const pos=x=>{const i=ordem.indexOf(x.s);return i<0?999:i;};
+    const resto=progSessions.filter(x=>!sesCard||x.s!==sesCard.s).sort((a,b)=>pos(a)-pos(b));
+    return sesCard?[sesCard].concat(resto):resto;
+  })();
+  // Ordem dos treinos dentro do ciclo — rotula os cards com algo que o motor
+  // respeita, em vez do dia da semana do plano original, que ele ignora.
+  const ordemCiclo=CYCLE.filter(i=>i.type==="workout").map(i=>i.session);
+  const rotuloCard=sess=>{
+    const i=ordemCiclo.indexOf(sess.s);
+    return i>=0?(i+1)+"º no ciclo":"Extra";
+  };
+  // ── "Hoje" acompanha a virada do dia ─────────────────────────
+  // O PWA fica dias aberto no celular; sem isto a faixa da semana e a grade
+  // de 28 dias congelam no dia em que a tela montou.
+  const [diaAtual,setDiaAtual]=useState(()=>new Date().toDateString());
+  useEffect(()=>{
+    const check=()=>{const d=new Date().toDateString();setDiaAtual(prev=>prev===d?prev:d);};
+    const id=setInterval(check,60000);
+    document.addEventListener("visibilitychange",check);
+    window.addEventListener("focus",check);
+    return()=>{clearInterval(id);document.removeEventListener("visibilitychange",check);window.removeEventListener("focus",check);};
+  },[]);
+  // ── Métricas da Home (um passe só, escopo do programa ativo) ──
+  // Escopos, de propósito diferentes:
+  //   getCompletedWorkoutDays() → só o ciclo, alimenta a RECOMENDAÇÃO
+  //   daqui pra baixo          → prog.sessions (inclui Bônus), alimenta o que
+  //                              a tela MOSTRA. Antes volume e PSE liam o log
+  //                              inteiro e cruzavam programas.
+  const dados=useMemo(()=>{
+    const nomesDoPrograma=new Set(prog.sessions);
+    const diaBase=new Date();diaBase.setHours(0,0,0,0);
+    // Aritmética por Date, não por múltiplos de 86400000: em fuso com
+    // horário de verão somar ms cai às 23h do dia anterior.
+    const addDias=(base,n)=>{const d=new Date(base);d.setDate(d.getDate()+n);d.setHours(0,0,0,0);return d;};
+    const Y=diaBase.getFullYear(),Mo=diaBase.getMonth();
+    const porDia={};// dateKey -> {vol, pses:[]}
+    const noMesPorEx={};
+    const psesDoMes=[];
+    (log||[]).forEach(e=>{
+      if(!e||!e.ts||!nomesDoPrograma.has(e.session))return;
+      const k=dateKey(e.ts);
+      const d=porDia[k]||(porDia[k]={vol:0,pses:[]});
+      d.vol+=(Number(e.carga)||0)*(Number(e.reps)||0);
+      const pse=Number(e.pse)||0;
+      if(pse>0)d.pses.push(pse);
+      const dt=new Date(e.ts);
+      if(dt.getFullYear()===Y&&dt.getMonth()===Mo){
+        if(pse>0)psesDoMes.push(pse);
+        if(Number(e.carga||0)>0)(noMesPorEx[e.exerciseId]=noMesPorEx[e.exerciseId]||[]).push(e);
       }
+    });
+    const treinou=k=>!!porDia[k];
+    // Faixa da semana (segunda→domingo)
+    const inicioSemana=addDias(diaBase,-((diaBase.getDay()+6)%7));
+    const INICIAIS=["S","T","Q","Q","S","S","D"],NOMES=["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
+    const weekDays=Array.from({length:7},(_,i)=>{
+      const d=addDias(inicioSemana,i);
+      return{ts:d.getTime(),inicial:INICIAIS[i],nome:NOMES[i],num:d.getDate(),
+        done:treinou(dateKey(d.getTime())),isToday:d.getTime()===diaBase.getTime(),isFuture:d.getTime()>diaBase.getTime()};
+    });
+    const MESES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+    const fmtDiaMes=d=>d.getDate()+" "+MESES[d.getMonth()];
+    // Últimos 28 dias
+    const last28=Array.from({length:28},(_,i)=>{
+      const d=addDias(diaBase,i-27);
+      return{ts:d.getTime(),done:treinou(dateKey(d.getTime())),isToday:i===27};
+    });
+    const treinos28=last28.filter(d=>d.done).length;
+    let melhorJanela=0;
+    for(let i=0;i<=21;i++){
+      const c=last28.slice(i,i+7).filter(d=>d.done).length;
+      if(c>melhorJanela)melhorJanela=c;
     }
-  });
+    // Volume: 8 janelas móveis de 7 dias, a última terminando hoje
+    const volSeries=Array.from({length:8},(_,i)=>{
+      const fim=addDias(diaBase,-(7-i)*7),ini=addDias(fim,-6);// janela termina HOJE, não daqui a 6 dias
+      let v=0;
+      for(let d=new Date(ini);d<=fim;d.setDate(d.getDate()+1)){
+        const b=porDia[dateKey(d.getTime())];
+        if(b)v+=b.vol;
+      }
+      return v;
+    });
+    const volAtual=volSeries[7],volAnterior=volSeries[6];
+    const volPct=volAnterior>0?((volAtual-volAnterior)/volAnterior)*100:null;
+    // PSE das últimas 7 sessões (média por dia de treino)
+    const pseUltimos=Object.keys(porDia).filter(k=>porDia[k].pses.length).sort().slice(-7)
+      .map(k=>{const a=porDia[k].pses;return a.reduce((x,y)=>x+y,0)/a.length;});
+    // Mês
+    const pseMed=psesDoMes.length?(psesDoMes.reduce((a,b)=>a+b,0)/psesDoMes.length):0;
+    let bestEvo=null,bestEvoPct=null;
+    Object.values(noMesPorEx).forEach(arr=>{
+      if(arr.length<2)return;
+      arr.sort((a,b)=>a.ts-b.ts);
+      const first=Number(arr[0].carga),last=Number(arr[arr.length-1].carga);
+      const deltaKg=parseFloat((last-first).toFixed(1));
+      if(deltaKg>0&&(!bestEvo||deltaKg>bestEvo.delta))bestEvo={name:arr[0].exerciseName||"Exercício",delta:deltaKg};
+      if(first>=5&&deltaKg>0){
+        const pct=(deltaKg/first)*100;
+        if(!bestEvoPct||pct>bestEvoPct.pct)bestEvoPct={pct,kg:deltaKg,name:arr[0].exerciseName||"Exercício"};
+      }
+    });
+    // Tempo médio do mês — workout_sessions é derivado do log, filtra igual
+    let tempoMed=0;
+    try{
+      const raw=localStorage.getItem("workout_sessions");
+      const arr=raw?JSON.parse(raw):[];
+      const durs=(Array.isArray(arr)?arr:[]).filter(x=>{
+        if(!x||!nomesDoPrograma.has(x.session))return false;
+        const d=new Date(x.ts);return d.getFullYear()===Y&&d.getMonth()===Mo;
+      }).map(x=>Number(x.durationMin)||0).filter(d=>d>0);
+      if(durs.length)tempoMed=Math.round(durs.reduce((a,b)=>a+b,0)/durs.length);
+    }catch(e){}
+    return{weekDays,last28,treinos28,melhorJanela,volSeries,volAtual,volPct,pseUltimos,pseMed,
+      bestEvo,bestEvoPct,tempoMed,
+      faixaSemana:fmtDiaMes(inicioSemana)+" – "+fmtDiaMes(addDias(inicioSemana,6))};
+  },[log,activeProgram,diaAtual]);
+  const {weekDays,last28,treinos28,melhorJanela,volSeries,volAtual,volPct,pseUltimos,pseMed,bestEvo,bestEvoPct,tempoMed,faixaSemana}=dados;
+  const pseMax=10;// escala absoluta: PSE vai de 0 a 10, barra não normaliza pelo próprio máximo
+  const fmtPse=v=>v>0?v.toFixed(1):"–";
   const fmtEvoPct=v=>{if(!v)return"–";return v.pct>=10?"+"+Math.round(v.pct)+"%":"+"+v.pct.toFixed(1)+"%";};
-  // ── v125: dados da Home nova (faixa da semana + cards) ───────
-  // Tudo aqui sai do log real; sem histórico cada bloco cai no seu vazio.
-  const DAY_MS=86400000;
-  const dayStart=ts=>{const d=new Date(ts);d.setHours(0,0,0,0);return d.getTime();};
-  const todayStart=dayStart(Date.now());
-  // Dias com treino do programa ativo (mesmo filtro do ciclo, então Bônus e
-  // histórico de outro programa não pintam a faixa).
-  const doneDays=new Set(getCompletedWorkoutDays().map(d=>d.date));
-  // Faixa da semana — segunda a domingo, como o calendário do primeiro uso.
-  const weekStart=todayStart-((new Date(todayStart).getDay()+6)%7)*DAY_MS;
-  const WEEK_INITIALS=["S","T","Q","Q","S","S","D"];
-  const WEEK_NOMES=["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
-  const weekDays=Array.from({length:7},(_,i)=>{
-    const ts=weekStart+i*DAY_MS;
-    return{ts,inicial:WEEK_INITIALS[i],nome:WEEK_NOMES[i],num:new Date(ts).getDate(),
-      done:doneDays.has(dateKey(ts)),isToday:ts===todayStart,isFuture:ts>todayStart};
-  });
-  const MESES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
-  const fmtDiaMes=ts=>{const d=new Date(ts);return d.getDate()+" "+MESES[d.getMonth()];};
-  const faixaSemana=fmtDiaMes(weekStart)+" – "+fmtDiaMes(weekStart+6*DAY_MS);
-  // Últimos 28 dias — contagem + grade + melhor janela de 7 dias
-  const last28=Array.from({length:28},(_,i)=>{
-    const ts=todayStart-(27-i)*DAY_MS;
-    return{ts,done:doneDays.has(dateKey(ts)),isToday:ts===todayStart};
-  });
-  const treinos28=last28.filter(d=>d.done).length;
-  let melhorSemana=0;
-  for(let i=0;i<=21;i++){
-    const c=last28.slice(i,i+7).filter(d=>d.done).length;
-    if(c>melhorSemana)melhorSemana=c;
-  }
-  // Volume semanal = Σ(carga × reps) por semana, 8 semanas até hoje.
-  // Séries sem reps registradas entram como 0 — daí o fallback pra "–".
-  const volSeries=Array.from({length:8},(_,i)=>{
-    const w=7-i;
-    const de=todayStart-(w*7+6)*DAY_MS,ate=todayStart-w*7*DAY_MS+DAY_MS-1;
-    return log.reduce((sum,e)=>{
-      if(!e||e.ts<de||e.ts>ate)return sum;
-      return sum+(Number(e.carga)||0)*(Number(e.reps)||0);
-    },0);
-  });
-  const volAtual=volSeries[7],volAnterior=volSeries[6];
-  const volPct=volAnterior>0?((volAtual-volAnterior)/volAnterior)*100:null;
-  const fmtVolPct=v=>v===null?"–":(v>=0?"+":"")+(Math.abs(v)>=10?Math.round(v):v.toFixed(1))+"%";
-  // Sparkline do volume — só desenha quando há mais de uma semana com carga
+  const fmtVolPct=v=>(v>=0?"+":"")+(Math.abs(v)>=10?Math.round(v):v.toFixed(1))+"%";
+  const fmtVolAbs=v=>v>=1000?(v/1000).toFixed(1).replace(".",",")+" t":Math.round(v)+" kg";
+  // Sparkline do volume — só desenha com mais de uma semana com carga
   const spark=(()=>{
-    const comDado=volSeries.filter(v=>v>0).length;
-    if(comDado<2)return null;
+    if(volSeries.filter(v=>v>0).length<2)return null;
     const max=Math.max.apply(null,volSeries),min=Math.min.apply(null,volSeries),span=(max-min)||1;
     const pts=volSeries.map((v,i)=>[2+i*(129/7),38-((v-min)/span)*32]);
     const d=pts.map(pt=>pt[0].toFixed(1)+" "+pt[1].toFixed(1)).join(" L ");
-    return{line:"M "+d,area:"M "+d+" L 131 42 L 2 42 Z",last:pts[pts.length-1]};
+    return{line:"M "+d,area:"M "+d+" L 131 42 L 2 42 Z"};
   })();
-  // PSE das últimas 7 sessões (média por dia de treino)
-  const pseUltimos=(()=>{
-    const byDay={};
-    log.forEach(e=>{const v=Number(e&&e.pse)||0;if(v<=0)return;const k=dateKey(e.ts);(byDay[k]=byDay[k]||[]).push(v);});
-    return Object.keys(byDay).sort().slice(-7).map(k=>{
-      const a=byDay[k];return a.reduce((x,y)=>x+y,0)/a.length;
-    });
-  })();
-  const pseMax=pseUltimos.length?Math.max.apply(null,pseUltimos):0;
-  // Cor de acento do card de hoje segue o status da recomendação
+  // Acento do card recomendado — status manda na cor, inclusive na borda
   const accentHoje=rec.status==="pending"?"#F59E0B":rec.status==="rest"?"#A3A3A3":"#C6FF00";
   const glowHoje=rec.status==="pending"?"0 10px 26px rgba(245,158,11,0.28)":rec.status==="rest"?"none":"0 10px 26px rgba(198,255,0,0.28)";
-  // ── Cards (helpers locais) ───────────────────────────────────
+  const bordaHoje=rec.status==="pending"?"rgba(245,158,11,0.28)":rec.status==="rest"?"rgba(163,163,163,0.22)":"rgba(198,255,0,0.22)";
+  // Em done_today o rótulo do card fala do PRÓXIMO treino, que é o que ele abre
+  const rotuloHoje=rec.status==="done_today"?"Próximo treino":(rec.label||"Para hoje");
   const cardBase={background:"#121212",borderRadius:20,boxShadow:"0 8px 24px rgba(0,0,0,.25)"};
   const lblStyle={fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#A3A3A3",textTransform:"uppercase"};
   // paddingBottom folgado: o chip de versão é fixo em bottom:72 e encostava
   // no último card agora que a Home cabe numa tela só
   return h("div",{className:"screen-enter",style:{background:"#050505",minHeight:"100vh",paddingBottom:48}},
-    h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
+    h("div",{className:"screen-top",style:{maxWidth:1040,margin:"0 auto",paddingLeft:24,paddingRight:24}},
       // ── Seletor de programa (Split ⇄ Full Body) ──────────────
       h("div",{style:{display:"flex",gap:6,background:"#121212",padding:5,borderRadius:14,marginBottom:24,boxShadow:"0 6px 20px rgba(0,0,0,.22)"}},
         Object.keys(PROGRAMS).map(pid=>{
@@ -1316,7 +1474,7 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
       h("div",{style:{marginBottom:20}},
         h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:12}},
           h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"#666666",textTransform:"uppercase"}},"Esta semana"),
-          h("div",{className:"bn",style:{fontSize:20,letterSpacing:".08em",color:"#666666"}},faixaSemana)),
+          h("div",{className:"bn",style:{fontSize:20,letterSpacing:"-.02em",color:"#666666"}},faixaSemana)),
         h("div",{className:"week-strip"},
           weekDays.map(d=>h("div",{key:d.ts,style:{display:"flex",flexDirection:"column",gap:7}},
             h("div",{"aria-hidden":"true",style:{fontSize:11,fontWeight:700,letterSpacing:.5,textAlign:"center",color:d.isToday?"#C6FF00":"#666666"}},d.inicial),
@@ -1329,7 +1487,7 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
                 ?h("svg",{width:17,height:17,viewBox:"0 0 24 24",fill:"none",stroke:"#050505",strokeWidth:3,strokeLinecap:"round",strokeLinejoin:"round"},
                     h("path",{d:"M5 12.5l4.5 4.5L19 7.5"}))
                 :d.isToday
-                  ?h("span",{className:"bn",style:{fontSize:20,lineHeight:1,color:"#C6FF00"}},"Hoje")
+                  ?h("span",{className:"bn",style:{fontSize:14,lineHeight:1,color:"#C6FF00"}},"Hoje")
                   :d.isFuture
                     ?h("span",{style:{fontSize:15,fontWeight:800,color:"#A3A3A3"}},String(d.num))
                     :h("span",{style:{width:12,height:2,borderRadius:999,background:"#333333"}}))))))
@@ -1338,32 +1496,40 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
       // Sangra até as bordas: o card seguinte fica espiando, que é o que
       // sinaliza "dá pra deslizar". Primeiro card = recomendação do ciclo.
       h("div",{style:{marginLeft:-24,marginRight:-24,marginBottom:16}},
-        h("div",{style:{display:"flex",gap:12,overflowX:"auto",scrollSnapType:"x mandatory",
-          WebkitOverflowScrolling:"touch",padding:"0 24px 6px"}},
+        h("div",{key:activeProgram,className:"treino-carousel",
+          style:{display:"flex",gap:12,overflowX:"auto",scrollSnapType:"x mandatory",
+          scrollPaddingLeft:24,WebkitOverflowScrolling:"touch",padding:"0 24px 6px"}},
           carrossel.map((sess,idx)=>{
             const exCount=EX.filter(x=>x.s===sess.s).length;
-            const isHoje=idx===0&&!!sesHoje;
+            const isHoje=idx===0&&!!sesCard;
             const subLower=(sess.sub||"").toLowerCase();
             const redundante=subLower&&sess.s.toLowerCase().indexOf(subLower)>=0;
-            return h("div",{key:sess.s,onClick:()=>onSelect(isHoje?rec.playSession:sess.s),
+            return h("div",{key:sess.s,className:"treino-card",onClick:()=>onSelect(isHoje?rec.playSession:sess.s),
               style:Object.assign({},cardBase,{flex:"0 0 auto",width:"calc(100vw - 60px)",maxWidth:360,boxSizing:"border-box",
-                scrollSnapAlign:"start",display:"flex",alignItems:"center",gap:12,padding:12,cursor:"pointer",
-                border:isHoje?"1px solid rgba(198,255,0,0.22)":"1px solid transparent"})},
-              h("div",{style:{width:72,height:72,borderRadius:14,overflow:"hidden",flexShrink:0,background:"#0D0D0D"}},
+                scrollSnapAlign:"start",display:"flex",alignItems:"center",cursor:"pointer",
+                border:"1px solid "+(isHoje?bordaHoje:"transparent")})},
+              h("div",{className:"treino-card__foto",style:{borderRadius:14,overflow:"hidden",flexShrink:0,background:"#0D0D0D"}},
                 h("img",{src:sess.img,alt:"",
-                  style:{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top",
+                  style:{position:"absolute",inset:0,display:"block",width:"100%",height:"100%",objectFit:"cover",objectPosition:"top",
                     filter:(isHoje&&rec.status==="rest")?"grayscale(0.5) brightness(.8)":"none"},
                   onError:e=>{e.target.style.display="none"}})),
               h("div",{style:{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:4}},
                 h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",
-                  color:isHoje?accentHoje:"#666666"}},isHoje?(rec.label||"Para hoje").toUpperCase():(sess.dia||"Treino")),
-                h("div",{className:"bn",style:{fontSize:30,lineHeight:.92,letterSpacing:".02em",color:"#FFFFFF",
-                  overflow:"hidden",display:"-webkit-box",WebkitBoxOrient:"vertical",WebkitLineClamp:2}},sess.sub||sess.s),
-                h("div",{style:{fontSize:12,color:"#A3A3A3",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},
-                  (redundante?"":sess.s+" · ")+exCount+" exercícios")),
+                  color:isHoje?accentHoje:"#666666"}},(isHoje?rotuloHoje:rotuloCard(sess)).toUpperCase()),
+                // paddingBottom: com line-height .92 e overflow hidden, a cedilha de
+                // "Braços" e acentos altos ficavam raspando na borda da caixa
+                // Caixa mista, SemiBold, sem tracking negativo: é ~20px mais estreito
+                // que o CAPS 700, o que devolve o título pra 30px e o Full Body
+                // pra 3 linhas. O resto do display do app segue em caixa alta.
+                h("div",{className:"bn treino-card__titulo",style:{lineHeight:1.05,letterSpacing:0,color:"#FFFFFF",
+                  textTransform:"none",fontWeight:600,
+                  paddingBottom:3,overflow:"hidden",display:"-webkit-box",WebkitBoxOrient:"vertical",WebkitLineClamp:4}},sess.sub||sess.s),
+                h("div",{className:"treino-card__meta",style:{color:"#A3A3A3"}},
+                  (redundante?"":sess.s+" · ")+exCount+" exercícios"+(sess.dur?" · "+sess.dur:""))),
               h("button",{onClick:e=>{e.stopPropagation();onSelect(isHoje?rec.playSession:sess.s);},
                 "aria-label":"Iniciar "+sess.s,
-                style:{width:48,height:48,borderRadius:999,flexShrink:0,cursor:"pointer",padding:0,
+                className:"treino-card__play",
+                style:{borderRadius:999,flexShrink:0,cursor:"pointer",padding:0,
                   display:"flex",alignItems:"center",justifyContent:"center",
                   background:isHoje?accentHoje:"#1A1A1A",
                   border:isHoje?"none":"1px solid #252525",
@@ -1376,11 +1542,11 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
         h("div",{style:{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6}},
           h("div",{style:lblStyle},"Últimos 28 dias"),
           h("div",{style:{display:"flex",alignItems:"baseline",gap:6}},
-            h("div",{className:"bn",style:{fontSize:50,lineHeight:.85,letterSpacing:".02em",color:treinos28?"#C6FF00":"#666666"}},String(treinos28)),
+            h("div",{className:"bn",style:{fontSize:50,lineHeight:1,letterSpacing:"-.04em",color:treinos28?"#C6FF00":"#666666"}},String(treinos28)),
             h("div",{style:{fontSize:13,fontWeight:700,color:"#A3A3A3"}},treinos28===1?"treino":"treinos")),
           h("div",{style:{fontSize:12,color:"#666666"}},
             treinos28
-              ?"Melhor semana: "+melhorSemana+" · média "+(tempoMed?tempoMed+" min":"–")
+              ?"Melhor sequência: "+melhorJanela+" em 7 dias · média "+(tempoMed?tempoMed+" min":"–")
               :"Seu primeiro treino começa a preencher isto aqui")),
         h("div",{style:{flexShrink:0,display:"flex",flexDirection:"column",gap:8}},
           h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#666666",textTransform:"uppercase"}},"Dia a dia"),
@@ -1391,17 +1557,19 @@ function SessionHomeView({onSelect,activeProgram,setActiveProgram}){
       h("div",{className:"metric-grid",style:{marginBottom:12}},
         h("div",{style:Object.assign({},cardBase,{padding:16,display:"flex",flexDirection:"column",gap:10})},
           h("div",{style:lblStyle},"Volume semanal"),
-          h("div",{className:"bn",style:{fontSize:34,lineHeight:.9,color:volPct===null?"#666666":"#F5F5F5"}},fmtVolPct(volPct)),
+          h("div",{className:"bn",style:{fontSize:34,lineHeight:1,color:(volPct===null&&!volAtual)?"#666666":"#F5F5F5"}},
+            volPct!==null?fmtVolPct(volPct):(volAtual>0?fmtVolAbs(volAtual):"–")),
           spark
             ?h("svg",{width:"100%",height:42,viewBox:"0 0 133 42",fill:"none",preserveAspectRatio:"none","aria-hidden":"true"},
                 h("path",{d:spark.area,fill:"rgba(198,255,0,0.12)"}),
                 h("path",{d:spark.line,stroke:"#C6FF00",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"}))
             :h("div",{style:{height:42,borderRadius:8,background:"#1A1A1A"}}),
-          h("div",{style:{fontSize:11,color:"#666666"}},spark?"8 semanas · carga × reps":"Sem carga registrada ainda")),
+          h("div",{style:{fontSize:11,color:"#666666"}},
+            volPct!==null?"vs. 7 dias anteriores":(volAtual>0?"nos últimos 7 dias":"Sem carga registrada ainda"))),
         h("div",{style:Object.assign({},cardBase,{padding:16,display:"flex",flexDirection:"column",gap:10})},
           h("div",{style:lblStyle},"PSE médio"),
           h("div",{style:{display:"flex",alignItems:"baseline",gap:5}},
-            h("div",{className:"bn",style:{fontSize:34,lineHeight:.9,color:pseMed>0?"#F5F5F5":"#666666"}},fmtPse(pseMed)),
+            h("div",{className:"bn",style:{fontSize:34,lineHeight:1,color:pseMed>0?"#F5F5F5":"#666666"}},fmtPse(pseMed)),
             h("div",{style:{fontSize:12,fontWeight:700,color:"#666666"}},"/ 10")),
           h("div",{style:{display:"flex",alignItems:"flex-end",gap:6,height:42}},
             pseUltimos.length
@@ -1466,7 +1634,7 @@ function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock,setCurrentBlock,
     return ss+"×"+r+(p?" · PSE "+p:"");
   }
   return h("div",{className:"screen-enter",key:"grid-"+selS,style:{background:"#050505",minHeight:"100vh",paddingBottom:24}},
-    h("div",{style:{maxWidth:1040,margin:"0 auto",padding:"28px 24px 0"}},
+    h("div",{className:"screen-top",style:{maxWidth:1040,margin:"0 auto",paddingLeft:24,paddingRight:24}},
       // ── Botão voltar ────────────────────────────────────────────
       h("button",{onClick:onBack,
         style:{display:"inline-flex",alignItems:"center",gap:5,padding:"8px 16px",borderRadius:22,
@@ -1475,7 +1643,7 @@ function ExerciseGridView({selS,sc,onBack,onSelect,currentBlock,setCurrentBlock,
         "← Voltar"),
       // ── Header editorial ────────────────────────────────────────
       h("div",{style:{marginBottom:28}},
-        h("h1",{style:{fontSize:"clamp(48px, 8vw, 60px)",fontWeight:900,letterSpacing:-2,
+        h("h1",{style:{fontSize:"clamp(38px, 9vw, 56px)",fontWeight:700,letterSpacing:"-.04em",
           color:"#F5F5F5",margin:0,lineHeight:1}},selS),
         h("div",{style:{fontSize:15,color:"#A3A3A3",marginTop:12,fontWeight:500,letterSpacing:-.1}},
           (sess.sub||"")+(sess.sub?" · ":"")+sesEx.length+" exercícios")),
@@ -1765,7 +1933,7 @@ function TreinoView(){
       h("div",{style:{position:"absolute",bottom:140,left:0,right:0,padding:"0 24px"}},
         h("div",{style:{maxWidth:860,margin:"0 auto"}},
           h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,.85)",textTransform:"uppercase",marginBottom:6,textShadow:"0 1px 6px rgba(0,0,0,.5)"}},selS),
-          h("h1",{style:{fontSize:"clamp(44px,7vw,60px)",fontWeight:900,color:"#F5F5F5",letterSpacing:-2,lineHeight:.95,margin:"0 0 10px",textShadow:"0 2px 20px rgba(0,0,0,.7), 0 1px 4px rgba(0,0,0,.55)"}},ex.n),
+          h("h1",{style:{fontSize:"clamp(34px,10vw,56px)",fontWeight:700,color:"#F5F5F5",letterSpacing:"-.04em",lineHeight:1,margin:"0 0 10px",hyphens:"auto",WebkitHyphens:"auto",textShadow:"0 2px 20px rgba(0,0,0,.7), 0 1px 4px rgba(0,0,0,.55)"}},ex.n),
           h("div",{style:{fontSize:14,color:"rgba(255,255,255,.85)",fontWeight:600,letterSpacing:.2,textShadow:"0 1px 6px rgba(0,0,0,.55)"}},ex.m+" · "+eb.l)))),
 
     h("div",{style:{maxWidth:860,margin:"0 auto",padding:"0 24px 16px",marginTop:-100,position:"relative",zIndex:2}},
@@ -1780,7 +1948,7 @@ function TreinoView(){
               h("div",{style:{height:1,background:"#252525",marginBottom:12}}),
               h("div",{style:{fontSize:10,color:"#A3A3A3",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}},"Hoje tente"),
               h("div",{style:{display:"flex",gap:12,alignItems:"baseline",marginBottom:6,flexWrap:"wrap"}},
-                h("span",{className:"bn",style:{fontSize:32,fontWeight:900,color:"#F5F5F5",letterSpacing:-.5}},"—"),
+                h("span",{className:"bn",style:{fontSize:32,fontWeight:700,color:"#F5F5F5",letterSpacing:"-.035em"}},"—"),
                 parsedPrescription&&h("span",{style:{fontSize:18,color:"#A3A3A3",fontWeight:700}},
                   parsedPrescription.rMin+(parsedPrescription.rMax!==parsedPrescription.rMin?"–"+parsedPrescription.rMax:"")+" reps"),
                 parsedPrescription&&h("span",{style:{fontSize:14,fontWeight:700,color:"#f59e0b"}},
@@ -1801,7 +1969,7 @@ function TreinoView(){
               h("div",{style:{height:1,background:"#252525",marginBottom:12}}),
               h("div",{style:{fontSize:10,color:"#A3A3A3",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}},"Hoje tente"),
               h("div",{style:{display:"flex",gap:12,alignItems:"baseline",marginBottom:6,flexWrap:"wrap"}},
-                sug.carga>0&&h("span",{className:"bn",style:{fontSize:32,fontWeight:900,color:"#F5F5F5",letterSpacing:-.5}},sug.carga+"kg"),
+                sug.carga>0&&h("span",{className:"bn",style:{fontSize:32,fontWeight:700,color:"#F5F5F5",letterSpacing:"-.035em"}},sug.carga+"kg"),
                 sug.rMin>0&&h("span",{style:{fontSize:18,color:"#A3A3A3",fontWeight:700}},
                   sug.rMin+(sug.rMax!==sug.rMin?"–"+sug.rMax:"")+" reps"),
                 sug.pMin>0&&h("span",{style:{fontSize:14,fontWeight:700,color:"#f59e0b"}},
@@ -1829,7 +1997,7 @@ function TreinoView(){
         h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,gap:8}},
           h("span",{style:{fontSize:11,fontWeight:900,letterSpacing:2,color:"#A3A3A3"}},"PROGRESSÃO DE CARGA"),
           h("span",{style:{display:"inline-flex",alignItems:"center",padding:"4px 10px",borderRadius:999,background:progPillBg,fontSize:11,fontWeight:700,color:progPillC}},progStatus)),
-        h("div",{className:"bn",style:{fontSize:42,fontWeight:900,color:"#F5F5F5",letterSpacing:-1,lineHeight:1}},progMainNumber),
+        h("div",{className:"bn",style:{fontSize:42,fontWeight:700,color:"#F5F5F5",letterSpacing:"-.04em",lineHeight:1}},progMainNumber),
         h("div",{style:{fontSize:12,color:"#A3A3A3",marginTop:4,fontWeight:600}},
           progDir==="stable"?"carga atual":"nas últimas 6 séries"),
         h("div",{style:{fontSize:14,color:"#A3A3A3",marginTop:8}},
@@ -1888,7 +2056,7 @@ function TreinoView(){
     (cntd!==null||exRun||showCarga||showPse||st)&&h("div",{className:"flow-shell"},
       cntd!==null&&h("div",{key:"countdown",className:"flow-step",style:{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
         h("div",{style:{fontSize:11,color:"#A3A3A3",fontWeight:700,letterSpacing:3,textTransform:"uppercase",marginBottom:24}},"Prepare-se"),
-        h("div",{className:"bn",style:{fontSize:160,fontWeight:900,color:"#C6FF00",lineHeight:1,fontVariantNumeric:"tabular-nums",textShadow:"0 0 80px rgba(198,255,0,.35)"}},cntd),
+        h("div",{className:"bn",style:{fontSize:160,fontWeight:700,color:"#C6FF00",lineHeight:1,fontVariantNumeric:"tabular-nums",textShadow:"0 0 80px rgba(198,255,0,.35)"}},cntd),
         h("div",{style:{fontSize:16,color:"#A3A3A3",marginTop:28,fontWeight:600,textAlign:"center"}},ex.n),
         h("button",{onClick:()=>setCntd(null),style:{marginTop:44,padding:"10px 28px",borderRadius:20,border:"1px solid #252525",background:"transparent",color:"#A3A3A3",fontSize:13,cursor:"pointer",fontFamily:"inherit"}},"Cancelar")),
       exRun&&h("div",{key:"run",className:"flow-step",style:{position:"absolute",inset:0,display:"flex",flexDirection:"column",overflow:"hidden"}},
@@ -1914,8 +2082,8 @@ function TreinoView(){
         // ── TOPO: título grande do exercício (sem botão Cancelar) ─
         h("div",{style:{paddingTop:"calc(env(safe-area-inset-top,0px) + 52px)",paddingBottom:16}},
           h("h1",{className:"display-title",style:{
-            fontSize:"clamp(44px,7vw,60px)",fontWeight:900,color:"#FFFFFF",
-            letterSpacing:"-0.05em",lineHeight:.9,margin:0,
+            fontSize:"clamp(34px,10vw,56px)",fontWeight:700,color:"#FFFFFF",
+            letterSpacing:"-0.04em",lineHeight:1,margin:0,hyphens:"auto",WebkitHyphens:"auto",
             textShadow:"0 8px 32px rgba(0,0,0,0.55)"}},ex.n),
           h("div",{style:{fontSize:14,color:"rgba(255,255,255,.65)",marginTop:10,fontWeight:600,letterSpacing:.2,textShadow:"0 2px 8px rgba(0,0,0,.4)"}},
             ex.m+(eb.l?" · "+eb.l:""))),
@@ -1928,8 +2096,8 @@ function TreinoView(){
             color:"rgba(255,255,255,.75)",textTransform:"uppercase",marginBottom:22}},
             "SÉRIE "+(seriesCt+1)+(plannedSeries>0?" DE "+plannedSeries:"")),
           // Timer grande com centésimos
-          h("div",{className:"bn",style:{fontSize:"clamp(88px,16vw,128px)",fontWeight:900,color:"#FFFFFF",
-            fontVariantNumeric:"tabular-nums",letterSpacing:-4,lineHeight:.9,
+          h("div",{className:"bn",style:{fontSize:"clamp(80px,16vw,128px)",fontWeight:700,color:"#FFFFFF",
+            fontVariantNumeric:"tabular-nums",letterSpacing:"-.05em",lineHeight:1,
             textShadow:"0 4px 32px rgba(0,0,0,.5), 0 1px 6px rgba(0,0,0,.4)"}},fmtTms(exTime)),
           h("div",{style:{fontSize:13,fontWeight:800,letterSpacing:3,
             color:"rgba(255,255,255,.65)",textTransform:"uppercase",marginTop:14}},
@@ -1960,7 +2128,7 @@ function TreinoView(){
         h("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",gap:24,marginBottom:28}},
           h("button",{onClick:()=>setCarga(v=>parseFloat(Math.max(0,v-0.5).toFixed(1))),style:{width:72,height:72,borderRadius:16,border:"1px solid #252525",background:"#121212",color:"#fff",fontSize:36,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"-"),
           h("div",{style:{textAlign:"center",minWidth:120}},
-            h("div",{className:"bn",style:{fontSize:80,fontWeight:900,color:"#fff",fontVariantNumeric:"tabular-nums",lineHeight:1}},carga>0?carga:"—"),
+            h("div",{className:"bn",style:{fontSize:80,fontWeight:700,color:"#fff",fontVariantNumeric:"tabular-nums",lineHeight:1}},carga>0?carga:"—"),
             h("div",{style:{fontSize:13,color:"#A3A3A3",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginTop:6}},"kg")),
           h("button",{onClick:()=>setCarga(v=>parseFloat((v+0.5).toFixed(1))),style:{width:72,height:72,borderRadius:16,border:"1px solid #252525",background:"#121212",color:"#fff",fontSize:36,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"+")),
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}},
@@ -1971,7 +2139,7 @@ function TreinoView(){
           h("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",gap:24,marginBottom:14}},
             h("button",{onClick:()=>setReps(v=>Math.max(0,v-1)),style:{width:56,height:56,borderRadius:16,border:"1px solid #252525",background:"#121212",color:"#fff",fontSize:28,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"-"),
             h("div",{style:{textAlign:"center",minWidth:100}},
-              h("div",{className:"bn",style:{fontSize:54,fontWeight:900,color:"#fff",fontVariantNumeric:"tabular-nums",lineHeight:1}},reps>0?reps:"—"),
+              h("div",{className:"bn",style:{fontSize:54,fontWeight:700,color:"#fff",fontVariantNumeric:"tabular-nums",lineHeight:1}},reps>0?reps:"—"),
               h("div",{style:{fontSize:12,color:"#A3A3A3",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginTop:4}},"reps")),
             h("button",{onClick:()=>setReps(v=>v+1),style:{width:56,height:56,borderRadius:16,border:"1px solid #252525",background:"#121212",color:"#fff",fontSize:28,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1}},"+")),
           h("div",{style:{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8}},
@@ -2000,7 +2168,7 @@ function TreinoView(){
               {r:"9",l:"Muito pesado",c:"#EF4444",bg:"rgba(239,68,68,0.10)"},
               {r:"10",l:"Falha",c:"#EF4444",bg:"rgba(239,68,68,0.10)"}
             ].map((it,i)=>h("div",{key:i,style:{background:it.bg,borderRadius:14,padding:"10px 8px",textAlign:"center"}},
-              h("div",{className:"bn",style:{fontSize:16,fontWeight:900,color:it.c,lineHeight:1,letterSpacing:.05}},it.r),
+              h("div",{className:"bn",style:{fontSize:16,fontWeight:700,color:it.c,lineHeight:1,letterSpacing:"-.03em"}},it.r),
               h("div",{style:{fontSize:10,color:it.highlight?"#F5F5F5":"#A3A3A3",fontWeight:it.highlight?700:500,marginTop:5,lineHeight:1.2}},it.l))))),
         h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:14}},
           [1,2,3,4,5,6,7,8,9,10].map(n=>{
@@ -2027,7 +2195,7 @@ function TreinoView(){
         h("button",{onClick:()=>{setShowPse(false);setSelectedPse(null);},style:{width:"100%",padding:"12px",borderRadius:12,border:"1px solid #252525",background:"transparent",color:"#A3A3A3",fontSize:13,cursor:"pointer",fontFamily:"inherit"}},"Cancelar"))),
       st&&!exRun&&h("div",{key:"rest",className:stClosing?"flow-screen-exit":"flow-step",style:{position:"absolute",inset:0,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px",paddingBottom:"calc(24px + env(safe-area-inset-bottom,0px))",boxSizing:"border-box",overflowY:"auto"}},
         h("div",{style:{fontSize:11,color:"#A3A3A3",fontWeight:700,letterSpacing:3,textTransform:"uppercase",marginBottom:24}},"Descanso"),
-        h("div",{className:"bn",style:{fontSize:120,fontWeight:900,fontVariantNumeric:"tabular-nums",letterSpacing:-4,lineHeight:1,color:tl===0?"#C6FF00":tl<=10?"#F59E0B":"#F5F5F5",textShadow:tl===0?"0 0 60px rgba(198,255,0,.35)":tl<=10?"0 0 60px rgba(245,158,11,.30)":"0 0 40px rgba(255,255,255,.15)"}},Math.floor(tl/60)+":"+String(tl%60).padStart(2,"0")),
+        h("div",{className:"bn",style:{fontSize:120,fontWeight:700,fontVariantNumeric:"tabular-nums",letterSpacing:"-.05em",lineHeight:1,color:tl===0?"#C6FF00":tl<=10?"#F59E0B":"#F5F5F5",textShadow:tl===0?"0 0 60px rgba(198,255,0,.35)":tl<=10?"0 0 60px rgba(245,158,11,.30)":"0 0 40px rgba(255,255,255,.15)"}},Math.floor(tl/60)+":"+String(tl%60).padStart(2,"0")),
         tl===0&&h("div",{style:{fontSize:18,color:"#C6FF00",fontWeight:800,marginTop:20,letterSpacing:.5}},"Pronto! Próxima série!"),
         tl>0&&h("div",{style:{display:"flex",gap:12,marginTop:40,alignItems:"center"}},
           h("button",{onClick:rt,"aria-label":"Reiniciar descanso",style:{width:60,height:60,borderRadius:999,background:"#1A1A1A",border:"none",color:"#A3A3A3",fontSize:22,fontWeight:900,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}},"↺"),
@@ -2054,8 +2222,8 @@ function DietaView(){
   const[om,setOm]=useState(null);
   const dias=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
   const hoje=dias[new Date().getDay()];
-  return h("div",{className:"screen-enter",style:{maxWidth:1040,margin:"0 auto",padding:"0 0 20px"}},
-    h("div",{style:{margin:"16px 16px 0",background:"linear-gradient(135deg,#121212,#0D0D0D)",borderRadius:16,padding:16,boxShadow:"0 12px 32px rgba(0,0,0,.3)"}},
+  return h("div",{className:"screen-enter screen-top",style:{maxWidth:1040,margin:"0 auto",paddingBottom:20}},
+    h("div",{style:{margin:"0 16px",background:"linear-gradient(135deg,#121212,#0D0D0D)",borderRadius:16,padding:16,boxShadow:"0 12px 32px rgba(0,0,0,.3)"}},
       h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}},
         h("div",null,
           h("div",{style:{fontSize:10,fontWeight:800,letterSpacing:2,color:"#C6FF00",textTransform:"uppercase",marginBottom:4}},"Meta Diária"),
@@ -2228,7 +2396,7 @@ function CoachView(){
   const history=groups.slice(1);
   const historyShown=showAllHist?history:history.slice(0,9);
   const mc=(label,value,accent)=>h("div",{style:{background:"#0D0D0D",borderRadius:12,padding:"12px 14px",flex:"1 1 0",minWidth:0}},
-    h("div",{className:"bn",style:{fontSize:22,fontWeight:900,color:accent||"#F5F5F5",letterSpacing:.05,lineHeight:1}},value),
+    h("div",{className:"bn",style:{fontSize:22,fontWeight:700,color:accent||"#F5F5F5",letterSpacing:"-.03em",lineHeight:1}},value),
     h("div",{style:{fontSize:9,fontWeight:700,letterSpacing:1.5,color:"#A3A3A3",textTransform:"uppercase",marginTop:6}},label));
   function workoutCard(g){
     const key=g.date+"|"+g.session;
@@ -2268,8 +2436,8 @@ function CoachView(){
             comments.map((c,i)=>h("div",{key:i,style:{fontSize:13,color:"#F5F5F5",lineHeight:1.5,fontWeight:500}},c))))));
   }
   return h("div",{className:"screen-enter",style:{maxWidth:1040,margin:"0 auto",padding:"0 0 32px"}},
-    h("div",{style:{padding:"28px 24px 0"}},
-      h("h1",{style:{fontSize:60,fontWeight:900,color:"#F5F5F5",margin:0,lineHeight:1}},"Coach"),
+    h("div",{className:"screen-top",style:{paddingLeft:24,paddingRight:24}},
+      h("h1",{style:{fontSize:56,fontWeight:700,color:"#F5F5F5",margin:0,lineHeight:1.05}},"Coach"),
       h("p",{style:{fontSize:15,color:"#A3A3A3",margin:"10px 0 0",fontWeight:500,letterSpacing:-.1}},"Análise dos seus treinos e próximos ajustes.")),
     !last&&h("div",{style:{padding:"24px 24px 0"}},
       h("div",{style:{background:"#121212",borderRadius:20,padding:"32px 20px",textAlign:"center",boxShadow:"0 8px 24px rgba(0,0,0,.25)"}},
